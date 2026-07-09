@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +9,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 import '../../domain/entities/activity_filters.dart';
+import '../../domain/entities/discover_activities_state.dart';
 import '../../domain/entities/discover_filters.dart';
 
 class ActivityRemoteDatasource {
@@ -18,10 +21,19 @@ class ActivityRemoteDatasource {
     required double latitude,
     required double longitude,
     ActivityDiscoverFilters filters = const ActivityDiscoverFilters.empty(),
+    int offset = 0,
+    int limit = discoverActivitiesPageSize,
   }) async {
+    // PostgREST-Äquivalent: .range(from, to) mit pageSize = limit
+    final from = offset;
+    final to = offset + limit - 1;
+    assert(to >= from);
+
     final params = <String, dynamic>{
       'p_lat': latitude,
       'p_lng': longitude,
+      'p_limit': limit,
+      'p_offset': from,
     };
 
     if (filters.locationType != null) {
@@ -31,11 +43,40 @@ class ActivityRemoteDatasource {
       params['p_weather_condition'] = filters.weatherCondition!.dbValue;
     }
 
-    final response = await _client.rpc('discover_activities', params: params);
+    final dateRange = filters.dateRange;
+    if (dateRange.start != null) {
+      params['p_date_from'] = dateRange.start!.toUtc().toIso8601String();
+    }
+    if (dateRange.end != null) {
+      params['p_date_to'] = dateRange.end!.toUtc().toIso8601String();
+    }
 
-    return (response as List)
-        .map((row) => _mapDiscoverableActivity(row as Map<String, dynamic>))
-        .toList();
+    try {
+      final response = await _client
+          .rpc('discover_activities', params: params)
+          .timeout(const Duration(seconds: 20));
+      if (response is! List) return const [];
+
+      final activities = <DiscoverableActivity>[];
+      for (final row in response) {
+        if (row is! Map<String, dynamic>) continue;
+        try {
+          activities.add(_mapDiscoverableActivity(row));
+        } catch (error, stackTrace) {
+          if (kDebugMode) {
+            debugPrint(
+              'CircleVeya: Aktivität übersprungen (id=${row['id']}): $error\n$stackTrace',
+            );
+          }
+        }
+      }
+      return activities;
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('CircleVeya: discover_activities Timeout – leere Liste');
+      }
+      return const [];
+    }
   }
 
   Future<Map<String, dynamic>?> getCurrentProfile() async {
@@ -66,35 +107,46 @@ class ActivityRemoteDatasource {
         .eq('host_id', userId)
         .order('date_time', ascending: true, nullsFirst: false);
 
-    return (response as List).map((row) {
-      final map = row as Map<String, dynamic>;
-      final profile = map['profiles'] as Map<String, dynamic>?;
-      return DiscoverableActivity(
-        id: map['id'] as String,
-        hostId: map['host_id'] as String,
-        hostUsername: profile?['username'] as String? ?? 'Du',
-        hostIsCompany: profile?['user_type'] == 'company',
-        title: map['title'] as String,
-        description: map['description'] as String?,
-        maxParticipants: map['max_participants'] as int?,
-        currentParticipants: map['current_participants'] as int,
-        dateTime: _parseOptionalDateTime(map['date_time']),
-        imageUrl: map['image_url'] as String?,
-        locationType: LocationType.values.byName(
-          map['location_type'] as String,
-        ),
-        weatherCondition: WeatherCondition.values.byName(
-          map['weather_condition'] as String,
-        ),
-        locationName: map['location_name'] as String?,
-        distanceKm: null,
-        visibleAs: VisibleAs.friend,
-        viewerAction: ViewerAction.host,
-        isSponsored: map['is_sponsored'] as bool? ?? false,
-        isFeatured: (map['is_sponsored'] as bool? ?? false) &&
-            profile?['user_type'] == 'company',
-      );
-    }).toList();
+    final activities = <DiscoverableActivity>[];
+    for (final row in response as List) {
+      if (row is! Map<String, dynamic>) continue;
+      try {
+        final map = row;
+        final profile = map['profiles'] as Map<String, dynamic>?;
+        activities.add(
+          DiscoverableActivity(
+            id: _requireString(map['id'], fallback: ''),
+            hostId: _requireString(map['host_id'], fallback: userId),
+            hostUsername:
+                _optionalString(profile?['username']) ?? 'Du',
+            hostIsCompany: profile?['user_type'] == 'company',
+            title: _requireString(map['title'], fallback: 'Aktivität'),
+            description: _optionalString(map['description']),
+            maxParticipants: _optionalInt(map['max_participants']),
+            currentParticipants: _optionalInt(map['current_participants']) ?? 0,
+            dateTime: _parseOptionalDateTime(map['date_time']),
+            imageUrl: _optionalString(map['image_url']),
+            locationType: _parseLocationType(map['location_type']),
+            weatherCondition: _parseWeatherCondition(map['weather_condition']),
+            locationName: _optionalString(map['location_name']),
+            distanceKm: null,
+            visibleAs: VisibleAs.friend,
+            viewerAction: ViewerAction.host,
+            isSponsored: map['is_sponsored'] as bool? ?? false,
+            isFeatured: (map['is_sponsored'] as bool? ?? false) &&
+                profile?['user_type'] == 'company',
+            source: ActivitySource.fromDb(map['source'] as String?),
+            externalUrl: _optionalString(map['external_url']),
+            createdAt: _parseOptionalDateTime(map['created_at']),
+          ),
+        );
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('CircleVeya: Gehostete Aktivität übersprungen: $error\n$stackTrace');
+        }
+      }
+    }
+    return activities;
   }
 
   Future<void> createActivity(
@@ -213,36 +265,81 @@ class ActivityRemoteDatasource {
   }
 
   DiscoverableActivity _mapDiscoverableActivity(Map<String, dynamic> map) {
+    final id = _requireString(map['id']);
+    if (id.isEmpty) {
+      throw const FormatException('Aktivität ohne id');
+    }
+
     return DiscoverableActivity(
-      id: map['id'] as String,
-      hostId: map['host_id'] as String,
-      hostUsername: map['host_username'] as String,
+      id: id,
+      hostId: _requireString(map['host_id'], fallback: id),
+      hostUsername:
+          _optionalString(map['host_username']) ?? 'CircleVeya',
       hostIsCompany: map['host_is_company'] as bool? ?? false,
-      title: map['title'] as String,
-      description: map['description'] as String?,
-      maxParticipants: map['max_participants'] as int?,
-      currentParticipants: map['current_participants'] as int,
+      title: _requireString(map['title'], fallback: 'Event'),
+      description: _optionalString(map['description']),
+      maxParticipants: _optionalInt(map['max_participants']),
+      currentParticipants: _optionalInt(map['current_participants']) ?? 0,
       dateTime: _parseOptionalDateTime(map['date_time']),
-      imageUrl: map['image_url'] as String?,
-      locationType: LocationType.values.byName(
-        map['location_type'] as String,
+      imageUrl: _optionalString(map['image_url']),
+      locationType: _parseLocationType(map['location_type']),
+      weatherCondition: _parseWeatherCondition(map['weather_condition']),
+      locationName: _optionalString(map['location_name']),
+      distanceKm: _optionalDouble(map['distance_km']),
+      visibleAs: VisibleAs.fromDb(
+        _optionalString(map['visible_as']) ?? 'stranger',
       ),
-      weatherCondition: WeatherCondition.values.byName(
-        map['weather_condition'] as String,
+      viewerAction: ViewerAction.fromDb(
+        _optionalString(map['viewer_action']) ?? 'none',
       ),
-      locationName: map['location_name'] as String?,
-      distanceKm: (map['distance_km'] as num?)?.toDouble(),
-      visibleAs: VisibleAs.fromDb(map['visible_as'] as String),
-      viewerAction: ViewerAction.fromDb(map['viewer_action'] as String),
       isSponsored: map['is_sponsored'] as bool? ?? false,
       isFeatured: map['is_featured'] as bool? ?? false,
       source: ActivitySource.fromDb(map['source'] as String?),
-      externalUrl: map['external_url'] as String?,
-      createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'] as String)
-          : null,
+      externalUrl: _optionalString(map['external_url']),
+      createdAt: _parseOptionalDateTime(map['created_at']),
       participantAvatarUrls: _parseAvatarUrls(map['participant_avatar_urls']),
     );
+  }
+
+  String _requireString(dynamic value, {String fallback = ''}) {
+    if (value is String && value.trim().isNotEmpty) return value.trim();
+    return fallback;
+  }
+
+  String? _optionalString(dynamic value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  int? _optionalInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
+  }
+
+  double? _optionalDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return null;
+  }
+
+  LocationType _parseLocationType(dynamic value) {
+    final raw = _optionalString(value);
+    if (raw == null) return LocationType.indoor;
+    for (final type in LocationType.values) {
+      if (type.name == raw) return type;
+    }
+    return LocationType.indoor;
+  }
+
+  WeatherCondition _parseWeatherCondition(dynamic value) {
+    final raw = _optionalString(value);
+    if (raw == null) return WeatherCondition.sun;
+    for (final condition in WeatherCondition.values) {
+      if (condition.name == raw) return condition;
+    }
+    return WeatherCondition.sun;
   }
 
   List<String> _parseAvatarUrls(dynamic value) {
@@ -255,7 +352,13 @@ class ActivityRemoteDatasource {
 
   DateTime? _parseOptionalDateTime(dynamic value) {
     if (value == null) return null;
-    return DateTime.parse(value as String);
+    if (value is DateTime) return value;
+    if (value is! String || value.trim().isEmpty) return null;
+    try {
+      return DateTime.parse(value);
+    } catch (_) {
+      return null;
+    }
   }
 
   String _extensionFromFileName(String? fileName) {

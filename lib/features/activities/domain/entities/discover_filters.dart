@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/location/user_location.dart';
 import 'activity_filters.dart';
+import 'discover_date_filter.dart';
 
 class ActivityDiscoverFilters extends Equatable {
   const ActivityDiscoverFilters({
@@ -9,17 +10,29 @@ class ActivityDiscoverFilters extends Equatable {
     this.weatherCondition,
     this.maxDistanceKm,
     this.distanceOption = DistanceFilterOption.everywhere,
+    this.dateFilter = DiscoverDateFilterOption.all,
+    this.customDateFrom,
+    this.customDateTo,
   });
 
   final LocationType? locationType;
   final WeatherCondition? weatherCondition;
   final double? maxDistanceKm;
   final DistanceFilterOption distanceOption;
+  final DiscoverDateFilterOption dateFilter;
+  final DateTime? customDateFrom;
+  final DateTime? customDateTo;
+
+  ({DateTime? start, DateTime? end}) get dateRange => dateFilter.resolveRange(
+        customStart: customDateFrom,
+        customEnd: customDateTo,
+      );
 
   bool get hasActiveFilters =>
       locationType != null ||
       weatherCondition != null ||
-      maxDistanceKm != null;
+      maxDistanceKm != null ||
+      dateFilter != DiscoverDateFilterOption.all;
 
   ActivityDiscoverFilters copyWith({
     LocationType? locationType,
@@ -29,6 +42,10 @@ class ActivityDiscoverFilters extends Equatable {
     double? maxDistanceKm,
     bool clearMaxDistance = false,
     DistanceFilterOption? distanceOption,
+    DiscoverDateFilterOption? dateFilter,
+    DateTime? customDateFrom,
+    DateTime? customDateTo,
+    bool clearCustomDateRange = false,
   }) {
     return ActivityDiscoverFilters(
       locationType: clearLocationType ? null : (locationType ?? this.locationType),
@@ -38,6 +55,12 @@ class ActivityDiscoverFilters extends Equatable {
       maxDistanceKm:
           clearMaxDistance ? null : (maxDistanceKm ?? this.maxDistanceKm),
       distanceOption: distanceOption ?? this.distanceOption,
+      dateFilter: dateFilter ?? this.dateFilter,
+      customDateFrom: clearCustomDateRange
+          ? null
+          : (customDateFrom ?? this.customDateFrom),
+      customDateTo:
+          clearCustomDateRange ? null : (customDateTo ?? this.customDateTo),
     );
   }
 
@@ -49,5 +72,8 @@ class ActivityDiscoverFilters extends Equatable {
         weatherCondition,
         maxDistanceKm,
         distanceOption,
+        dateFilter,
+        customDateFrom,
+        customDateTo,
       ];
 }

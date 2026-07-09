@@ -14,12 +14,14 @@ class DiscoverGridCard extends StatelessWidget {
   const DiscoverGridCard({
     super.key,
     required this.activity,
+    this.occurrenceCount = 1,
     this.onTap,
     this.onAction,
     this.isLoading = false,
   });
 
   final DiscoverableActivity activity;
+  final int occurrenceCount;
   final VoidCallback? onTap;
   final VoidCallback? onAction;
   final bool isLoading;
@@ -28,10 +30,12 @@ class DiscoverGridCard extends StatelessWidget {
       activity.viewerAction != ViewerAction.none &&
       activity.viewerAction != ViewerAction.host;
 
+  bool get _isGrouped => occurrenceCount > 1;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('dd.MM. · HH:mm');
+    final dateLabel = _formatDateLabel(activity.dateTime);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -55,32 +59,26 @@ class DiscoverGridCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (activity.imageUrl != null)
-                    CachedNetworkImage(
-                      imageUrl: activity.imageUrl!,
-                      fit: BoxFit.cover,
-                    )
-                  else
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.seed.withValues(alpha: 0.7),
-                            AppColors.gradientEnd.withValues(alpha: 0.5),
-                          ],
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.image_outlined,
-                        color: Colors.white54,
-                        size: 40,
-                      ),
-                    ),
+                  CachedNetworkImage(
+                    imageUrl: activity.effectiveImageUrl,
+                    fit: BoxFit.cover,
+                  ),
                   Positioned(
                     top: 10,
                     left: 10,
                     child: ActivityStatusBadges(activity: activity),
                   ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: _DateBadge(label: dateLabel),
+                  ),
+                  if (_isGrouped)
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: _SeriesBadge(count: occurrenceCount),
+                    ),
                 ],
               ),
             ),
@@ -98,6 +96,16 @@ class DiscoverGridCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (_isGrouped) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '+ ${occurrenceCount - 1} weitere Termine',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.seed,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -116,25 +124,40 @@ class DiscoverGridCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (activity.locationName != null &&
+                        activity.locationName!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              activity.locationName!,
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const Spacer(),
                     Row(
                       children: [
-                        if (activity.dateTime != null)
-                          Expanded(
-                            child: Text(
-                              dateFormat.format(activity.dateTime!.toLocal()),
-                              style: theme.textTheme.labelSmall,
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Text(
-                              'Flexibel',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: AppColors.tertiary,
-                              ),
+                        Expanded(
+                          child: Text(
+                            dateLabel,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.seed,
                             ),
                           ),
+                        ),
                         if (activity.distanceKm != null)
                           Text(
                             DistanceDisplay.forActivity(activity),
@@ -165,10 +188,10 @@ class DiscoverGridCard extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: activity.viewerAction.canTap &&
-                                  !isLoading
-                              ? onAction
-                              : null,
+                          onPressed:
+                              activity.viewerAction.canTap && !isLoading
+                                  ? onAction
+                                  : null,
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             backgroundColor:
@@ -194,6 +217,66 @@ class DiscoverGridCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatDateLabel(DateTime? dateTime) {
+    if (dateTime == null) return 'Flexibel';
+    final local = dateTime.toLocal();
+    final day = DateFormat('dd.MM.yyyy').format(local);
+    final time = DateFormat('HH:mm').format(local);
+    return '$day · $time';
+  }
+}
+
+class _DateBadge extends StatelessWidget {
+  const _DateBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SeriesBadge extends StatelessWidget {
+  const _SeriesBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.seed.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          '$count Termine',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import '../../data/datasources/external_events_sync_datasource.dart';
 import '../../data/repositories/activity_repository_impl.dart';
 import '../../data/repositories/unconfigured_activity_repository.dart';
 import '../../domain/entities/activity.dart';
+import '../../domain/entities/discover_activities_state.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../../domain/repositories/activity_repository.dart';
 final activityRemoteDatasourceProvider = Provider<ActivityRemoteDatasource>((ref) {
@@ -40,38 +42,143 @@ final isCompanyPartnerProvider = Provider<bool>((ref) {
   return profile?.isCompany ?? false;
 });
 
-final discoverActivitiesProvider =
-    FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {
-  ref.watch(locationCoordsKeyProvider);
+final discoverActivitiesProvider = NotifierProvider.autoDispose<
+    DiscoverActivitiesController, DiscoverActivitiesState>(
+  DiscoverActivitiesController.new,
+);
 
-  final locationState = ref.watch(userLocationProvider);
-  final UserLocation location = locationState.hasValue
-      ? locationState.requireValue
-      : await ref.read(userLocationProvider.future);
+class DiscoverActivitiesController
+    extends AutoDisposeNotifier<DiscoverActivitiesState> {
+  int _loadedCount = 0;
+  bool _fetchInFlight = false;
 
-  final filters = ref.watch(discoverFiltersProvider);
+  @override
+  DiscoverActivitiesState build() {
+    ref.listen(locationCoordsKeyProvider, (_, __) {
+      unawaited(refresh());
+    });
+    ref.listen(discoverFiltersProvider, (_, __) {
+      unawaited(refresh());
+    });
+    Future.microtask(refresh);
+    return const DiscoverActivitiesState(isLoading: true);
+  }
 
-  await ref.read(externalEventsSyncDatasourceProvider).syncForUserLocation(
+  Future<void> refresh() async {
+    _loadedCount = 0;
+    state = const DiscoverActivitiesState(isLoading: true);
+    await _fetchPage(append: false);
+    unawaited(_triggerBackgroundSync());
+  }
+
+  Future<void> loadMore() async {
+    if (_fetchInFlight || state.isLoadingMore || !state.hasMore) return;
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+    await _fetchPage(append: true);
+  }
+
+  Future<void> _fetchPage({required bool append}) async {
+    if (_fetchInFlight) return;
+    _fetchInFlight = true;
+
+    try {
+      final location = await _resolveLocation();
+      final filters = ref.read(discoverFiltersProvider);
+      final repository = ref.read(activityRepositoryProvider);
+
+      final page = await repository.discoverActivities(
         latitude: location.latitude,
         longitude: location.longitude,
-        radiusKm: filters.maxDistanceKm ?? 25,
-        countryCode: 'CH',
-        expandRadius: true,
-        minResults: 5,
+        filters: filters,
+        offset: _loadedCount,
+        limit: discoverActivitiesPageSize,
       );
 
-  final activities =
-      await ref.watch(activityRepositoryProvider).discoverActivities(
-            latitude: location.latitude,
-            longitude: location.longitude,
-            filters: filters,
-          );
+      final filtered = ActivityDistanceFilter.apply(
+        page,
+        maxDistanceKm: filters.maxDistanceKm,
+      );
 
-  return ActivityDistanceFilter.apply(
-    activities,
-    maxDistanceKm: filters.maxDistanceKm,
-  );
-});
+      final merged = append
+          ? _mergeActivities(state.activities, filtered)
+          : filtered;
+
+      _loadedCount = append ? _loadedCount + page.length : page.length;
+
+      state = DiscoverActivitiesState(
+        activities: merged,
+        isLoading: false,
+        isLoadingMore: false,
+        hasMore: page.length >= discoverActivitiesPageSize,
+      );
+    } catch (error) {
+      if (append && state.activities.isNotEmpty) {
+        state = state.copyWith(
+          isLoadingMore: false,
+          error: error,
+        );
+      } else {
+        state = DiscoverActivitiesState(
+          activities: const [],
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: false,
+          error: error,
+        );
+      }
+    } finally {
+      _fetchInFlight = false;
+    }
+  }
+
+  List<DiscoverableActivity> _mergeActivities(
+    List<DiscoverableActivity> existing,
+    List<DiscoverableActivity> incoming,
+  ) {
+    final seen = existing.map((a) => a.id).toSet();
+    final merged = List<DiscoverableActivity>.from(existing);
+    for (final activity in incoming) {
+      if (seen.add(activity.id)) {
+        merged.add(activity);
+      }
+    }
+    return merged;
+  }
+
+  Future<UserLocation> _resolveLocation() async {
+    final locationState = ref.read(userLocationProvider);
+    if (locationState.hasValue) {
+      return locationState.requireValue;
+    }
+    if (locationState.hasError) {
+      return UserLocation.mockFrauenfeld;
+    }
+    return ref
+        .read(userLocationProvider.future)
+        .timeout(
+          const Duration(seconds: 12),
+          onTimeout: () => UserLocation.mockFrauenfeld,
+        )
+        .catchError((_) => UserLocation.mockFrauenfeld);
+  }
+
+  Future<void> _triggerBackgroundSync() async {
+    final location = await _resolveLocation();
+    final filters = ref.read(discoverFiltersProvider);
+    final syncDatasource = ref.read(externalEventsSyncDatasourceProvider);
+
+    await syncDatasource
+        .syncForUserLocation(
+          latitude: location.latitude,
+          longitude: location.longitude,
+          radiusKm: filters.maxDistanceKm ?? 25,
+          countryCode: 'CH',
+          expandRadius: true,
+        )
+        .timeout(const Duration(seconds: 20), onTimeout: () {})
+        .catchError((_) {});
+  }
+}
 
 final hostedActivitiesProvider =
     FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {

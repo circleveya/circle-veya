@@ -50,40 +50,34 @@ class ActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (activity.imageUrl != null)
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: activity.imageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (_, _) => ColoredBox(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: (_, _, _) => ColoredBox(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: activity.effectiveImageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, _) => ColoredBox(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: (_, _, _) => ColoredBox(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: ActivityStatusBadges(activity: activity),
-                  ),
-                ],
-              ),
-            )
-          else if (activity.isNew || activity.isFeatured || activity.isExternal)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: ActivityStatusBadges(activity: activity),
+                ),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: ActivityStatusBadges(activity: activity),
+                ),
+              ],
             ),
+          ),
           InkWell(
             onTap: onTap,
             child: Padding(

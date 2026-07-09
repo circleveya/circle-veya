@@ -54,6 +54,16 @@ class DiscoverableActivity extends Equatable {
 
   bool get isExternal => source == ActivitySource.external;
 
+  /// Fallback-Cover, wenn Eventfrog kein Bild liefert.
+  static const defaultCoverImageUrl =
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop';
+
+  String get effectiveImageUrl {
+    final url = imageUrl?.trim();
+    if (url != null && url.isNotEmpty) return url;
+    return defaultCoverImageUrl;
+  }
+
   bool get isNew {
     if (createdAt == null) return false;
     return DateTime.now().difference(createdAt!) < const Duration(hours: 48);

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../entities/activity.dart';
+import '../entities/discover_activities_state.dart';
 import '../entities/discover_filters.dart';
 
 abstract class ActivityRepository {
@@ -8,6 +9,8 @@ abstract class ActivityRepository {
     required double latitude,
     required double longitude,
     ActivityDiscoverFilters filters = const ActivityDiscoverFilters.empty(),
+    int offset = 0,
+    int limit = discoverActivitiesPageSize,
   });
 
   Future<List<DiscoverableActivity>> getHostedActivities();

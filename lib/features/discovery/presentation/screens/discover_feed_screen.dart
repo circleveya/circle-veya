@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../activities/domain/entities/activity.dart';
 import '../../../activities/domain/entities/activity_enums.dart';
+import '../../../activities/domain/entities/discover_activities_state.dart';
 import '../../../activities/domain/entities/discover_filters.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_filter_bar.dart';
@@ -11,8 +12,12 @@ import '../../../activities/presentation/widgets/location_filter_bar.dart';
 import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/url_utils.dart';
+import '../../domain/discover_activity_grouper.dart';
+import '../../domain/discover_feed_item.dart';
 import '../widgets/discover_activity_grid.dart';
 import '../widgets/discover_hero.dart';
+import '../widgets/discover_load_more_footer.dart';
+import '../widgets/discover_occurrence_picker.dart';
 
 class DiscoverFeedScreen extends ConsumerStatefulWidget {
   const DiscoverFeedScreen({super.key});
@@ -24,10 +29,32 @@ class DiscoverFeedScreen extends ConsumerStatefulWidget {
 
 class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   String _searchQuery = '';
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 320) {
+      ref.read(discoverActivitiesProvider.notifier).loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final activitiesAsync = ref.watch(discoverActivitiesProvider);
+    final feedState = ref.watch(discoverActivitiesProvider);
     final actionsState = ref.watch(activityActionsProvider);
     final filters = ref.watch(discoverFiltersProvider);
     final isActionLoading = actionsState.isLoading;
@@ -43,111 +70,136 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
           },
         ),
         Expanded(
-          child: activitiesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => _ErrorState(
-              message: _friendlyErrorMessage(error),
-              onRetry: () {
-                ref.invalidate(userLocationProvider);
-                ref.invalidate(discoverActivitiesProvider);
-              },
-            ),
-            data: (activities) {
-              final filtered = _searchQuery.isEmpty
-                  ? activities
-                  : activities
-                      .where(
-                        (a) =>
-                            a.title
-                                .toLowerCase()
-                                .contains(_searchQuery.toLowerCase()) ||
-                            (a.locationName?.toLowerCase().contains(
-                                  _searchQuery.toLowerCase(),
-                                ) ??
-                                false),
-                      )
-                      .toList();
-
-              if (filtered.isEmpty) {
-                return ListView(
-                  children: [
-                    LocationFilterBar(
-                      filters: filters,
-                      onFiltersChanged: (next) {
-                        ref.read(discoverFiltersProvider.notifier).state = next;
-                      },
-                    ),
-                    DiscoverHero(onSearch: _onSearch),
-                    SizedBox(
-                      height: 200,
-                      child: _EmptyState(
-                        hasFilters: filters.hasActiveFilters ||
-                            _searchQuery.isNotEmpty,
-                        onRefresh: () =>
-                            ref.invalidate(discoverActivitiesProvider),
-                        onClearFilters: filters.hasActiveFilters
-                            ? () {
-                                ref
-                                    .read(discoverFiltersProvider.notifier)
-                                    .state = const ActivityDiscoverFilters
-                                        .empty();
-                                setState(() => _searchQuery = '');
-                                ref.invalidate(discoverActivitiesProvider);
-                              }
-                            : null,
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              final featured =
-                  filtered.where((a) => a.isFeatured).toList();
-              final regular =
-                  filtered.where((a) => !a.isFeatured).toList();
-              final gridItems = [...featured, ...regular];
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(discoverActivitiesProvider);
-                  await ref.read(discoverActivitiesProvider.future);
-                },
-                child: ListView(
-                  children: [
-                    LocationFilterBar(
-                      filters: filters,
-                      onFiltersChanged: (next) {
-                        ref.read(discoverFiltersProvider.notifier).state = next;
-                      },
-                    ),
-                    DiscoverHero(onSearch: _onSearch),
-                    if (featured.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                        child: Text(
-                          'Featured Partner',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                    ],
-                    DiscoverActivityGrid(
-                      activities: gridItems,
-                      isActionLoading: isActionLoading,
-                      onTap: (a) => _openDetail(context, a),
-                      onAction: (a) => _handleAction(context, ref, a),
-                    ),
-                  ],
-                ),
-              );
-            },
+          child: _buildBody(
+            context,
+            feedState: feedState,
+            filters: filters,
+            isActionLoading: isActionLoading,
           ),
         ),
       ],
     );
   }
 
+  Widget _buildBody(
+    BuildContext context, {
+    required DiscoverActivitiesState feedState,
+    required ActivityDiscoverFilters filters,
+    required bool isActionLoading,
+  }) {
+    if (feedState.isInitialLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (feedState.hasError) {
+      return _ErrorState(
+        message: _friendlyErrorMessage(feedState.error!),
+        onRetry: () {
+          ref.invalidate(userLocationProvider);
+          ref.invalidate(discoverActivitiesProvider);
+        },
+      );
+    }
+
+    final filtered = _searchQuery.isEmpty
+        ? feedState.activities
+        : feedState.activities
+            .where(
+              (a) =>
+                  a.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                  (a.locationName?.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ??
+                      false),
+            )
+            .toList();
+
+    if (filtered.isEmpty) {
+      return ListView(
+        controller: _scrollController,
+        children: [
+          LocationFilterBar(
+            filters: filters,
+            onFiltersChanged: (next) {
+              ref.read(discoverFiltersProvider.notifier).state = next;
+            },
+          ),
+          DiscoverHero(onSearch: _onSearch),
+          SizedBox(
+            height: 200,
+            child: _EmptyState(
+              hasFilters:
+                  filters.hasActiveFilters || _searchQuery.isNotEmpty,
+              onRefresh: () =>
+                  ref.read(discoverActivitiesProvider.notifier).refresh(),
+              onClearFilters: filters.hasActiveFilters
+                  ? () {
+                      ref.read(discoverFiltersProvider.notifier).state =
+                          const ActivityDiscoverFilters.empty();
+                      setState(() => _searchQuery = '');
+                      ref.invalidate(discoverActivitiesProvider);
+                    }
+                  : null,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final grouped = DiscoverActivityGrouper.group(filtered);
+    final featured = grouped.where((item) => item.primary.isFeatured).toList();
+    final regular = grouped.where((item) => !item.primary.isFeatured).toList();
+    final gridItems = [...featured, ...regular];
+
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(discoverActivitiesProvider.notifier).refresh(),
+      child: ListView(
+        controller: _scrollController,
+        children: [
+          LocationFilterBar(
+            filters: filters,
+            onFiltersChanged: (next) {
+              ref.read(discoverFiltersProvider.notifier).state = next;
+            },
+          ),
+          DiscoverHero(onSearch: _onSearch),
+          if (featured.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              child: Text(
+                'Featured Partner',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+          DiscoverActivityGrid(
+            items: gridItems,
+            isActionLoading: isActionLoading,
+            onTap: (item) => _openFeedItem(context, item),
+            onAction: (activity) => _handleAction(context, ref, activity),
+          ),
+          DiscoverLoadMoreFooter(
+            isLoadingMore: feedState.isLoadingMore,
+            hasMore: feedState.hasMore,
+            onLoadMore: () =>
+                ref.read(discoverActivitiesProvider.notifier).loadMore(),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _onSearch(String query) {
     setState(() => _searchQuery = query.trim());
+  }
+
+  Future<void> _openFeedItem(BuildContext context, DiscoverFeedItem item) async {
+    final activity = item.isGrouped
+        ? await showDiscoverOccurrencePicker(context, item)
+        : item.primary;
+    if (activity == null || !context.mounted) return;
+    _openDetail(context, activity);
   }
 
   void _openDetail(BuildContext context, DiscoverableActivity activity) {

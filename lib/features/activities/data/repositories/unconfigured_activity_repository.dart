@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../../domain/entities/activity.dart';
+import '../../domain/entities/discover_activities_state.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../../domain/repositories/activity_repository.dart';
 
@@ -34,6 +35,8 @@ class UnconfiguredActivityRepository implements ActivityRepository {
     required double latitude,
     required double longitude,
     ActivityDiscoverFilters filters = const ActivityDiscoverFilters.empty(),
+    int offset = 0,
+    int limit = discoverActivitiesPageSize,
   }) async =>
       [];
 

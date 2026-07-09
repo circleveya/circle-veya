@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,7 +19,6 @@ class ExternalEventsSyncDatasource {
     double? radiusKm,
     String countryCode = 'CH',
     bool expandRadius = true,
-    int minResults = 5,
   }) async {
     final radius = (radiusKm ?? 25).round().clamp(1, 200);
     final syncKey =
@@ -31,17 +32,18 @@ class ExternalEventsSyncDatasource {
     }
 
     try {
-      final response = await _client.functions.invoke(
-        'sync-external-events',
-        body: {
-          'lat': double.parse(latitude.toStringAsFixed(4)),
-          'lng': double.parse(longitude.toStringAsFixed(4)),
-          'radius_km': radius,
-          'country_code': countryCode,
-          'expand_radius': expandRadius,
-          'min_results': minResults,
-        },
-      );
+      final response = await _client.functions
+          .invoke(
+            'sync-external-events',
+            body: {
+              'lat': double.parse(latitude.toStringAsFixed(4)),
+              'lng': double.parse(longitude.toStringAsFixed(4)),
+              'radius_km': radius,
+              'country_code': countryCode,
+              'expand_radius': expandRadius,
+            },
+          )
+          .timeout(const Duration(seconds: 25));
 
       _lastSyncKey = syncKey;
       _lastSyncAt = now;

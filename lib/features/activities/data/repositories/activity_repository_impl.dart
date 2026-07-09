@@ -4,8 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
-import '../../domain/entities/discover_filters.dart';
 import '../../domain/entities/activity.dart';
+import '../../domain/entities/discover_activities_state.dart';
+import '../../domain/entities/discover_filters.dart';
 import '../../domain/repositories/activity_repository.dart';
 import '../datasources/activity_remote_datasource.dart';
 
@@ -19,17 +20,27 @@ class ActivityRepositoryImpl implements ActivityRepository {
     required double latitude,
     required double longitude,
     ActivityDiscoverFilters filters = const ActivityDiscoverFilters.empty(),
+    int offset = 0,
+    int limit = discoverActivitiesPageSize,
   }) async {
     try {
       return await _datasource.discoverActivities(
         latitude: latitude,
         longitude: longitude,
         filters: filters,
+        offset: offset,
+        limit: limit,
       );
     } on PostgrestException catch (error) {
       throw ActivityFailure(error.message);
     } on AppAuthException catch (error) {
       throw ActivityFailure(error.message);
+    } on FormatException catch (error) {
+      throw ActivityFailure(error.message);
+    } catch (error) {
+      throw ActivityFailure(
+        'Aktivitäten konnten nicht geladen werden: $error',
+      );
     }
   }
 
