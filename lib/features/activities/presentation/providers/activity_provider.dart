@@ -36,7 +36,13 @@ final isCompanyPartnerProvider = Provider<bool>((ref) {
 
 final discoverActivitiesProvider =
     FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {
-  final location = await ref.watch(userLocationProvider.future);
+  ref.watch(locationCoordsKeyProvider);
+
+  final locationState = ref.watch(userLocationProvider);
+  final UserLocation location = locationState.hasValue
+      ? locationState.requireValue
+      : await ref.read(userLocationProvider.future);
+
   final filters = ref.watch(discoverFiltersProvider);
   final activities =
       await ref.watch(activityRepositoryProvider).discoverActivities(

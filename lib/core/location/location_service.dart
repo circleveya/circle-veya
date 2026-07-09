@@ -10,19 +10,34 @@ class LocationService {
     if (Env.useMockLocation) {
       return UserLocation.mockFrauenfeld;
     }
-    return requestGps();
+    return requestGps(forceRealGps: true);
   }
 
-  Future<UserLocation> requestGps() async {
-    if (Env.useMockLocation) {
+  /// [forceRealGps]: USE_MOCK_LOCATION ignorieren (Nutzer tippt „GPS“).
+  Future<UserLocation> requestGps({bool forceRealGps = false}) async {
+    if (!forceRealGps && Env.useMockLocation) {
       return UserLocation.mockFrauenfeld;
+    }
+
+    if (kIsWeb) {
+      final browserResult = await _tryNativeBrowserGeolocation();
+      if (browserResult != null) return browserResult;
     }
 
     final geolocatorResult = await _tryGeolocator();
     if (geolocatorResult != null) return geolocatorResult;
 
-    final browserResult = await _tryNativeBrowserGeolocation();
-    if (browserResult != null) return browserResult;
+    if (!kIsWeb) {
+      final browserResult = await _tryNativeBrowserGeolocation();
+      if (browserResult != null) return browserResult;
+    }
+
+    if (forceRealGps) {
+      throw LocationPermissionException(
+        'Standort konnte nicht ermittelt werden. '
+        'Bitte im Browser „Standort erlauben“ wählen.',
+      );
+    }
 
     return _fallback('GPS-Abruf fehlgeschlagen oder abgelehnt');
   }
@@ -30,9 +45,7 @@ class LocationService {
   Future<UserLocation?> _tryGeolocator() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled && !kIsWeb) {
-        return null;
-      }
+      if (!serviceEnabled && !kIsWeb) return null;
 
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -41,16 +54,13 @@ class LocationService {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        if (kDebugMode) {
-          debugPrint('CircleVeya: Geolocator-Berechtigung verweigert.');
-        }
         return null;
       }
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 12),
+          timeLimit: Duration(seconds: 15),
         ),
       );
 
@@ -59,11 +69,10 @@ class LocationService {
         longitude: position.longitude,
         source: LocationSource.gps,
         isMock: false,
+        label: 'Aktueller Standort',
       );
     } catch (error) {
-      if (kDebugMode) {
-        debugPrint('CircleVeya: Geolocator-Fehler: $error');
-      }
+      if (kDebugMode) debugPrint('CircleVeya: Geolocator-Fehler: $error');
       return null;
     }
   }
@@ -92,12 +101,16 @@ class LocationService {
 
   UserLocation _fallback(String reason) {
     if (kDebugMode) {
-      debugPrint(
-        'CircleVeya: $reason – nutze Fallback Frauenfeld '
-        '(${UserLocation.mockFrauenfeld.latitude}, '
-        '${UserLocation.mockFrauenfeld.longitude}).',
-      );
+      debugPrint('CircleVeya: $reason – Fallback Frauenfeld.');
     }
     return UserLocation.mockFrauenfeld;
   }
+}
+
+class LocationPermissionException implements Exception {
+  LocationPermissionException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
 }

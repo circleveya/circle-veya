@@ -53,6 +53,7 @@ class CircleVeyaBrand extends StatelessWidget {
         Image.asset(
           logoAsset,
           height: logoHeight,
+          width: double.infinity,
           fit: BoxFit.contain,
           alignment: Alignment.centerLeft,
         ),

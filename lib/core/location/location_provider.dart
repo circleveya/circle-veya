@@ -9,7 +9,12 @@ final locationServiceProvider = Provider<LocationService>((ref) {
   return LocationService();
 });
 
-/// Aktiver Standort für Feed, Filter und Supabase-RPCs.
+final locationCoordsKeyProvider = Provider<String>((ref) {
+  final location = ref.watch(userLocationProvider).valueOrNull;
+  if (location == null) return 'pending';
+  return '${location.latitude}|${location.longitude}|${location.source.name}';
+});
+
 final userLocationProvider =
     AsyncNotifierProvider<UserLocationController, UserLocation>(
   UserLocationController.new,
@@ -21,14 +26,24 @@ class UserLocationController extends AsyncNotifier<UserLocation> {
     return ref.read(locationServiceProvider).resolveInitialLocation();
   }
 
-  Future<void> selectPreset(LocationPreset preset, {bool asMock = false}) async {
-    state = AsyncData(preset.toLocation(isMock: asMock));
+  void selectPreset(LocationPreset preset) {
+    state = AsyncData(preset.toLocation());
   }
 
   Future<void> requestGps() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return ref.read(locationServiceProvider).requestGps();
-    });
+    final previous = state.valueOrNull;
+    try {
+      final location = await ref
+          .read(locationServiceProvider)
+          .requestGps(forceRealGps: true);
+      state = AsyncData(location);
+    } catch (error, stackTrace) {
+      if (previous != null) {
+        state = AsyncData(previous);
+      } else {
+        state = AsyncError(error, stackTrace);
+      }
+      rethrow;
+    }
   }
 }

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/location/location_provider.dart';
+import '../../../../core/location/location_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../providers/activity_provider.dart';
 
-/// Standortauswahl + Entfernungsradius für den Activity-Feed.
-class LocationFilterBar extends ConsumerWidget {
+/// Kompakte Standortleiste – nur im Feed-Inhalt, ohne globales Layout zu beeinflussen.
+class LocationFilterBar extends ConsumerStatefulWidget {
   const LocationFilterBar({
     super.key,
     required this.filters,
@@ -18,199 +19,207 @@ class LocationFilterBar extends ConsumerWidget {
   final ValueChanged<ActivityDiscoverFilters> onFiltersChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LocationFilterBar> createState() => _LocationFilterBarState();
+}
+
+class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
+  final _searchController = TextEditingController();
+  bool _gpsLoading = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleGps() async {
+    if (_gpsLoading) return;
+    setState(() => _gpsLoading = true);
+    try {
+      await ref.read(userLocationProvider.notifier).requestGps();
+      ref.invalidate(discoverActivitiesProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Standort per GPS übernommen.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } on LocationPermissionException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } finally {
+      if (mounted) setState(() => _gpsLoading = false);
+    }
+  }
+
+  void _applySearch() {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    final preset = LocationPreset.tryMatch(query);
+    if (preset == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('„$query“ nicht gefunden. Wähle einen Ort-Chip.')),
+      );
+      return;
+    }
+
+    ref.read(userLocationProvider.notifier).selectPreset(preset);
+    ref.invalidate(discoverActivitiesProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final locationAsync = ref.watch(userLocationProvider);
+    final activeSource = locationAsync.valueOrNull?.source;
 
-    return Material(
-      color: theme.colorScheme.surface,
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.place_outlined, size: 20, color: AppColors.seed),
-                const SizedBox(width: 8),
-                Text(
-                  'Standort',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Spacer(),
-                locationAsync.when(
-                  loading: () => const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (_, _) => const SizedBox.shrink(),
-                  data: (location) => Text(
-                    location.displayLabel,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppColors.seed,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  _LocationChip(
-                    label: 'Aktueller Standort',
-                    icon: Icons.my_location,
-                    selected: locationAsync.valueOrNull?.source ==
-                        LocationSource.gps,
-                    onTap: () async {
-                      await ref
-                          .read(userLocationProvider.notifier)
-                          .requestGps();
-                      ref.invalidate(discoverActivitiesProvider);
-                    },
-                  ),
-                  for (final preset in LocationPreset.values)
-                    _LocationChip(
-                      label: preset.label,
-                      selected: locationAsync.valueOrNull?.source ==
-                          preset.source,
-                      onTap: () async {
-                        await ref
-                            .read(userLocationProvider.notifier)
-                            .selectPreset(preset);
-                        ref.invalidate(discoverActivitiesProvider);
-                      },
+                  Icon(Icons.place_outlined, size: 20, color: AppColors.seed),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Standort & Entfernung',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
+                  ),
+                  const Spacer(),
+                  locationAsync.when(
+                    loading: () => const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                    data: (location) => Text(
+                      location.displayLabel,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.seed,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-            locationAsync.maybeWhen(
-              data: (location) => location.isMock
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: _InfoBanner(
-                        icon: Icons.info_outline,
-                        text: location.source == LocationSource.mock
-                            ? 'Test-Modus (USE_MOCK_LOCATION): Events werden um '
-                                '${location.displayLabel} geladen.'
-                            : 'GPS nicht verfügbar – Fallback ${location.displayLabel}.',
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-              orElse: () => const SizedBox.shrink(),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Entfernung',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'Ort suchen (Zürich, Basel, Bern…)',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.check),
+                    onPressed: _applySearch,
+                    tooltip: 'Ort übernehmen',
+                  ),
+                  isDense: true,
+                ),
+                onSubmitted: (_) => _applySearch(),
               ),
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final option in DistanceFilterOption.values)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(option.label),
-                        selected: filters.distanceOption == option,
-                        onSelected: (_) {
-                          onFiltersChanged(
-                            filters.copyWith(
-                              distanceOption: option,
-                              maxDistanceKm: option.maxKm,
-                              clearMaxDistance: option.maxKm == null,
-                            ),
-                          );
-                          ref.invalidate(discoverActivitiesProvider);
-                        },
-                        selectedColor: AppColors.seed.withValues(alpha: 0.15),
-                        checkmarkColor: AppColors.seed,
-                        labelStyle: TextStyle(
-                          color: filters.distanceOption == option
-                              ? AppColors.seed
-                              : theme.colorScheme.onSurface,
-                          fontWeight: filters.distanceOption == option
-                              ? FontWeight.w600
-                              : FontWeight.w500,
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _gpsLoading ? null : _handleGps,
+                  icon: _gpsLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location),
+                  label: const Text('Aktueller Standort (GPS)'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final preset in LocationPreset.values)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          label: Text(preset.label),
+                          onPressed: () {
+                            ref
+                                .read(userLocationProvider.notifier)
+                                .selectPreset(preset);
+                            _searchController.text = preset.label;
+                            ref.invalidate(discoverActivitiesProvider);
+                          },
+                          backgroundColor: activeSource == preset.source
+                              ? AppColors.seed.withValues(alpha: 0.15)
+                              : null,
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationChip extends StatelessWidget {
-  const _LocationChip({
-    required this.label,
-    this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData? icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        avatar: icon != null ? Icon(icon, size: 16) : null,
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        selectedColor: AppColors.seed.withValues(alpha: 0.15),
-        checkmarkColor: AppColors.seed,
-      ),
-    );
-  }
-}
-
-class _InfoBanner extends StatelessWidget {
-  const _InfoBanner({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.seed.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.seed.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.seed),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final option in DistanceFilterOption.values)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(option.label),
+                          selected: widget.filters.distanceOption == option,
+                          onSelected: (_) {
+                            widget.onFiltersChanged(
+                              widget.filters.copyWith(
+                                distanceOption: option,
+                                maxDistanceKm: option.maxKm,
+                                clearMaxDistance: option.maxKm == null,
+                              ),
+                            );
+                            ref.invalidate(discoverActivitiesProvider);
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (locationAsync.valueOrNull?.isMock == true &&
+                  activeSource != LocationSource.gps)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Test-Standort aktiv. GPS oder Ort-Chip überschreibt den Mock.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

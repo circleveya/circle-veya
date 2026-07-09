@@ -23,9 +23,9 @@ class DiscoverActivityGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final crossAxisCount = width >= 1100
+        final crossAxisCount = width >= 900
             ? 3
-            : width >= 700
+            : width >= 560
                 ? 2
                 : 1;
 

@@ -91,6 +91,24 @@ enum LocationPreset {
         isMock: isMock,
         label: label,
       );
+
+  static List<LocationPreset> search(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return LocationPreset.values;
+    return LocationPreset.values
+        .where((preset) => preset.label.toLowerCase().contains(normalized))
+        .toList();
+  }
+
+  static LocationPreset? tryMatch(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    for (final preset in LocationPreset.values) {
+      if (preset.label.toLowerCase() == normalized) return preset;
+    }
+    final matches = search(query);
+    return matches.isEmpty ? null : matches.first;
+  }
 }
 
 /// Entfernungs-Filter für den Feed.

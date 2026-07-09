@@ -33,13 +33,8 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
     final isActionLoading = actionsState.isLoading;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LocationFilterBar(
-          filters: filters,
-          onFiltersChanged: (next) {
-            ref.read(discoverFiltersProvider.notifier).state = next;
-          },
-        ),
         DiscoverFilterBar(
           filters: filters,
           onChanged: (next) {
@@ -76,6 +71,12 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
               if (filtered.isEmpty) {
                 return ListView(
                   children: [
+                    LocationFilterBar(
+                      filters: filters,
+                      onFiltersChanged: (next) {
+                        ref.read(discoverFiltersProvider.notifier).state = next;
+                      },
+                    ),
                     DiscoverHero(onSearch: _onSearch),
                     SizedBox(
                       height: 200,
@@ -113,6 +114,12 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
                 },
                 child: ListView(
                   children: [
+                    LocationFilterBar(
+                      filters: filters,
+                      onFiltersChanged: (next) {
+                        ref.read(discoverFiltersProvider.notifier).state = next;
+                      },
+                    ),
                     DiscoverHero(onSearch: _onSearch),
                     if (featured.isNotEmpty) ...[
                       Padding(
