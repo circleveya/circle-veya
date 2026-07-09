@@ -14,6 +14,7 @@ Soziale Erlebnis-App: Menschen über **gemeinsame Aktivitäten** verbinden — n
 | [`WEB_UI_STRATEGIE.md`](WEB_UI_STRATEGIE.md) | Web-First UI, Design-Spec |
 | [`APP_DOCUMENTATION.md`](APP_DOCUMENTATION.md) | Technische Voll-Doku, Troubleshooting |
 | [`supabase/README.md`](supabase/README.md) | Datenbank-Setup & Edge Functions |
+| [`DEPLOY_VERCEL.md`](DEPLOY_VERCEL.md) | **Auto-Deploy** auf Vercel (Push → Live) |
 
 ## Schnellstart
 
