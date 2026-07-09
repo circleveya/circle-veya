@@ -47,3 +47,4 @@ app.*.map.json
 # Local environment defines (do not commit secrets)
 dart_define.local.json
 dart_define.vercel.json
+dart_define.json

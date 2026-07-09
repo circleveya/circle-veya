@@ -98,7 +98,7 @@ Sonst schlägt Login/E-Mail-Redirect auf der Live-Seite fehl.
 | Datei | Zweck |
 |-------|-------|
 | `vercel.json` | Build-Befehl, Output `build/web`, SPA-Routing |
-| `scripts/vercel-build.sh` | Flutter installieren + Web-Build mit Env-Vars |
+| `scripts/vercel-build.sh` | Flutter installieren (non-root) + Web-Build mit `dart_define.json` |
 
 ---
 
