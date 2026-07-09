@@ -1,11 +1,11 @@
 {
-    "name": "circle",
-    "short_name": "circle",
+    "name": "CircleVeya",
+    "short_name": "CircleVeya",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFAF6",
+    "theme_color": "#F58220",
+    "description": "Find people. Create memories.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

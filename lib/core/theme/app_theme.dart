@@ -13,7 +13,10 @@ abstract final class AppTheme {
     );
 
     return ThemeData(
-      colorScheme: colorScheme,
+      colorScheme: colorScheme.copyWith(
+        onSurface: AppColors.brandNavy,
+        onSurfaceVariant: AppColors.brandNavy.withValues(alpha: 0.65),
+      ),
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.surfaceTint,
       appBarTheme: AppBarTheme(

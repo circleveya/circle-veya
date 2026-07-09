@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../branding/circleveya_brand.dart';
 import '../theme/app_colors.dart';
 import 'web_shell_destination.dart';
 
@@ -33,7 +34,13 @@ class SidebarNavigation extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          const _CircleLogo(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: CircleVeyaBrand(
+              showSlogan: true,
+              onTap: () => onSelected(WebShellDestination.feed),
+            ),
+          ),
           const SizedBox(height: 28),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -65,41 +72,11 @@ class SidebarNavigation extends ConsumerWidget {
               ],
             ),
           ),
-          if (!isPremium) const _PremiumUpsellCard(),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
-
-class _CircleLogo extends StatelessWidget {
-  const _CircleLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: AppColors.premiumGradient,
-              borderRadius: BorderRadius.circular(12),
+          if (!isPremium)
+            _PremiumUpsellCard(
+              onUpgrade: () => onSelected(WebShellDestination.settings),
             ),
-            child: const Icon(Icons.brightness_7, color: Colors.white, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Circle',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.seed,
-                  letterSpacing: -0.5,
-                ),
-          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -205,7 +182,9 @@ class _SidebarNavItem extends StatelessWidget {
 }
 
 class _PremiumUpsellCard extends StatelessWidget {
-  const _PremiumUpsellCard();
+  const _PremiumUpsellCard({required this.onUpgrade});
+
+  final VoidCallback onUpgrade;
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +212,7 @@ class _PremiumUpsellCard extends StatelessWidget {
                   const Icon(Icons.workspace_premium, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Circle Premium',
+                    'CircleVeya Premium',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -253,7 +232,7 @@ class _PremiumUpsellCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () {},
+                  onPressed: onUpgrade,
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.seed,

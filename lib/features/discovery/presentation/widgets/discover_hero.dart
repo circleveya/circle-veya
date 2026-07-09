@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/branding/circleveya_brand.dart';
 
 /// Hero-Bereich für Entdecken (image_2.jpg).
 class DiscoverHero extends StatelessWidget {
@@ -33,7 +34,7 @@ class DiscoverHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Erlebnisse verbinden Menschen',
+            CircleVeyaBrand.slogan,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -42,8 +43,8 @@ class DiscoverHero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Entdecke Aktivitäten in deiner Nähe – von Freunden, '
-            'der Community und automatisch gefundenen Events.',
+            'Entdecke Aktivitäten in deiner Nähe – mit Freunden, '
+            'der Community und Events aus deiner Region.',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.92),
               height: 1.45,

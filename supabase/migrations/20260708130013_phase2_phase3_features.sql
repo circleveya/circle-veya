@@ -49,7 +49,7 @@ RETURNS TABLE (
     participant_avatar_urls TEXT[]
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
@@ -678,7 +678,7 @@ RETURNS TABLE (
     challenge_xp_reward INT
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -713,6 +713,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.heartbeat_presence()
 RETURNS VOID
 LANGUAGE plpgsql
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -727,6 +728,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.simulate_premium(p_enabled BOOLEAN DEFAULT true)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$

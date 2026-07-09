@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/layout/web_layout_scaffold.dart';
 import '../../../../core/layout/web_shell_destination.dart';
+import '../../../../core/branding/circleveya_brand.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
@@ -134,7 +135,13 @@ class _MobileHomeShell extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[currentIndex]),
+        title: Row(
+          children: [
+            const CircleVeyaBrand(compact: true, logoHeight: 32),
+            const SizedBox(width: 12),
+            Text(_titles[currentIndex]),
+          ],
+        ),
         actions: [
           if (userId != null)
             IconButton(

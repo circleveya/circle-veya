@@ -9,7 +9,7 @@ class GroupsPlaceholderScreen extends StatelessWidget {
     return _PlaceholderBody(
       icon: Icons.groups_outlined,
       title: 'Gruppen',
-      subtitle: 'Circle-Gruppen kommen in einer späteren Phase.',
+      subtitle: 'CircleVeya-Gruppen kommen in einer späteren Phase.',
     );
   }
 }
