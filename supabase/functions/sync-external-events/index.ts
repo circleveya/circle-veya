@@ -4,10 +4,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const EVENTBRITE_API_KEY = Deno.env.get("EVENTBRITE_API_KEY");
 const TICKETMASTER_API_KEY = Deno.env.get("TICKETMASTER_API_KEY");
 
-const DEFAULT_RADIUS_KM = 50;
+const DEFAULT_RADIUS_KM = 25;
+const MAX_RADIUS_KM = 200;
+const MIN_RESULTS_TARGET = 5;
+const SWISS_TIMEZONE = "Europe/Zurich";
 
-/** Schweizer Städte – Fallback für Cron-Sync ohne Request-Body */
-const SWISS_LOCATIONS = [
+/** Schweizer Städte – Cron-Fallback & Hub-Suche */
+const SWISS_HUBS = [
   { label: "Zürich", lat: 47.3769, lng: 8.5417 },
   { label: "Bern", lat: 46.948, lng: 7.4474 },
   { label: "Basel", lat: 47.5596, lng: 7.5886 },
@@ -47,6 +50,21 @@ type SyncRequestBody = {
   lng?: number;
   radius_km?: number;
   country_code?: string;
+  expand_radius?: boolean;
+  min_results?: number;
+};
+
+type FetchStrategy =
+  | "user_radius"
+  | "radius_expansion"
+  | "national_ch"
+  | "swiss_hubs"
+  | "swiss_cities_cron";
+
+type FetchMeta = {
+  strategy: FetchStrategy;
+  usedRadiusKm?: number;
+  attempts: string[];
 };
 
 const corsHeaders = {
@@ -55,19 +73,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-/** Ticketmaster latlong: "47.5586,8.8901" (Breite,Länge – Komma, Punkt-Dezimal) */
 function formatLatLong(lat: number, lng: number): string {
   const safeLat = Number(lat.toFixed(4));
   const safeLng = Number(lng.toFixed(4));
   return `${safeLat},${safeLng}`;
 }
 
-function clampRadiusKm(radiusKm: number): number {
+function clampRadiusKm(radiusKm: number, max = MAX_RADIUS_KM): number {
   if (!Number.isFinite(radiusKm) || radiusKm <= 0) return DEFAULT_RADIUS_KM;
-  return Math.min(200, Math.max(1, Math.round(radiusKm)));
+  return Math.min(max, Math.max(1, Math.round(radiusKm)));
 }
 
-/** Grobe CH-Bounding-Box für countryCode=CH */
 function isInSwitzerland(lat: number, lng: number): boolean {
   return lat >= 45.7 && lat <= 47.9 && lng >= 5.8 && lng <= 10.6;
 }
@@ -77,6 +93,38 @@ function resolveCountryCode(lat: number, lng: number, explicit?: string): string
     return explicit.trim().toUpperCase();
   }
   return isInSwitzerland(lat, lng) ? "CH" : "CH";
+}
+
+/** Ticketmaster erwartet UTC ISO-8601, z. B. 2026-07-09T18:00:00Z */
+function formatTicketmasterUtcDateTime(date: Date): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+/** Start = jetzt (Europe/Zurich → UTC), Ende = +6 Monate */
+function getSwissTicketmasterDateRange(): {
+  startDateTime: string;
+  endDateTime: string;
+} {
+  const now = new Date();
+  const end = new Date(now);
+  end.setMonth(end.getMonth() + 6);
+
+  return {
+    startDateTime: formatTicketmasterUtcDateTime(now),
+    endDateTime: formatTicketmasterUtcDateTime(end),
+  };
+}
+
+function buildRadiusExpansionSteps(initialRadiusKm: number): number[] {
+  const steps = [
+    clampRadiusKm(initialRadiusKm),
+    10,
+    25,
+    50,
+    100,
+    MAX_RADIUS_KM,
+  ];
+  return [...new Set(steps)].sort((a, b) => a - b);
 }
 
 function inferLocationType(title: string): "indoor" | "outdoor" {
@@ -103,6 +151,13 @@ function isFutureOrUnset(dateTime: string | null): boolean {
   return parsed > Date.now();
 }
 
+function dedupeEvents(events: NormalizedEvent[]): NormalizedEvent[] {
+  const unique = new Map<string, NormalizedEvent>();
+  for (const event of events) {
+    unique.set(`${event.external_provider}:${event.external_id}`, event);
+  }
+  return [...unique.values()];
+}
 
 async function readSyncRequestBody(req: Request): Promise<SyncRequestBody | null> {
   if (req.method !== "POST") return null;
@@ -117,34 +172,16 @@ async function readSyncRequestBody(req: Request): Promise<SyncRequestBody | null
   }
 }
 
-function buildGeoQueriesFromBody(body: SyncRequestBody | null): GeoQuery[] {
-  if (
-    body?.lat != null &&
-    body?.lng != null &&
-    Number.isFinite(body.lat) &&
-    Number.isFinite(body.lng)
-  ) {
-    const lat = Number(body.lat);
-    const lng = Number(body.lng);
-    const radiusKm = clampRadiusKm(Number(body.radius_km ?? DEFAULT_RADIUS_KM));
-    const countryCode = resolveCountryCode(lat, lng, body.country_code);
-
-    return [
-      {
-        label: `GPS ${formatLatLong(lat, lng)}`,
-        lat,
-        lng,
-        radiusKm,
-        countryCode,
-      },
-    ];
-  }
-
-  return SWISS_LOCATIONS.map((loc) => ({
-    ...loc,
-    radiusKm: DEFAULT_RADIUS_KM,
-    countryCode: "CH",
-  }));
+function buildUserGeoQuery(body: SyncRequestBody): GeoQuery {
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  return {
+    label: `GPS ${formatLatLong(lat, lng)}`,
+    lat,
+    lng,
+    radiusKm: clampRadiusKm(Number(body.radius_km ?? DEFAULT_RADIUS_KM)),
+    countryCode: resolveCountryCode(lat, lng, body.country_code),
+  };
 }
 
 async function fetchEventbriteEvents(
@@ -202,46 +239,68 @@ async function fetchEventbriteEvents(
     );
 }
 
-async function fetchTicketmasterEvents(
-  location: GeoQuery,
+type TicketmasterSearchOptions = {
+  location?: GeoQuery;
+  countryOnly?: boolean;
+  sort?: string;
+  size?: number;
+};
+
+async function fetchTicketmasterEventsRaw(
+  options: TicketmasterSearchOptions,
 ): Promise<NormalizedEvent[]> {
   if (!TICKETMASTER_API_KEY) return [];
 
-  const radiusKm = clampRadiusKm(location.radiusKm);
-  const latlong = formatLatLong(location.lat, location.lng);
-  const countryCode = resolveCountryCode(
-    location.lat,
-    location.lng,
-    location.countryCode,
-  );
+  const { startDateTime, endDateTime } = getSwissTicketmasterDateRange();
+  const countryCode = options.location
+    ? resolveCountryCode(
+      options.location.lat,
+      options.location.lng,
+      options.location.countryCode,
+    )
+    : "CH";
 
   const params = new URLSearchParams({
     apikey: TICKETMASTER_API_KEY,
-    latlong,
-    radius: String(radiusKm),
-    unit: "km",
     countryCode,
-    size: "20",
-    sort: "date,asc",
+    unit: "km",
+    size: String(options.size ?? 20),
+    sort: options.sort ?? "date,asc",
+    startDateTime,
+    endDateTime,
+    locale: "de-ch",
+    includeTBA: "no",
+    includeTBD: "no",
   });
+
+  if (options.location && !options.countryOnly) {
+    const radiusKm = clampRadiusKm(options.location.radiusKm);
+    params.set("latlong", formatLatLong(options.location.lat, options.location.lng));
+    params.set("radius", String(radiusKm));
+  }
 
   const url =
     `https://app.ticketmaster.com/discovery/v2/events.json?${params.toString()}`;
 
+  const logLabel = options.countryOnly
+    ? "CH-national"
+    : options.location?.label ?? "CH";
+
   console.log(
     "Ticketmaster request",
-    location.label,
-    `latlong=${latlong}`,
-    `radius=${radiusKm}`,
-    `unit=km`,
-    `countryCode=${countryCode}`,
+    logLabel,
+    options.countryOnly
+      ? `countryCode=${countryCode} sort=${params.get("sort")}`
+      : `latlong=${params.get("latlong")} radius=${params.get("radius")} unit=km countryCode=${countryCode}`,
+    `startDateTime=${startDateTime}`,
+    `timezone=${SWISS_TIMEZONE}`,
   );
 
   const res = await fetch(url);
   if (!res.ok) {
     console.error(
       "Ticketmaster error",
-      location.label,
+      logLabel,
       res.status,
       await res.text(),
     );
@@ -249,6 +308,9 @@ async function fetchTicketmasterEvents(
   }
 
   const data = await res.json();
+  const total = data.page?.totalElements ?? 0;
+  console.log("Ticketmaster response", logLabel, `events=${total}`);
+
   const events = data._embedded?.events ?? [];
 
   return events
@@ -264,15 +326,25 @@ async function fetchTicketmasterEvents(
       const start = dates?.start as Record<string, string> | undefined;
       const title = String(event.name ?? "Event").slice(0, 120);
 
+      const dateTime = start?.dateTime ??
+        (start?.localDate && start?.localTime
+          ? `${start.localDate}T${start.localTime}`
+          : start?.localDate ?? null);
+
       return {
         external_id: String(event.id),
         external_provider: "ticketmaster",
         title,
         description: null,
-        date_time: start?.dateTime ?? null,
-        location_name: (venue?.name as string) ?? location.label,
-        latitude: loc?.latitude ? parseFloat(loc.latitude) : location.lat,
-        longitude: loc?.longitude ? parseFloat(loc.longitude) : location.lng,
+        date_time: dateTime,
+        location_name: (venue?.name as string) ??
+          (options.location?.label ?? "Schweiz"),
+        latitude: loc?.latitude
+          ? parseFloat(loc.latitude)
+          : options.location?.lat ?? null,
+        longitude: loc?.longitude
+          ? parseFloat(loc.longitude)
+          : options.location?.lng ?? null,
         image_url: (image?.url as string) ?? null,
         external_url: String(event.url ?? ""),
         location_type: inferLocationType(title),
@@ -281,6 +353,134 @@ async function fetchTicketmasterEvents(
     .filter((e: NormalizedEvent) =>
       e.external_url.length > 0 && isFutureOrUnset(e.date_time)
     );
+}
+
+async function fetchTicketmasterWithFallback(
+  baseLocation: GeoQuery,
+  expandRadius: boolean,
+  minResults: number,
+): Promise<{ events: NormalizedEvent[]; meta: FetchMeta }> {
+  const meta: FetchMeta = { strategy: "user_radius", attempts: [] };
+  let collected: NormalizedEvent[] = [];
+
+  const radii = expandRadius
+    ? buildRadiusExpansionSteps(baseLocation.radiusKm)
+    : [clampRadiusKm(baseLocation.radiusKm)];
+
+  for (const radiusKm of radii) {
+    const location = { ...baseLocation, radiusKm };
+    const events = await fetchTicketmasterEventsRaw({ location });
+    meta.attempts.push(`geo radius=${radiusKm}km → ${events.length}`);
+
+    collected = dedupeEvents([...collected, ...events]);
+    if (collected.length >= minResults) {
+      meta.strategy = radiusKm === baseLocation.radiusKm
+        ? "user_radius"
+        : "radius_expansion";
+      meta.usedRadiusKm = radiusKm;
+      return { events: collected, meta };
+    }
+  }
+
+  const national = await fetchTicketmasterEventsRaw({
+    countryOnly: true,
+    sort: "relevance,desc",
+    size: 50,
+  });
+  meta.attempts.push(`national CH → ${national.length}`);
+  collected = dedupeEvents([...collected, ...national]);
+
+  if (collected.length >= minResults) {
+    meta.strategy = "national_ch";
+    return { events: collected, meta };
+  }
+
+  const hubResults = await Promise.all(
+    SWISS_HUBS.slice(0, 4).map((hub) =>
+      fetchTicketmasterEventsRaw({
+        location: {
+          ...hub,
+          radiusKm: 75,
+          countryCode: "CH",
+        },
+        sort: "relevance,desc",
+        size: 15,
+      })
+    ),
+  );
+
+  for (const [index, events] of hubResults.entries()) {
+    meta.attempts.push(`${SWISS_HUBS[index].label} hub → ${events.length}`);
+    collected = dedupeEvents([...collected, ...events]);
+  }
+
+  meta.strategy = "swiss_hubs";
+  return { events: collected, meta };
+}
+
+async function fetchAllExternalEvents(
+  body: SyncRequestBody | null,
+): Promise<{ events: NormalizedEvent[]; meta: FetchMeta; mode: string }> {
+  const expandRadius = body?.expand_radius !== false;
+  const minResults = Math.max(
+    1,
+    Math.min(50, Number(body?.min_results ?? MIN_RESULTS_TARGET)),
+  );
+
+  if (
+    body?.lat != null &&
+    body?.lng != null &&
+    Number.isFinite(body.lat) &&
+    Number.isFinite(body.lng)
+  ) {
+    const userLocation = buildUserGeoQuery(body);
+    const [ticketmaster, eventbrite] = await Promise.all([
+      fetchTicketmasterWithFallback(userLocation, expandRadius, minResults),
+      fetchEventbriteEvents(userLocation),
+    ]);
+
+    return {
+      events: dedupeEvents([...ticketmaster.events, ...eventbrite]),
+      meta: ticketmaster.meta,
+      mode: "user_location",
+    };
+  }
+
+  const meta: FetchMeta = {
+    strategy: "swiss_cities_cron",
+    attempts: [],
+  };
+  let collected: NormalizedEvent[] = [];
+
+  for (const hub of SWISS_HUBS) {
+    const location: GeoQuery = {
+      ...hub,
+      radiusKm: 50,
+      countryCode: "CH",
+    };
+    const [tm, eb] = await Promise.all([
+      fetchTicketmasterEventsRaw({ location, size: 20 }),
+      fetchEventbriteEvents(location),
+    ]);
+    meta.attempts.push(`${hub.label} → tm:${tm.length} eb:${eb.length}`);
+    collected = dedupeEvents([...collected, ...tm, ...eb]);
+  }
+
+  if (collected.length < minResults) {
+    const national = await fetchTicketmasterEventsRaw({
+      countryOnly: true,
+      sort: "relevance,desc",
+      size: 50,
+    });
+    meta.attempts.push(`national CH fallback → ${national.length}`);
+    collected = dedupeEvents([...collected, ...national]);
+  }
+
+  return {
+    events: collected,
+    meta,
+    mode: "swiss_cities_cron",
+  };
 }
 
 serve(async (req) => {
@@ -301,7 +501,6 @@ serve(async (req) => {
     }
 
     const body = await readSyncRequestBody(req);
-    const geoQueries = buildGeoQueriesFromBody(body);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -318,26 +517,14 @@ serve(async (req) => {
       );
     }
 
-    const allEvents: NormalizedEvent[] = [];
-
-    for (const loc of geoQueries) {
-      const [eb, tm] = await Promise.all([
-        fetchEventbriteEvents(loc),
-        fetchTicketmasterEvents(loc),
-      ]);
-      allEvents.push(...eb, ...tm);
-    }
-
-    const unique = new Map<string, NormalizedEvent>();
-    for (const e of allEvents) {
-      unique.set(`${e.external_provider}:${e.external_id}`, e);
-    }
+    const { events: allEvents, meta, mode } = await fetchAllExternalEvents(body);
+    const unique = dedupeEvents(allEvents);
 
     let inserted = 0;
     let updated = 0;
     const errors: string[] = [];
 
-    for (const event of unique.values()) {
+    for (const event of unique) {
       const payload: Record<string, unknown> = {
         host_id: hostId,
         title: event.title,
@@ -402,11 +589,15 @@ serve(async (req) => {
       .eq("source", "external")
       .lt("date_time", archiveCutoff);
 
+    const dateRange = getSwissTicketmasterDateRange();
     const result = {
       success: true,
       started_at: startedAt,
       providers,
-      mode: body?.lat != null ? "user_location" : "swiss_cities",
+      mode,
+      strategy: meta.strategy,
+      attempts: meta.attempts,
+      used_radius_km: meta.usedRadiusKm ?? null,
       query: body?.lat != null
         ? {
           latlong: formatLatLong(Number(body.lat), Number(body.lng)),
@@ -416,9 +607,11 @@ serve(async (req) => {
             Number(body.lng),
             body.country_code,
           ),
+          expand_radius: body?.expand_radius !== false,
+          startDateTime: dateRange.startDateTime,
+          endDateTime: dateRange.endDateTime,
         }
         : null,
-      cities: geoQueries.length,
       fetched: unique.size,
       inserted,
       updated,

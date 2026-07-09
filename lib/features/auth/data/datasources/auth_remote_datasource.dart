@@ -1,5 +1,7 @@
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException, AuthUser;
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
+import '../../../../core/auth/auth_error_messages.dart';
 import '../../../../core/errors/exceptions.dart';
 
 class AuthRemoteDatasource {
@@ -29,10 +31,13 @@ class AuthRemoteDatasource {
       }
 
       return user;
-    } on AuthApiException catch (error) {
-      throw AppAuthException(error.message);
-    } catch (_) {
-      throw const AppAuthException('Registrierung fehlgeschlagen.');
+    } on AuthException catch (error) {
+      throw AppAuthException(mapSupabaseAuthException(error));
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('CircleVeya signUp error: $error\n$stackTrace');
+      }
+      throw AppAuthException(formatAuthError(error));
     }
   }
 
@@ -48,22 +53,32 @@ class AuthRemoteDatasource {
 
       final user = response.user;
       if (user == null) {
+        if (response.session == null) {
+          throw const AppAuthException(
+            'Bitte bestätige zuerst deine E-Mail-Adresse (Link in deinem Postfach).',
+          );
+        }
         throw const AppAuthException('Anmeldung fehlgeschlagen.');
       }
 
       return user;
-    } on AuthApiException catch (error) {
-      throw AppAuthException(error.message);
-    } catch (_) {
-      throw const AppAuthException('Anmeldung fehlgeschlagen.');
+    } on AuthException catch (error) {
+      throw AppAuthException(mapSupabaseAuthException(error));
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('CircleVeya signIn error: $error\n$stackTrace');
+      }
+      throw AppAuthException(formatAuthError(error));
     }
   }
 
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
-    } on AuthApiException catch (error) {
-      throw AppAuthException(error.message);
+    } on AuthException catch (error) {
+      throw AppAuthException(mapSupabaseAuthException(error));
+    } catch (error) {
+      throw AppAuthException(formatAuthError(error));
     }
   }
 }

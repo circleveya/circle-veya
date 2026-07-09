@@ -61,11 +61,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset(
-          CircleVeyaBrand.logoAsset,
-          height: 28,
-          fit: BoxFit.contain,
-        ),
+        title: const CircleVeyaBrand(logoHeight: 30),
         centerTitle: true,
       ),
       body: SafeArea(

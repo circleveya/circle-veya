@@ -38,7 +38,9 @@ git push -u origin main
 | Name | Wert |
 |------|------|
 | `SUPABASE_URL` | `https://unvmyeqvhnmhlkxtkjgo.supabase.co` |
-| `SUPABASE_ANON_KEY` | dein Anon-Key |
+| `SUPABASE_ANON_KEY` | dein Anon-Key (Settings → API → anon public) |
+
+> **Wichtig:** `SUPABASE_URL` ist die **API-URL** (`https://xxx.supabase.co`), **nicht** die Dashboard-URL (`https://supabase.com/dashboard/project/...`). Mit der falschen URL funktioniert Login live nicht.
 | `USE_MOCK_LOCATION` | `true` |
 
 > Der Anon-Key ist öffentlich im Client sichtbar – das ist bei Supabase normal.  
@@ -107,7 +109,7 @@ Sonst schlägt Login/E-Mail-Redirect auf der Live-Seite fehl.
 | Problem | Lösung |
 |---------|--------|
 | Build: `SUPABASE_URL` fehlt | Env-Vars in Vercel prüfen |
-| Login funktioniert nicht live | Supabase Redirect-URLs anpassen |
+| Login funktioniert nicht live | `SUPABASE_URL` muss `https://xxx.supabase.co` sein (nicht Dashboard-URL). Supabase Redirect-URLs anpassen |
 | 404 bei Deep-Links | `vercel.json` Rewrites sind gesetzt (SPA) |
 | Build timeout | Erneut deployen; ggf. Vercel Pro für längere Builds |
 

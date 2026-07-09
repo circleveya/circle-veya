@@ -178,8 +178,10 @@ Bei User-Standort (POST-Body) oder pro Stadt verwendet die API:
 curl -X POST "https://DEIN-PROJECT.supabase.co/functions/v1/sync-external-events" \
   -H "Authorization: Bearer DEIN-ANON-ODER-SERVICE-KEY" \
   -H "Content-Type: application/json" \
-  -d '{"lat":47.5569,"lng":8.8982,"radius_km":10,"country_code":"CH"}'
+  -d '{"lat":47.5569,"lng":8.8982,"radius_km":10,"country_code":"CH","expand_radius":true,"min_results":5}'
 ```
+
+**Radius-Fallback (automatisch):** Keine Treffer im User-Radius → Expansion 10/25/50/100/200 km → CH-weit (`countryCode=CH`) → Top-Hubs (Zürich, Bern, Basel, Genf).
 
 ### Voraussetzungen
 

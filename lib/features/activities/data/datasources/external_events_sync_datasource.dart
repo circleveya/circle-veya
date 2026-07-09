@@ -16,8 +16,10 @@ class ExternalEventsSyncDatasource {
     required double longitude,
     double? radiusKm,
     String countryCode = 'CH',
+    bool expandRadius = true,
+    int minResults = 5,
   }) async {
-    final radius = radiusKm ?? 25;
+    final radius = (radiusKm ?? 25).round().clamp(1, 200);
     final syncKey =
         '${latitude.toStringAsFixed(4)}|${longitude.toStringAsFixed(4)}|$radius';
 
@@ -29,13 +31,15 @@ class ExternalEventsSyncDatasource {
     }
 
     try {
-      await _client.functions.invoke(
+      final response = await _client.functions.invoke(
         'sync-external-events',
         body: {
           'lat': double.parse(latitude.toStringAsFixed(4)),
           'lng': double.parse(longitude.toStringAsFixed(4)),
-          'radius_km': radius.round(),
+          'radius_km': radius,
           'country_code': countryCode,
+          'expand_radius': expandRadius,
+          'min_results': minResults,
         },
       );
 
@@ -43,10 +47,11 @@ class ExternalEventsSyncDatasource {
       _lastSyncAt = now;
 
       if (kDebugMode) {
+        final data = response.data;
         debugPrint(
           'CircleVeya: Externe Events synchronisiert '
           '(latlong=${latitude.toStringAsFixed(4)},${longitude.toStringAsFixed(4)}, '
-          'radius=${radius.round()}km, country=$countryCode)',
+          'radius=${radius}km, country=$countryCode, response=$data)',
         );
       }
     } catch (error) {

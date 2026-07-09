@@ -61,6 +61,21 @@ write_dart_define() {
     exit 1
   fi
 
+  # Leerzeichen/Zeilenumbrüche entfernen (häufige Copy-Paste-Fehler in Vercel)
+  SUPABASE_URL="$(printf '%s' "${SUPABASE_URL}" | tr -d '[:space:]')"
+  SUPABASE_ANON_KEY="$(printf '%s' "${SUPABASE_ANON_KEY}" | tr -d '[:space:]')"
+
+  if [[ "$SUPABASE_URL" == *"supabase.com/dashboard"* ]]; then
+    echo "FEHLER: SUPABASE_URL ist die Dashboard-URL – bitte API-URL verwenden:"
+    echo "       https://unvmyeqvhnmhlkxtkjgo.supabase.co"
+    exit 1
+  fi
+
+  if [[ "$SUPABASE_URL" != *".supabase.co"* ]]; then
+    echo "FEHLER: SUPABASE_URL muss auf .supabase.co enden (z. B. https://DEIN-PROJECT.supabase.co)."
+    exit 1
+  fi
+
   log "dart_define.json aus Vercel-Umgebungsvariablen erzeugen..."
   cat > "$DART_DEFINE_FILE" <<EOF
 {

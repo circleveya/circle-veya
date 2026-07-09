@@ -56,6 +56,8 @@ final discoverActivitiesProvider =
         longitude: location.longitude,
         radiusKm: filters.maxDistanceKm ?? 25,
         countryCode: 'CH',
+        expandRadius: true,
+        minResults: 5,
       );
 
   final activities =
