@@ -9,6 +9,7 @@ import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/datasources/activity_remote_datasource.dart';
+import '../../data/datasources/external_events_sync_datasource.dart';
 import '../../data/repositories/activity_repository_impl.dart';
 import '../../data/repositories/unconfigured_activity_repository.dart';
 import '../../domain/entities/activity.dart';
@@ -16,6 +17,11 @@ import '../../domain/entities/discover_filters.dart';
 import '../../domain/repositories/activity_repository.dart';
 final activityRemoteDatasourceProvider = Provider<ActivityRemoteDatasource>((ref) {
   return ActivityRemoteDatasource(ref.watch(supabaseClientProvider));
+});
+
+final externalEventsSyncDatasourceProvider =
+    Provider<ExternalEventsSyncDatasource>((ref) {
+  return ExternalEventsSyncDatasource(ref.watch(supabaseClientProvider));
 });
 
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
@@ -44,6 +50,14 @@ final discoverActivitiesProvider =
       : await ref.read(userLocationProvider.future);
 
   final filters = ref.watch(discoverFiltersProvider);
+
+  await ref.read(externalEventsSyncDatasourceProvider).syncForUserLocation(
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radiusKm: filters.maxDistanceKm ?? 25,
+        countryCode: 'CH',
+      );
+
   final activities =
       await ref.watch(activityRepositoryProvider).discoverActivities(
             latitude: location.latitude,

@@ -157,9 +157,29 @@ curl -X POST "https://DEIN-PROJECT.supabase.co/functions/v1/generate-stock-image
 
 Lädt Events aus **Eventbrite** und **Ticketmaster** für die Schweiz und upsertet sie in `activities` mit `source = 'external'`.
 
-### Städte (9 × 50 km Radius)
+### Städte (Cron-Fallback, 50 km Radius)
 
-Zürich, Bern, Basel, Genf, Lausanne, Luzern, Winterthur, St. Gallen, Lugano
+Zürich, Bern, Basel, **Frauenfeld**, Genf, Lausanne, Luzern, Winterthur, St. Gallen, Lugano
+
+### Ticketmaster-Geosuche
+
+Bei User-Standort (POST-Body) oder pro Stadt verwendet die API:
+
+| Parameter | Wert |
+|-----------|------|
+| `latlong` | `47.5586,8.8901` (Breite,Länge, Komma) |
+| `radius` | z. B. `5`, `10`, `25` (aus UI-Filter) |
+| `unit` | `km` (immer Kilometer, nie Meilen) |
+| `countryCode` | `CH` (wenn User in der Schweiz) |
+
+**User-Standort aus der App** (wird beim Öffnen von „Entdecken“ aufgerufen, max. alle 5 Min.):
+
+```bash
+curl -X POST "https://DEIN-PROJECT.supabase.co/functions/v1/sync-external-events" \
+  -H "Authorization: Bearer DEIN-ANON-ODER-SERVICE-KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"lat":47.5569,"lng":8.8982,"radius_km":10,"country_code":"CH"}'
+```
 
 ### Voraussetzungen
 
