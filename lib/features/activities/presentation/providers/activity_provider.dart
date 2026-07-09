@@ -51,6 +51,7 @@ class DiscoverActivitiesController
     extends AutoDisposeNotifier<DiscoverActivitiesState> {
   int _loadedCount = 0;
   bool _fetchInFlight = false;
+  bool _backgroundSyncStarted = false;
 
   @override
   DiscoverActivitiesState build() {
@@ -66,9 +67,14 @@ class DiscoverActivitiesController
 
   Future<void> refresh() async {
     _loadedCount = 0;
-    state = const DiscoverActivitiesState(isLoading: true);
+    state = state.activities.isEmpty
+        ? const DiscoverActivitiesState(isLoading: true)
+        : state.copyWith(isLoading: true, clearError: true);
     await _fetchPage(append: false);
-    unawaited(_triggerBackgroundSync());
+    if (!_backgroundSyncStarted) {
+      _backgroundSyncStarted = true;
+      unawaited(_triggerBackgroundSync());
+    }
   }
 
   Future<void> loadMore() async {
@@ -153,13 +159,8 @@ class DiscoverActivitiesController
     if (locationState.hasError) {
       return UserLocation.mockFrauenfeld;
     }
-    return ref
-        .read(userLocationProvider.future)
-        .timeout(
-          const Duration(seconds: 12),
-          onTimeout: () => UserLocation.mockFrauenfeld,
-        )
-        .catchError((_) => UserLocation.mockFrauenfeld);
+    // GPS nicht abwarten – Feed sofort mit Fallback-Standort laden.
+    return UserLocation.mockFrauenfeld;
   }
 
   Future<void> _triggerBackgroundSync() async {

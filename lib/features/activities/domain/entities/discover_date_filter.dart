@@ -1,7 +1,8 @@
-/// Zeitraum-Filter für den Entdecken-Feed.
+/// Schnell-Auswahl für den Zeitraum im Entdecken-Feed.
 enum DiscoverDateFilterOption {
-  all('Alle Termine'),
+  all('Alle'),
   today('Heute'),
+  tomorrow('Morgen'),
   thisWeekend('Dieses Wochenende'),
   thisWeek('Diese Woche'),
   custom('Datum wählen');
@@ -9,6 +10,12 @@ enum DiscoverDateFilterOption {
   const DiscoverDateFilterOption(this.label);
 
   final String label;
+
+  static const quickFilters = [
+    DiscoverDateFilterOption.today,
+    DiscoverDateFilterOption.tomorrow,
+    DiscoverDateFilterOption.thisWeekend,
+  ];
 
   /// Liefert [start, end] in lokaler Zeit (inklusiv), oder `null` für „alle“.
   ({DateTime? start, DateTime? end}) resolveRange({
@@ -27,12 +34,9 @@ enum DiscoverDateFilterOption {
       case all:
         return (start: null, end: null);
       case today:
-        return (
-          start: dayStart,
-          end: dayStart
-              .add(const Duration(days: 1))
-              .subtract(const Duration(microseconds: 1)),
-        );
+        return _dayRange(dayStart);
+      case tomorrow:
+        return _dayRange(dayStart.add(const Duration(days: 1)));
       case thisWeekend:
         final saturday = _weekendSaturday(dayStart, now.weekday);
         return (
@@ -42,7 +46,8 @@ enum DiscoverDateFilterOption {
               .subtract(const Duration(microseconds: 1)),
         );
       case thisWeek:
-        final monday = dayStart.subtract(Duration(days: now.weekday - DateTime.monday));
+        final monday =
+            dayStart.subtract(Duration(days: now.weekday - DateTime.monday));
         return (
           start: monday,
           end: monday
@@ -62,6 +67,15 @@ enum DiscoverDateFilterOption {
             .subtract(const Duration(microseconds: 1));
         return (start: start, end: end);
     }
+  }
+
+  static ({DateTime start, DateTime end}) _dayRange(DateTime dayStart) {
+    return (
+      start: dayStart,
+      end: dayStart
+          .add(const Duration(days: 1))
+          .subtract(const Duration(microseconds: 1)),
+    );
   }
 
   static DateTime _weekendSaturday(DateTime dayStart, int weekday) {

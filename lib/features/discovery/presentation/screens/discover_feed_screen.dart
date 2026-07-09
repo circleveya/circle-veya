@@ -8,6 +8,7 @@ import '../../../activities/domain/entities/discover_activities_state.dart';
 import '../../../activities/domain/entities/discover_filters.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_filter_bar.dart';
+import '../../../activities/presentation/widgets/discover_quick_filters_bar.dart';
 import '../../../activities/presentation/widgets/location_filter_bar.dart';
 import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
@@ -32,24 +33,9 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 320) {
-      ref.read(discoverActivitiesProvider.notifier).loadMore();
-    }
   }
 
   @override
@@ -66,7 +52,12 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
           filters: filters,
           onChanged: (next) {
             ref.read(discoverFiltersProvider.notifier).state = next;
-            ref.invalidate(discoverActivitiesProvider);
+          },
+        ),
+        DiscoverQuickFiltersBar(
+          filters: filters,
+          onFiltersChanged: (next) {
+            ref.read(discoverFiltersProvider.notifier).state = next;
           },
         ),
         Expanded(
@@ -182,6 +173,7 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
           DiscoverLoadMoreFooter(
             isLoadingMore: feedState.isLoadingMore,
             hasMore: feedState.hasMore,
+            loadedCount: feedState.activities.length,
             onLoadMore: () =>
                 ref.read(discoverActivitiesProvider.notifier).loadMore(),
           ),

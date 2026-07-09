@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity_filters.dart';
+import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
 
 class DiscoverFilterBar extends StatefulWidget {
@@ -219,6 +220,9 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
     }
     if (filters.maxDistanceKm != null) {
       parts.add('max. ${filters.maxDistanceKm!.round()} km');
+    }
+    if (filters.dateFilter != DiscoverDateFilterOption.all) {
+      parts.add(filters.dateFilter.label);
     }
     return parts.join(' · ');
   }
