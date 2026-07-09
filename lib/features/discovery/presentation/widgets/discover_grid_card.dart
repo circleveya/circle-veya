@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/location/distance_display.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../activities/domain/entities/activity.dart';
 import '../../../activities/domain/entities/activity_enums.dart';
@@ -136,7 +137,7 @@ class DiscoverGridCard extends StatelessWidget {
                           ),
                         if (activity.distanceKm != null)
                           Text(
-                            '${activity.distanceKm!.toStringAsFixed(1)} km',
+                            DistanceDisplay.forActivity(activity),
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: AppColors.seed,

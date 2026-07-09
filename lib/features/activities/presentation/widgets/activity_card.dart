@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/location/distance_display.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
@@ -150,7 +151,7 @@ class ActivityCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '${activity.distanceKm!.toStringAsFixed(1)} km',
+                            DistanceDisplay.forActivity(activity),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.onSecondaryContainer,
                               fontWeight: FontWeight.w600,
@@ -208,10 +209,15 @@ class ActivityCard extends StatelessWidget {
                         icon: activity.weatherCondition.icon,
                         label: activity.weatherCondition.label,
                       ),
-                      if (activity.locationName != null)
+                      if (DistanceDisplay.placeLabel(activity) != null)
                         _Chip(
                           icon: Icons.place_outlined,
-                          label: activity.locationName!,
+                          label: DistanceDisplay.placeLabel(activity)!,
+                        )
+                      else if (activity.distanceKm != null)
+                        _Chip(
+                          icon: Icons.near_me_outlined,
+                          label: DistanceDisplay.forActivity(activity),
                         ),
                     ],
                   ),

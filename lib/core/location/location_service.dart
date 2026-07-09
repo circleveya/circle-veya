@@ -1,46 +1,37 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../config/env.dart';
-
-class UserLocation {
-  const UserLocation({
-    required this.latitude,
-    required this.longitude,
-    this.isMock = false,
-  });
-
-  final double latitude;
-  final double longitude;
-  final bool isMock;
-
-  /// Fallback für Tests ohne GPS (Frauenfeld, CH).
-  static const mock = UserLocation(
-    latitude: 47.5569,
-    longitude: 8.8982,
-    isMock: true,
-  );
-}
-
-final locationServiceProvider = Provider<LocationService>((ref) {
-  return LocationService();
-});
-
-final userLocationProvider = FutureProvider<UserLocation>((ref) async {
-  return ref.watch(locationServiceProvider).getCurrentLocation();
-});
+import 'geolocation_platform.dart';
+import 'user_location.dart';
 
 class LocationService {
-  Future<UserLocation> getCurrentLocation() async {
+  Future<UserLocation> resolveInitialLocation() async {
     if (Env.useMockLocation) {
-      return UserLocation.mock;
+      return UserLocation.mockFrauenfeld;
+    }
+    return requestGps();
+  }
+
+  Future<UserLocation> requestGps() async {
+    if (Env.useMockLocation) {
+      return UserLocation.mockFrauenfeld;
     }
 
+    final geolocatorResult = await _tryGeolocator();
+    if (geolocatorResult != null) return geolocatorResult;
+
+    final browserResult = await _tryNativeBrowserGeolocation();
+    if (browserResult != null) return browserResult;
+
+    return _fallback('GPS-Abruf fehlgeschlagen oder abgelehnt');
+  }
+
+  Future<UserLocation?> _tryGeolocator() async {
     try {
-      final enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) {
-        return _fallback('Standortdienste deaktiviert');
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled && !kIsWeb) {
+        return null;
       }
 
       var permission = await Geolocator.checkPermission();
@@ -50,32 +41,63 @@ class LocationService {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        return _fallback('Standortberechtigung verweigert');
+        if (kDebugMode) {
+          debugPrint('CircleVeya: Geolocator-Berechtigung verweigert.');
+        }
+        return null;
       }
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 12),
         ),
       );
 
       return UserLocation(
         latitude: position.latitude,
         longitude: position.longitude,
+        source: LocationSource.gps,
+        isMock: false,
       );
     } catch (error) {
-      return _fallback(error.toString());
+      if (kDebugMode) {
+        debugPrint('CircleVeya: Geolocator-Fehler: $error');
+      }
+      return null;
+    }
+  }
+
+  Future<UserLocation?> _tryNativeBrowserGeolocation() async {
+    if (!kIsWeb) return null;
+
+    try {
+      final coords = await getNativeBrowserPosition();
+      if (coords == null) return null;
+
+      return UserLocation(
+        latitude: coords.lat,
+        longitude: coords.lng,
+        source: LocationSource.gps,
+        isMock: false,
+        label: 'Aktueller Standort',
+      );
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('CircleVeya: HTML5-Geolocation-Fehler: $error');
+      }
+      return null;
     }
   }
 
   UserLocation _fallback(String reason) {
     if (kDebugMode) {
       debugPrint(
-        'Circle: GPS nicht verfügbar ($reason) – nutze Fallback Frauenfeld, CH '
-        '(${UserLocation.mock.latitude}, ${UserLocation.mock.longitude}). '
-        'Optional: --dart-define=USE_MOCK_LOCATION=true',
+        'CircleVeya: $reason – nutze Fallback Frauenfeld '
+        '(${UserLocation.mockFrauenfeld.latitude}, '
+        '${UserLocation.mockFrauenfeld.longitude}).',
       );
     }
-    return UserLocation.mock;
+    return UserLocation.mockFrauenfeld;
   }
 }

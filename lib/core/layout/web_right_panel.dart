@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/challenges/domain/entities/challenge.dart';
 import '../../features/challenges/presentation/providers/challenge_provider.dart';
 import '../../features/sidebar/presentation/providers/sidebar_provider.dart';
+import '../location/distance_display.dart';
 import '../router/route_names.dart';
 import '../theme/app_colors.dart';
 import 'web_shell_destination.dart';
@@ -96,7 +97,7 @@ class WebRightPanel extends ConsumerWidget {
                         (item) => _TrendItem(
                           title: item.title,
                           subtitle: item.distanceKm != null
-                              ? '${item.matchScore} Treffer · ${item.distanceKm!.toStringAsFixed(1)} km'
+                              ? '${item.matchScore} Treffer · ${DistanceDisplay.formatDistanceKm(item.distanceKm)}'
                               : '${item.matchScore} Treffer',
                           onTap: () => context.pushNamed(
                             RouteNames.activityDetail,

@@ -8,7 +8,7 @@ import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_filters.dart';
 import '../providers/activity_provider.dart';
 import '../widgets/visibility_selector.dart';
-import '../../../../core/location/location_service.dart';
+import '../../../../core/location/location_provider.dart';
 
 class CreateActivityScreen extends ConsumerStatefulWidget {
   const CreateActivityScreen({super.key});
@@ -97,11 +97,12 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     final location = await ref.read(userLocationProvider.future);
     if (location.isMock == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Test-Standort (Berlin) wird verwendet – GPS ist deaktiviert.',
+            'Test-Standort (${location.displayLabel}) wird verwendet – '
+            'GPS ist deaktiviert oder nicht verfügbar.',
           ),
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }

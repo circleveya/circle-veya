@@ -3,8 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/location/activity_distance_filter.dart';
+import '../../../../core/location/location_provider.dart';
 import '../../../../core/config/env.dart';
-import '../../../../core/location/location_service.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/datasources/activity_remote_datasource.dart';
@@ -37,11 +38,17 @@ final discoverActivitiesProvider =
     FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {
   final location = await ref.watch(userLocationProvider.future);
   final filters = ref.watch(discoverFiltersProvider);
-  return ref.watch(activityRepositoryProvider).discoverActivities(
-        latitude: location.latitude,
-        longitude: location.longitude,
-        filters: filters,
-      );
+  final activities =
+      await ref.watch(activityRepositoryProvider).discoverActivities(
+            latitude: location.latitude,
+            longitude: location.longitude,
+            filters: filters,
+          );
+
+  return ActivityDistanceFilter.apply(
+    activities,
+    maxDistanceKm: filters.maxDistanceKm,
+  );
 });
 
 final hostedActivitiesProvider =

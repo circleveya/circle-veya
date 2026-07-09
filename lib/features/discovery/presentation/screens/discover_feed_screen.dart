@@ -7,7 +7,8 @@ import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/domain/entities/discover_filters.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_filter_bar.dart';
-import '../../../../core/location/location_service.dart';
+import '../../../activities/presentation/widgets/location_filter_bar.dart';
+import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../widgets/discover_activity_grid.dart';
@@ -33,6 +34,12 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
 
     return Column(
       children: [
+        LocationFilterBar(
+          filters: filters,
+          onFiltersChanged: (next) {
+            ref.read(discoverFiltersProvider.notifier).state = next;
+          },
+        ),
         DiscoverFilterBar(
           filters: filters,
           onChanged: (next) {
@@ -40,18 +47,15 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
             ref.invalidate(discoverActivitiesProvider);
           },
         ),
-        ref.watch(userLocationProvider).maybeWhen(
-              data: (location) => location.isMock == true
-                  ? const _MockLocationBanner()
-                  : const SizedBox.shrink(),
-              orElse: () => const SizedBox.shrink(),
-            ),
         Expanded(
           child: activitiesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _ErrorState(
-              message: error.toString(),
-              onRetry: () => ref.invalidate(discoverActivitiesProvider),
+              message: _friendlyErrorMessage(error),
+              onRetry: () {
+                ref.invalidate(userLocationProvider);
+                ref.invalidate(discoverActivitiesProvider);
+              },
             ),
             data: (activities) {
               final filtered = _searchQuery.isEmpty
@@ -193,25 +197,18 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   }
 }
 
-class _MockLocationBanner extends StatelessWidget {
-  const _MockLocationBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialBanner(
-      content: const Text(
-        'Test-Standort Frauenfeld, CH – GPS ist deaktiviert oder nicht verfügbar.',
-      ),
-      leading: const Icon(Icons.my_location),
-      actions: [
-        TextButton(
-          onPressed: () =>
-              ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-          child: const Text('OK'),
-        ),
-      ],
-    );
+String _friendlyErrorMessage(Object error) {
+  final text = error.toString();
+  if (text.contains('non-volatile function')) {
+    return 'Datenbank-Fix nötig: fix_volatile_functions.sql in Supabase ausführen.';
   }
+  if (text.contains('Nicht authentifiziert')) {
+    return 'Bitte erneut anmelden.';
+  }
+  if (text.contains('geography') || text.contains('PostGIS')) {
+    return 'Standort-Datenbank nicht vollständig eingerichtet (PostGIS).';
+  }
+  return 'Aktivitäten konnten nicht geladen werden. Standort prüfen und erneut versuchen.';
 }
 
 class _EmptyState extends StatelessWidget {

@@ -217,6 +217,9 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
     if (filters.weatherCondition != null) {
       parts.add(filters.weatherCondition!.label);
     }
+    if (filters.maxDistanceKm != null) {
+      parts.add('max. ${filters.maxDistanceKm!.round()} km');
+    }
     return parts.join(' · ');
   }
 }
