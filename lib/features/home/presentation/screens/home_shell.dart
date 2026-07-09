@@ -1,0 +1,198 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/layout/web_layout_scaffold.dart';
+import '../../../../core/layout/web_shell_destination.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../notifications/presentation/providers/notifications_provider.dart';
+import '../../../sidebar/presentation/providers/sidebar_provider.dart';
+import '../../../discovery/presentation/screens/discover_feed_screen.dart';
+import '../../../activities/presentation/screens/create_activity_screen.dart';
+import '../../../activities/presentation/screens/my_activities_screen.dart';
+import '../../../chat/presentation/screens/chat_list_screen.dart';
+import '../../../feed/presentation/screens/feed_screen.dart';
+import '../../../friends/presentation/screens/friends_screen.dart';
+import '../../../gallery/presentation/screens/activity_gallery_screen.dart';
+import '../../../profile/presentation/screens/profile_view_screen.dart';
+import '../../../challenges/presentation/screens/challenges_screen.dart';
+import '../../../settings/presentation/screens/settings_screen.dart';
+import 'placeholder_screens.dart';
+
+class HomeShell extends ConsumerStatefulWidget {
+  const HomeShell({super.key});
+
+  @override
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState<HomeShell> {
+  WebShellDestination _destination = WebShellDestination.discover;
+
+  // Legacy-Index für Mobile-Bottom-Nav
+  int get _mobileIndex => switch (_destination) {
+        WebShellDestination.discover => 0,
+        WebShellDestination.create => 1,
+        WebShellDestination.myActivities => 2,
+        WebShellDestination.friends => 3,
+        WebShellDestination.messages => 4,
+        _ => 0,
+      };
+
+  void _onDestinationChanged(WebShellDestination dest) {
+    setState(() => _destination = dest);
+  }
+
+  Widget _bodyFor(WebShellDestination dest, {bool embedded = false}) {
+    final userId = ref.read(authStateProvider).valueOrNull?.id;
+
+    return switch (dest) {
+      WebShellDestination.create => const CreateActivityScreen(),
+      WebShellDestination.discover => const DiscoverFeedScreen(),
+      WebShellDestination.feed => const FeedScreen(),
+      WebShellDestination.myActivities => const MyActivitiesScreen(),
+      WebShellDestination.groups => const GroupsPlaceholderScreen(),
+      WebShellDestination.messages => const ChatListScreen(),
+      WebShellDestination.friends => const FriendsScreen(),
+      WebShellDestination.memories => const PastActivitiesGalleryScreen(),
+      WebShellDestination.challenges => const ChallengesScreen(),
+      WebShellDestination.profile => userId != null
+          ? ProfileViewScreen(
+              profileId: userId,
+              isOwnProfile: true,
+              embedded: embedded,
+            )
+          : const Center(child: Text('Nicht angemeldet')),
+      WebShellDestination.settings => const SettingsScreen(),
+    };
+  }
+
+  bool _showRightPanel(WebShellDestination dest) {
+    return dest == WebShellDestination.discover ||
+        dest == WebShellDestination.feed ||
+        dest == WebShellDestination.profile;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(presenceHeartbeatProvider);
+    final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final useWebLayout = kIsWeb && WebLayoutScaffold.isDesktop(context);
+
+    if (useWebLayout) {
+      return WebLayoutScaffold(
+        destination: _destination,
+        onDestinationChanged: _onDestinationChanged,
+        showRightPanel: _showRightPanel(_destination),
+        notificationCount: unreadCount,
+        body: _bodyFor(_destination, embedded: true),
+      );
+    }
+
+    return _MobileHomeShell(
+      currentIndex: _mobileIndex,
+      onIndexChanged: (index) {
+        final dest = switch (index) {
+          0 => WebShellDestination.discover,
+          1 => WebShellDestination.create,
+          2 => WebShellDestination.myActivities,
+          3 => WebShellDestination.friends,
+          _ => WebShellDestination.messages,
+        };
+        _onDestinationChanged(dest);
+      },
+      body: _bodyFor(_destination),
+    );
+  }
+}
+
+class _MobileHomeShell extends ConsumerWidget {
+  const _MobileHomeShell({
+    required this.currentIndex,
+    required this.onIndexChanged,
+    required this.body,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onIndexChanged;
+  final Widget body;
+
+  static const _titles = [
+    'Entdecken',
+    'Erstellen',
+    'Meine Events',
+    'Freunde',
+    'Chats',
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authControllerProvider).isLoading;
+    final userId = ref.watch(authStateProvider).valueOrNull?.id;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_titles[currentIndex]),
+        actions: [
+          if (userId != null)
+            IconButton(
+              onPressed: () => context.pushNamed(
+                RouteNames.profileView,
+                pathParameters: {'id': userId},
+                queryParameters: {'own': 'true'},
+              ),
+              icon: const Icon(Icons.person_outline),
+              tooltip: 'Mein Profil',
+            ),
+          IconButton(
+            onPressed: isLoading
+                ? null
+                : () => ref.read(authControllerProvider.notifier).signOut(),
+            icon: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.logout),
+            tooltip: 'Abmelden',
+          ),
+        ],
+      ),
+      body: body,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: onIndexChanged,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Entdecken',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
+            label: 'Erstellen',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.event_outlined),
+            selectedIcon: Icon(Icons.event),
+            label: 'Events',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outlined),
+            selectedIcon: Icon(Icons.people),
+            label: 'Freunde',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_outlined),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Chats',
+          ),
+        ],
+      ),
+    );
+  }
+}

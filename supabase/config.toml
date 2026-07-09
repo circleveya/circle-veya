@@ -1,0 +1,7 @@
+project_id = "ciwffewffeyjffowwdhy"
+
+[functions.generate-stock-image]
+verify_jwt = false
+
+[functions.sync-external-events]
+verify_jwt = false
