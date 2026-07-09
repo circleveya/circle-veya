@@ -24,13 +24,13 @@ abstract final class ActivityDistanceFilter {
       final rankB = _sortRank(b);
       if (rankA != rankB) return rankA.compareTo(rankB);
 
+      final dateA = a.dateTime ?? DateTime.fromMillisecondsSinceEpoch(9999999999999);
+      final dateB = b.dateTime ?? DateTime.fromMillisecondsSinceEpoch(9999999999999);
+      if (dateA != dateB) return dateA.compareTo(dateB);
+
       final distA = a.distanceKm ?? double.infinity;
       final distB = b.distanceKm ?? double.infinity;
-      if (distA != distB) return distA.compareTo(distB);
-
-      final dateA = a.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final dateB = b.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return dateA.compareTo(dateB);
+      return distA.compareTo(distB);
     });
 
     return result;

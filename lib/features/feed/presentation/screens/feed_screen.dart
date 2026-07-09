@@ -15,76 +15,78 @@ class FeedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activitiesAsync = ref.watch(discoverActivitiesProvider);
+    final feedState = ref.watch(discoverActivitiesProvider);
     final actionsState = ref.watch(activityActionsProvider);
     final theme = Theme.of(context);
     final isActionLoading = actionsState.isLoading;
 
-    return activitiesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('$error')),
-      data: (activities) {
-        final strangers =
-            activities.where((a) => a.visibleAs == VisibleAs.stranger).toList();
-        final acquaintances = activities
-            .where((a) => a.visibleAs == VisibleAs.acquaintance)
-            .toList();
-        final friends =
-            activities.where((a) => a.visibleAs == VisibleAs.friend).toList();
-        final sponsored = activities.where((a) => a.isFeatured).toList();
+    if (feedState.isInitialLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        return CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                child: Text(
-                  'Feed',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    if (feedState.hasError) {
+      return Center(child: Text('${feedState.error}'));
+    }
+
+    final activities = feedState.activities;
+    final strangers =
+        activities.where((a) => a.visibleAs == VisibleAs.stranger).toList();
+    final acquaintances =
+        activities.where((a) => a.visibleAs == VisibleAs.acquaintance).toList();
+    final friends =
+        activities.where((a) => a.visibleAs == VisibleAs.friend).toList();
+    final sponsored = activities.where((a) => a.isFeatured).toList();
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+            child: Text(
+              'Feed',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
             ),
-            SliverToBoxAdapter(child: _CategoryTabs()),
-            if (activities.isEmpty)
-              const SliverFillRemaining(
-                child: Center(child: Text('Noch keine Aktivitäten im Feed.')),
-              )
-            else ...[
-              _FeedSection(
-                title: 'Neue Leute',
-                activities: strangers,
-                isActionLoading: isActionLoading,
-                onTap: (a) => _openDetail(context, a),
-                onAction: (a) => _handleAction(context, ref, a),
-              ),
-              _FeedSection(
-                title: 'Bekannte',
-                activities: acquaintances,
-                isActionLoading: isActionLoading,
-                onTap: (a) => _openDetail(context, a),
-                onAction: (a) => _handleAction(context, ref, a),
-              ),
-              _FeedSection(
-                title: 'Freunde',
-                activities: friends,
-                isActionLoading: isActionLoading,
-                onTap: (a) => _openDetail(context, a),
-                onAction: (a) => _handleAction(context, ref, a),
-              ),
-              _FeedSection(
-                title: 'Gesponsert',
-                activities: sponsored,
-                isActionLoading: isActionLoading,
-                onTap: (a) => _openDetail(context, a),
-                onAction: (a) => _handleAction(context, ref, a),
-              ),
-            ],
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
-        );
-      },
+          ),
+        ),
+        SliverToBoxAdapter(child: _CategoryTabs()),
+        if (activities.isEmpty)
+          const SliverFillRemaining(
+            child: Center(child: Text('Noch keine Aktivitäten im Feed.')),
+          )
+        else ...[
+          _FeedSection(
+            title: 'Neue Leute',
+            activities: strangers,
+            isActionLoading: isActionLoading,
+            onTap: (a) => _openDetail(context, a),
+            onAction: (a) => _handleAction(context, ref, a),
+          ),
+          _FeedSection(
+            title: 'Bekannte',
+            activities: acquaintances,
+            isActionLoading: isActionLoading,
+            onTap: (a) => _openDetail(context, a),
+            onAction: (a) => _handleAction(context, ref, a),
+          ),
+          _FeedSection(
+            title: 'Freunde',
+            activities: friends,
+            isActionLoading: isActionLoading,
+            onTap: (a) => _openDetail(context, a),
+            onAction: (a) => _handleAction(context, ref, a),
+          ),
+          _FeedSection(
+            title: 'Gesponsert',
+            activities: sponsored,
+            isActionLoading: isActionLoading,
+            onTap: (a) => _openDetail(context, a),
+            onAction: (a) => _handleAction(context, ref, a),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+      ],
     );
   }
 

@@ -47,7 +47,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Username suchen (z.B. lea_go)',
+              hintText: 'Username suchen',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -131,8 +131,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Suche oben nach Demo-Usern wie lea_go, '
-                            'max_kick oder sara_boards.',
+                            'Suche oben nach anderen Nutzer:innen '
+                            'und füge sie als Freund:in oder Bekanntschaft hinzu.',
                             textAlign: TextAlign.center,
                           ),
                         ],
