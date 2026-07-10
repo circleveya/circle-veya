@@ -1,5 +1,8 @@
--- Pagination für discover_activities (LIMIT/OFFSET = PostgREST .range(from, to))
-
+-- =============================================================================
+-- Migration 00016: discover_activities_pagination
+-- Zweck: LIMIT/OFFSET (p_limit, p_offset) fuer seitenweises Laden.
+-- Betrifft: RPC discover_activities
+-- =============================================================================
 DROP FUNCTION IF EXISTS public.discover_activities(
     DOUBLE PRECISION,
     DOUBLE PRECISION,

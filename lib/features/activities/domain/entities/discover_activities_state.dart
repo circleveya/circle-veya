@@ -1,22 +1,31 @@
 import 'activity.dart';
 
-/// Standard-Seitengröße für den Entdecken-Feed (entspricht `.range(from, to)`).
+/// Standard-Seitengröße für den Entdecken-Feed.
 const int discoverActivitiesPageSize = 10;
 
 class DiscoverActivitiesState {
   const DiscoverActivitiesState({
     this.activities = const [],
     this.isLoading = false,
-    this.isLoadingMore = false,
-    this.hasMore = true,
+    this.page = 1,
+    this.totalCount = 0,
     this.error,
   });
 
   final List<DiscoverableActivity> activities;
   final bool isLoading;
-  final bool isLoadingMore;
-  final bool hasMore;
+  final int page;
+  final int totalCount;
   final Object? error;
+
+  int get totalPages {
+    if (totalCount <= 0) return 1;
+    return ((totalCount - 1) ~/ discoverActivitiesPageSize) + 1;
+  }
+
+  bool get hasPreviousPage => page > 1;
+
+  bool get hasNextPage => page < totalPages;
 
   bool get isInitialLoading => isLoading && activities.isEmpty && error == null;
 
@@ -25,16 +34,16 @@ class DiscoverActivitiesState {
   DiscoverActivitiesState copyWith({
     List<DiscoverableActivity>? activities,
     bool? isLoading,
-    bool? isLoadingMore,
-    bool? hasMore,
+    int? page,
+    int? totalCount,
     Object? error,
     bool clearError = false,
   }) {
     return DiscoverActivitiesState(
       activities: activities ?? this.activities,
       isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
+      page: page ?? this.page,
+      totalCount: totalCount ?? this.totalCount,
       error: clearError ? null : (error ?? this.error),
     );
   }

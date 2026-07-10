@@ -1,9 +1,8 @@
--- ============================================================
--- Phase 2/3: Bugfixes, Gamification, Reviews, Notifications,
--- Premium, Sidebar-RPCs, Teilnehmer-Avatare
--- ============================================================
-
--- Voraussetzung: PostGIS (Migration 00000)
+-- =============================================================================
+-- Migration 00013: phase2_phase3_features
+-- Zweck: Bugfixes, Gamification, Reviews, Notifications, Premium, Avatare.
+-- Betrifft: user_stats, user_challenges, reviews, notifications, discover_activities
+-- =============================================================================
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 GRANT USAGE ON SCHEMA extensions TO postgres, anon, authenticated, service_role;

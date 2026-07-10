@@ -1,7 +1,8 @@
--- ============================================================
--- activities – von Usern erstellte Aktivitäten
--- ============================================================
-
+-- =============================================================================
+-- Migration 00002: create_activities
+-- Zweck: Erstellt public.activities fuer User-Events inkl. Geo und RLS.
+-- Betrifft: ENUM weather_category, Tabelle activities, Indizes
+-- =============================================================================
 DO $$ BEGIN
     CREATE TYPE public.weather_category AS ENUM ('indoor', 'outdoor', 'rain');
 EXCEPTION WHEN duplicate_object THEN NULL;

@@ -1,7 +1,9 @@
--- ============================================================
--- Externe Events, Profil-Cover, Discover v2
--- ============================================================
-
+-- =============================================================================
+-- Migration 00011: external_events_and_discover_v2
+-- Zweck: Externe Events in activities (legacy) + Discover v2 + Cover-URL.
+-- Betrifft: activities.source/external_*, profiles.cover_url, discover_activities
+-- Hinweis: Eventfrog-Cache liegt seit 00019 in public.external_events
+-- =============================================================================
 ALTER TABLE public.activities
     ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'user'
         CHECK (source IN ('user', 'external'));

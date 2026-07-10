@@ -1,17 +1,8 @@
--- ============================================================
--- Sidebar-RPCs für Flutter WebRightPanel
--- Behebt PGRST202 (Funktion nicht gefunden)
---
--- Flutter erwartet (sidebar_remote_datasource.dart):
---   get_trending_activities  → activity_id, title, participant_count, source, external_provider
---   get_recommended_activities → activity_id, title, match_score, distance_km
---   get_online_friends       → profile_id, username, avatar_url
---
--- Voraussetzungen: Migrationen 00004+ (can_view_activity, connections),
---                   00007 (profiles.interests), 00011 optional (activities.source)
--- ============================================================
-
--- Spalten für Online-Status (falls Migration 00013 noch nicht gelaufen)
+-- =============================================================================
+-- Migration 00014: sidebar_rpc_functions
+-- Zweck: Sidebar-RPCs fuer Flutter WebRightPanel (Trending, Friends, Level).
+-- Betrifft: get_trending_activities, get_recommended_activities, get_online_friends, ...
+-- =============================================================================
 ALTER TABLE public.profiles
     ADD COLUMN IF NOT EXISTS is_online BOOLEAN NOT NULL DEFAULT false;
 

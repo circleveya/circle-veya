@@ -55,16 +55,20 @@ enum DiscoverDateFilterOption {
               .subtract(const Duration(microseconds: 1)),
         );
       case custom:
-        if (customStart == null) return (start: null, end: null);
-        final start = DateTime(
-          customStart.year,
-          customStart.month,
-          customStart.day,
-        );
-        final endBase = customEnd ?? customStart;
-        final end = DateTime(endBase.year, endBase.month, endBase.day)
-            .add(const Duration(days: 1))
-            .subtract(const Duration(microseconds: 1));
+        DateTime? start;
+        DateTime? end;
+        if (customStart != null) {
+          start = DateTime(
+            customStart.year,
+            customStart.month,
+            customStart.day,
+          );
+        }
+        if (customEnd != null) {
+          end = DateTime(customEnd.year, customEnd.month, customEnd.day)
+              .add(const Duration(days: 1))
+              .subtract(const Duration(microseconds: 1));
+        }
         return (start: start, end: end);
     }
   }

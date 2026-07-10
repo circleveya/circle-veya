@@ -23,16 +23,25 @@ class ActivityDiscoverFilters extends Equatable {
   final DateTime? customDateFrom;
   final DateTime? customDateTo;
 
-  ({DateTime? start, DateTime? end}) get dateRange => dateFilter.resolveRange(
+  ({DateTime? start, DateTime? end}) get dateRange {
+    if (dateFilter == DiscoverDateFilterOption.custom ||
+        customDateFrom != null ||
+        customDateTo != null) {
+      return DiscoverDateFilterOption.custom.resolveRange(
         customStart: customDateFrom,
         customEnd: customDateTo,
       );
+    }
+    return dateFilter.resolveRange();
+  }
 
   bool get hasActiveFilters =>
       locationType != null ||
       weatherCondition != null ||
       maxDistanceKm != null ||
-      dateFilter != DiscoverDateFilterOption.all;
+      dateFilter != DiscoverDateFilterOption.all ||
+      customDateFrom != null ||
+      customDateTo != null;
 
   ActivityDiscoverFilters copyWith({
     LocationType? locationType,
@@ -45,6 +54,8 @@ class ActivityDiscoverFilters extends Equatable {
     DiscoverDateFilterOption? dateFilter,
     DateTime? customDateFrom,
     DateTime? customDateTo,
+    bool clearCustomDateFrom = false,
+    bool clearCustomDateTo = false,
     bool clearCustomDateRange = false,
   }) {
     return ActivityDiscoverFilters(
@@ -56,11 +67,12 @@ class ActivityDiscoverFilters extends Equatable {
           clearMaxDistance ? null : (maxDistanceKm ?? this.maxDistanceKm),
       distanceOption: distanceOption ?? this.distanceOption,
       dateFilter: dateFilter ?? this.dateFilter,
-      customDateFrom: clearCustomDateRange
+      customDateFrom: clearCustomDateRange || clearCustomDateFrom
           ? null
           : (customDateFrom ?? this.customDateFrom),
-      customDateTo:
-          clearCustomDateRange ? null : (customDateTo ?? this.customDateTo),
+      customDateTo: clearCustomDateRange || clearCustomDateTo
+          ? null
+          : (customDateTo ?? this.customDateTo),
     );
   }
 

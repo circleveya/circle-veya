@@ -1376,7 +1376,7 @@ SELECT public.seed_demo_data('DEINE-USER-UUID');
 
 ```sql
 -- 1) Migration 00011 + 00012
--- 2) System-Host: supabase/setup_external_events_host.sql
+-- 2) System-Host: supabase/scripts/setup/02_external_events_host.sql
 -- 3) Edge Functions deployen (siehe DOKUMENTATION.md §3.6)
 ```
 

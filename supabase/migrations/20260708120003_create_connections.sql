@@ -1,7 +1,8 @@
--- ============================================================
--- connections – Beziehungen zwischen Usern (Freunde / Bekannte)
--- ============================================================
-
+-- =============================================================================
+-- Migration 00003: create_connections
+-- Zweck: Erstellt Freund-/Bekannten-Beziehungen zwischen Profilen.
+-- Betrifft: ENUM connection_status, Tabelle connections
+-- =============================================================================
 DO $$ BEGIN
     CREATE TYPE public.connection_status AS ENUM ('friend', 'acquaintance');
 EXCEPTION WHEN duplicate_object THEN NULL;

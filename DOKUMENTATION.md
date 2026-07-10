@@ -146,7 +146,7 @@ supabase functions deploy sync-external-events
 
 1. **Authentication → Users → Add user** (z. B. `circle-events@circle.app`)
 2. UUID kopieren
-3. `supabase/setup_external_events_host.sql` anpassen und im SQL Editor ausführen
+3. `supabase/scripts/setup/02_external_events_host.sql` anpassen und im SQL Editor ausführen
 4. Prüfen: `SELECT public.get_external_events_host_id();`
 
 ### 3.8 Cron für Event-Sync (empfohlen: alle 6h)
@@ -483,7 +483,7 @@ LIMIT 20;
 
 | Problem | Lösung |
 |---------|--------|
-| `circle_events nicht gefunden` | `setup_external_events_host.sql` ausführen |
+| `circle_events nicht gefunden` | `scripts/setup/02_external_events_host.sql` ausführen |
 | `Kein API-Key gesetzt` | `supabase secrets set EVENTBRITE_API_KEY=...` |
 | Keine Events im Feed | Migration 00011, Cron/Manuell-Sync, Standort CH-nah |
 | Sync-Log leer | Migration 00012 ausführen |
@@ -518,7 +518,7 @@ Details: `PROJEKT_VERLAUF.md`
 | [`WEB_UI_STRATEGIE.md`](WEB_UI_STRATEGIE.md) | Web-First UI, Design-Spec, Architektur |
 | [`APP_DOCUMENTATION.md`](APP_DOCUMENTATION.md) | Technische Voll-Doku, Troubleshooting §8 |
 | [`supabase/README.md`](supabase/README.md) | DB-Setup, Edge Functions |
-| [`supabase/setup_external_events_host.sql`](supabase/setup_external_events_host.sql) | System-Host anlegen |
+| [`supabase/scripts/setup/02_external_events_host.sql`](supabase/scripts/setup/02_external_events_host.sql) | System-Host anlegen |
 
 ---
 

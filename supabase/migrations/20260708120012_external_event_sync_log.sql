@@ -1,7 +1,8 @@
--- ============================================================
--- Sync-Log für externe Event-Aggregation
--- ============================================================
-
+-- =============================================================================
+-- Migration 00012: external_event_sync_log
+-- Zweck: Protokollt Laeufe der Edge Function sync-external-events.
+-- Betrifft: Tabelle external_event_sync_log
+-- =============================================================================
 CREATE TABLE IF NOT EXISTS public.external_event_sync_log (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     synced_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),

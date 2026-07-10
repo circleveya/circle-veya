@@ -1,5 +1,8 @@
--- Performance: leichte discover_activities (keine Beschreibung/Avatare, Profil-Update nur Seite 1)
-
+-- =============================================================================
+-- Migration 00018: discover_activities_light
+-- Zweck: Schlanke Discover-Response (ohne Description/Avatare) fuer Performance.
+-- Betrifft: RPC discover_activities
+-- =============================================================================
 DROP FUNCTION IF EXISTS public.discover_activities(
     DOUBLE PRECISION,
     DOUBLE PRECISION,

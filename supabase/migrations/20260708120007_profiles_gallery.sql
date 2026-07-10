@@ -1,7 +1,8 @@
--- ============================================================
--- Phase 6: Profile (Interessen) & Post-Event-Galerie
--- ============================================================
-
+-- =============================================================================
+-- Migration 00007: profiles_gallery
+-- Zweck: Profil-Interessen und Post-Event-Galerie (Storage-Pfade).
+-- Betrifft: profiles.interests, activity_photos
+-- =============================================================================
 ALTER TABLE public.profiles
     ADD COLUMN interests TEXT[] NOT NULL DEFAULT '{}';
 

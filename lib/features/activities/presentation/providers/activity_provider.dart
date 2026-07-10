@@ -10,6 +10,7 @@ import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/datasources/activity_remote_datasource.dart';
+import '../../data/datasources/external_events_cache_datasource.dart';
 import '../../data/datasources/external_events_sync_datasource.dart';
 import '../../data/repositories/activity_repository_impl.dart';
 import '../../data/repositories/unconfigured_activity_repository.dart';
@@ -17,8 +18,14 @@ import '../../domain/entities/activity.dart';
 import '../../domain/entities/discover_activities_state.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../../domain/repositories/activity_repository.dart';
+
 final activityRemoteDatasourceProvider = Provider<ActivityRemoteDatasource>((ref) {
   return ActivityRemoteDatasource(ref.watch(supabaseClientProvider));
+});
+
+final externalEventsCacheDatasourceProvider =
+    Provider<ExternalEventsCacheDatasource>((ref) {
+  return ExternalEventsCacheDatasource(ref.watch(supabaseClientProvider));
 });
 
 final externalEventsSyncDatasourceProvider =
@@ -49,122 +56,96 @@ final discoverActivitiesProvider = NotifierProvider.autoDispose<
 
 class DiscoverActivitiesController
     extends AutoDisposeNotifier<DiscoverActivitiesState> {
-  int _loadedCount = 0;
   bool _fetchInFlight = false;
   bool _backgroundSyncStarted = false;
 
   @override
   DiscoverActivitiesState build() {
     ref.listen(locationCoordsKeyProvider, (_, __) {
-      unawaited(refresh());
+      unawaited(goToPage(1));
     });
     ref.listen(discoverFiltersProvider, (_, __) {
-      unawaited(refresh());
+      unawaited(goToPage(1));
     });
-    Future.microtask(refresh);
+    Future.microtask(() => goToPage(1));
     return const DiscoverActivitiesState(isLoading: true);
   }
 
-  Future<void> refresh() async {
-    _loadedCount = 0;
-    state = state.activities.isEmpty
-        ? const DiscoverActivitiesState(isLoading: true)
-        : state.copyWith(isLoading: true, clearError: true);
-    await _fetchPage(append: false);
-    if (!_backgroundSyncStarted) {
-      _backgroundSyncStarted = true;
-      unawaited(_triggerBackgroundSync());
-    }
-  }
+  Future<void> refresh() => goToPage(1);
 
-  Future<void> loadMore() async {
-    if (_fetchInFlight || state.isLoadingMore || !state.hasMore) return;
-    state = state.copyWith(isLoadingMore: true, clearError: true);
-    await _fetchPage(append: true);
-  }
-
-  Future<void> _fetchPage({required bool append}) async {
+  Future<void> goToPage(int page) async {
     if (_fetchInFlight) return;
+    if (page < 1) page = 1;
     _fetchInFlight = true;
 
-    try {
-      final location = await _resolveLocation();
-      final filters = ref.read(discoverFiltersProvider);
-      final repository = ref.read(activityRepositoryProvider);
+    state = state.copyWith(
+      isLoading: true,
+      page: page,
+      clearError: true,
+    );
 
-      final page = await repository.discoverActivities(
-        latitude: location.latitude,
-        longitude: location.longitude,
+    try {
+      final location = _resolveLocation();
+      final filters = ref.read(discoverFiltersProvider);
+      final cache = ref.read(externalEventsCacheDatasourceProvider);
+
+      final result = await cache.fetchPage(
+        page: page,
+        pageSize: discoverActivitiesPageSize,
         filters: filters,
-        offset: _loadedCount,
-        limit: discoverActivitiesPageSize,
+        cityHint: _cityHint(location),
       );
 
       final filtered = ActivityDistanceFilter.apply(
-        page,
+        result.events,
         maxDistanceKm: filters.maxDistanceKm,
       );
 
-      final merged = append
-          ? _mergeActivities(state.activities, filtered)
-          : filtered;
-
-      _loadedCount = append ? _loadedCount + page.length : page.length;
+      final totalPages = result.totalCount <= 0
+          ? 1
+          : ((result.totalCount - 1) ~/ discoverActivitiesPageSize) + 1;
+      final safePage = page > totalPages ? totalPages : page;
 
       state = DiscoverActivitiesState(
-        activities: merged,
+        activities: filtered,
         isLoading: false,
-        isLoadingMore: false,
-        hasMore: page.length >= discoverActivitiesPageSize,
+        page: safePage,
+        totalCount: result.totalCount,
       );
-    } catch (error) {
-      if (append && state.activities.isNotEmpty) {
-        state = state.copyWith(
-          isLoadingMore: false,
-          error: error,
-        );
-      } else {
-        state = DiscoverActivitiesState(
-          activities: const [],
-          isLoading: false,
-          isLoadingMore: false,
-          hasMore: false,
-          error: error,
-        );
+
+      if (!_backgroundSyncStarted) {
+        _backgroundSyncStarted = true;
+        unawaited(_triggerBackgroundSync());
       }
+    } catch (error) {
+      state = DiscoverActivitiesState(
+        activities: const [],
+        isLoading: false,
+        page: page,
+        totalCount: 0,
+        error: error,
+      );
     } finally {
       _fetchInFlight = false;
     }
   }
 
-  List<DiscoverableActivity> _mergeActivities(
-    List<DiscoverableActivity> existing,
-    List<DiscoverableActivity> incoming,
-  ) {
-    final seen = existing.map((a) => a.id).toSet();
-    final merged = List<DiscoverableActivity>.from(existing);
-    for (final activity in incoming) {
-      if (seen.add(activity.id)) {
-        merged.add(activity);
-      }
-    }
-    return merged;
-  }
-
-  Future<UserLocation> _resolveLocation() async {
+  UserLocation _resolveLocation() {
     final locationState = ref.read(userLocationProvider);
     if (locationState.hasValue) {
       return locationState.requireValue;
     }
-    if (locationState.hasError) {
-      return UserLocation.mockFrauenfeld;
-    }
-    // GPS nicht abwarten – Feed sofort mit Fallback-Standort laden.
     return UserLocation.mockFrauenfeld;
   }
 
+  String? _cityHint(UserLocation location) {
+    if (location.source == LocationSource.gps) return null;
+    final raw = location.label ?? location.displayLabel;
+    return raw.replaceAll(RegExp(r'\s*\(.*\)\s*'), '').trim();
+  }
+
   Future<void> _triggerBackgroundSync() async {
-    final location = await _resolveLocation();
+    final location = _resolveLocation();
     final filters = ref.read(discoverFiltersProvider);
     final syncDatasource = ref.read(externalEventsSyncDatasourceProvider);
 

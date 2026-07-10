@@ -1,7 +1,8 @@
--- ============================================================
--- Phase 3: Sichtbarkeit, Teilnehmer & Interesse-Matching
--- ============================================================
-
+-- =============================================================================
+-- Migration 00004: activity_visibility_matching
+-- Zweck: Sichtbarkeit, Teilnehmer, Interesse-Matching und Discover-RPC v1.
+-- Betrifft: activities-Spalten, activity_participants, activity_interests, RPCs
+-- =============================================================================
 DO $$ BEGIN
     CREATE TYPE public.activity_status AS ENUM ('open', 'full', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;

@@ -1,7 +1,8 @@
--- ============================================================
--- Phase 4: Chat-Infrastruktur (Gruppenchat + DM)
--- ============================================================
-
+-- =============================================================================
+-- Migration 00005: create_chats
+-- Zweck: Chat-Infrastruktur (Gruppenchat + Direct Messages) inkl. Realtime.
+-- Betrifft: chats, chat_participants, messages
+-- =============================================================================
 CREATE TYPE public.chat_type AS ENUM ('activity_group', 'direct');
 
 CREATE TABLE public.chats (

@@ -1,7 +1,8 @@
--- ============================================================
--- Phase 7: Freunde finden, hinzufügen & Verbindungsliste
--- ============================================================
-
+-- =============================================================================
+-- Migration 00008: friends_connections
+-- Zweck: Freunde suchen, Anfragen und Verbindungsliste (RPCs).
+-- Betrifft: search_profiles, Connection-RPCs
+-- =============================================================================
 CREATE OR REPLACE FUNCTION public.search_profiles(p_query TEXT)
 RETURNS TABLE (
     id UUID,

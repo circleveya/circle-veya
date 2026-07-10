@@ -1,7 +1,8 @@
--- ============================================================
--- Phase 5: B2B Community Partner & erweiterte Filter
--- ============================================================
-
+-- =============================================================================
+-- Migration 00006: b2b_partner_filters
+-- Zweck: B2B-Partner-Flags und Filter (Ort/Wetter) fuer Discover.
+-- Betrifft: ENUM location_type/weather_condition, activities, discover_activities
+-- =============================================================================
 CREATE TYPE public.location_type AS ENUM ('indoor', 'outdoor');
 CREATE TYPE public.weather_condition AS ENUM ('cold', 'rain', 'sun');
 

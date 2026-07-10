@@ -1,5 +1,8 @@
--- Zeitraum-Filter + chronologische Sortierung für discover_activities
-
+-- =============================================================================
+-- Migration 00017: discover_activities_date_filter
+-- Zweck: Datumsfilter (p_date_from/p_date_to) und chronologische Sortierung.
+-- Betrifft: RPC discover_activities
+-- =============================================================================
 DROP FUNCTION IF EXISTS public.discover_activities(
     DOUBLE PRECISION,
     DOUBLE PRECISION,

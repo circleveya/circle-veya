@@ -1,7 +1,8 @@
--- ============================================================
--- Freund-DMs (ohne Aktivitätsbezug)
--- ============================================================
-
+-- =============================================================================
+-- Migration 00010: friend_direct_messages
+-- Zweck: Erlaubt Freund-DMs ohne Aktivitaetsbezug.
+-- Betrifft: chats Constraints, DM-RPCs
+-- =============================================================================
 ALTER TABLE public.chats
     DROP CONSTRAINT IF EXISTS chats_dm_requires_activity;
 

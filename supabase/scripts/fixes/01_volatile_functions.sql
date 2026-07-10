@@ -1,9 +1,10 @@
--- ============================================================
--- Fix: "UPDATE is not allowed in a non-volatile function"
---
--- Betroffen: Funktionen mit STABLE/IMMUTABLE, die trotzdem
--- schreiben (UPDATE/INSERT). Im Supabase SQL Editor ausführen.
--- ============================================================
+-- =============================================================================
+-- Script: 01_volatile_functions.sql
+-- Zweck: fixes
+-- Zweck: Setzt RPCs auf VOLATILE, die intern UPDATE ausführen.
+-- Betrifft: discover_activities, heartbeat_presence, simulate_premium
+-- Wann: Bei Fehler "UPDATE is not allowed in a non-volatile function"
+-- =============================================================================
 
 -- 1. discover_activities – speichert Viewer-Standort per UPDATE
 DROP FUNCTION IF EXISTS public.discover_activities(

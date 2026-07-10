@@ -56,7 +56,7 @@ String sidebarErrorMessage(Object error) {
     return 'Sidebar-Funktion fehlt in der Datenbank. Migration 00014 ausführen.';
   }
   if (text.contains('non-volatile function')) {
-    return 'Datenbank-Fix nötig: fix_volatile_functions.sql ausführen.';
+    return 'Datenbank-Fix nötig: scripts/fixes/01_volatile_functions.sql ausführen.';
   }
   if (text.contains('Nicht authentifiziert')) {
     return 'Bitte erneut anmelden.';

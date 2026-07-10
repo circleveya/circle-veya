@@ -17,8 +17,8 @@ import '../../domain/discover_activity_grouper.dart';
 import '../../domain/discover_feed_item.dart';
 import '../widgets/discover_activity_grid.dart';
 import '../widgets/discover_hero.dart';
-import '../widgets/discover_load_more_footer.dart';
 import '../widgets/discover_occurrence_picker.dart';
+import '../widgets/discover_page_navigation.dart';
 
 class DiscoverFeedScreen extends ConsumerStatefulWidget {
   const DiscoverFeedScreen({super.key});
@@ -170,12 +170,11 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
             onTap: (item) => _openFeedItem(context, item),
             onAction: (activity) => _handleAction(context, ref, activity),
           ),
-          DiscoverLoadMoreFooter(
-            isLoadingMore: feedState.isLoadingMore,
-            hasMore: feedState.hasMore,
-            loadedCount: feedState.activities.length,
-            onLoadMore: () =>
-                ref.read(discoverActivitiesProvider.notifier).loadMore(),
+          DiscoverPageNavigation(
+            state: feedState,
+            onPageSelected: (page) {
+              ref.read(discoverActivitiesProvider.notifier).goToPage(page);
+            },
           ),
         ],
       ),
@@ -251,7 +250,7 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
 String _friendlyErrorMessage(Object error) {
   final text = error.toString();
   if (text.contains('non-volatile function')) {
-    return 'Datenbank-Fix nötig: fix_volatile_functions.sql in Supabase ausführen.';
+    return 'Datenbank-Fix nötig: scripts/fixes/01_volatile_functions.sql in Supabase ausführen.';
   }
   if (text.contains('Nicht authentifiziert')) {
     return 'Bitte erneut anmelden.';

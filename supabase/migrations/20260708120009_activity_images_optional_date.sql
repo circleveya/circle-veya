@@ -1,7 +1,8 @@
--- ============================================================
--- Optionales Datum, Aktivitätsbild, Discover-Fix
--- ============================================================
-
+-- =============================================================================
+-- Migration 00009: activity_images_optional_date
+-- Zweck: Optionales Datum, Aktivitaetsbild und Discover-Anpassung.
+-- Betrifft: activities.image_url, date_time nullable, discover_activities
+-- =============================================================================
 ALTER TABLE public.activities
     ADD COLUMN IF NOT EXISTS image_url TEXT;
 

@@ -1,7 +1,8 @@
--- ============================================================
--- profiles – erweitert auth.users (1:1)
--- ============================================================
-
+-- =============================================================================
+-- Migration 00001: create_profiles
+-- Zweck: Erstellt public.profiles (1:1 zu auth.users) inkl. RLS.
+-- Betrifft: ENUM user_type, Tabelle profiles, Trigger updated_at
+-- =============================================================================
 DO $$ BEGIN
     CREATE TYPE public.user_type AS ENUM ('standard', 'company');
 EXCEPTION WHEN duplicate_object THEN NULL;
