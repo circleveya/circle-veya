@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")?.trim();
+const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY")?.trim();
 
 /**
  * CircleVeya-Emblem als Fallback, wenn Groq/Pexels fehlschlagen oder nichts liefern.
@@ -249,6 +249,12 @@ async function searchPexels(
         "catch/http: Pexels request failed with status",
         pexelsResponse.status,
       );
+      if (pexelsResponse.status === 401 || pexelsResponse.status === 403) {
+        console.error(
+          "Pexels auth failed – PEXELS_API_KEY ist ungültig oder falsch formatiert. " +
+            "Secret in Supabase prüfen (ohne Anführungszeichen/Leerzeichen).",
+        );
+      }
       return {
         imageUrl: null,
         photographer: null,
