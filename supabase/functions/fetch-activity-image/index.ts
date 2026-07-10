@@ -4,11 +4,11 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
 /**
- * CircleVeya-Logo als Fallback, wenn Groq/Pexels fehlschlagen oder nichts liefern.
+ * CircleVeya-Emblem als Fallback, wenn Groq/Pexels fehlschlagen oder nichts liefern.
  * Bei Bedarf durch eine öffentliche Storage-/CDN-URL ersetzen.
  */
-const FALLBACK_LOGO_URL =
-  "https://circleveya.vercel.app/assets/assets/branding/circleveya_logo.png";
+const FALLBACK_EMBLEM_URL =
+  "https://circleveya.vercel.app/assets/assets/branding/circleveya_emblem.png";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.1-8b-instant";
@@ -228,9 +228,9 @@ function fallbackPayload(
   extras: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return {
-    image_url: FALLBACK_LOGO_URL,
+    image_url: FALLBACK_EMBLEM_URL,
     fallback: true,
-    fallback_logo_url: FALLBACK_LOGO_URL,
+    fallback_emblem_url: FALLBACK_EMBLEM_URL,
     activityName,
     ...extras,
   };
@@ -286,7 +286,7 @@ Deno.serve(async (req: Request) => {
     }
 
     console.warn(
-      "fetch-activity-image: kein Pexels-Treffer – Logo-Fallback",
+      "fetch-activity-image: kein Pexels-Treffer – Emblem-Fallback",
       pexels.error ?? "",
     );
     return jsonResponse(
