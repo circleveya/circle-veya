@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/layout/shell_destination_provider.dart';
 import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_layout_scaffold.dart';
 import '../../../../core/layout/web_shell_destination.dart';
@@ -31,10 +32,8 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
-  WebShellDestination _destination = WebShellDestination.discover;
-
   // Legacy-Index für Mobile-Bottom-Nav
-  int get _mobileIndex => switch (_destination) {
+  int _mobileIndexFor(WebShellDestination destination) => switch (destination) {
         WebShellDestination.discover => 0,
         WebShellDestination.create => 1,
         WebShellDestination.myActivities => 2,
@@ -44,7 +43,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       };
 
   void _onDestinationChanged(WebShellDestination dest) {
-    setState(() => _destination = dest);
+    ref.read(shellDestinationProvider.notifier).set(dest);
   }
 
   Widget _bodyFor(WebShellDestination dest, {bool embedded = false}) {
@@ -82,6 +81,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     ref.watch(presenceHeartbeatProvider);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
     final useWebLayout = kIsWeb && WebLayoutScaffold.isDesktop(context);
+    final destination = ref.watch(shellDestinationProvider);
 
     ref.listen(shellDestinationRequestProvider, (previous, next) {
       if (next == null) return;
@@ -90,7 +90,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     });
 
     final pendingDestination = ref.watch(shellDestinationRequestProvider);
-    if (pendingDestination != null && _destination != pendingDestination) {
+    if (pendingDestination != null && destination != pendingDestination) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final pending = ref.read(shellDestinationRequestProvider);
@@ -102,16 +102,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     if (useWebLayout) {
       return WebLayoutScaffold(
-        destination: _destination,
+        destination: destination,
         onDestinationChanged: _onDestinationChanged,
-        showRightPanel: _showRightPanel(_destination),
+        showRightPanel: _showRightPanel(destination),
         notificationCount: unreadCount,
-        body: _bodyFor(_destination, embedded: true),
+        body: _bodyFor(destination, embedded: true),
       );
     }
 
     return _MobileHomeShell(
-      currentIndex: _mobileIndex,
+      currentIndex: _mobileIndexFor(destination),
       onIndexChanged: (index) {
         final dest = switch (index) {
           0 => WebShellDestination.discover,
@@ -122,7 +122,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         };
         _onDestinationChanged(dest);
       },
-      body: _bodyFor(_destination),
+      body: _bodyFor(destination),
     );
   }
 }
@@ -155,7 +155,7 @@ class _MobileHomeShell extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            const CircleVeyaBrand(compact: true, logoHeight: 36),
+            const CircleVeyaBrand(compact: true, logoHeight: 32),
             const SizedBox(width: 12),
             Text(_titles[currentIndex]),
           ],

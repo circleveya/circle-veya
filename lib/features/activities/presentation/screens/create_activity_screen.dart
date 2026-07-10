@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/location/location_provider.dart';
+import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_filters.dart';
@@ -155,6 +156,21 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       );
     }
 
+    // Pexels-Cover, wenn weder Upload noch Event-Bild vorhanden.
+    var imageUrl = _prefilledImageUrl?.trim();
+    if ((_coverImage == null) &&
+        (imageUrl == null || imageUrl.isEmpty)) {
+      // ignore: avoid_print
+      print(
+        'CircleVeya Create: hole Pexels-Bild für "${_titleController.text.trim()}"',
+      );
+      imageUrl = await ref
+          .read(imageServiceProvider)
+          .fetchActivityImage(_titleController.text.trim());
+      // ignore: avoid_print
+      print('CircleVeya Create: Pexels-Ergebnis = $imageUrl');
+    }
+
     await ref.read(createActivityProvider.notifier).create(
           CreateActivityInput(
             title: _titleController.text.trim(),
@@ -175,7 +191,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             visibleToStrangers: _visibleToStrangers,
             discoveryRadiusKm: _radiusKm,
             isSponsored: _isSponsored,
-            imageUrl: _prefilledImageUrl,
+            imageUrl: imageUrl,
             sourceEventId: _sourceEventId,
             sourceEventTitle: _sourceEventTitle,
           ),

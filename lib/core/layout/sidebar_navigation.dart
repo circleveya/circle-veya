@@ -33,19 +33,16 @@ class SidebarNavigation extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 24),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: CircleVeyaBrand(
-                showSlogan: true,
-                logoHeight: 48,
+                logoHeight: 34,
                 onTap: () => onSelected(WebShellDestination.feed),
               ),
             ),
           ),
-          const SizedBox(height: 28),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _CreateActivityButton(
@@ -53,7 +50,7 @@ class SidebarNavigation extends ConsumerWidget {
               onTap: () => onSelected(WebShellDestination.create),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),

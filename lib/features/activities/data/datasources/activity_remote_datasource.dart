@@ -272,13 +272,14 @@ class ActivityRemoteDatasource {
     }
 
     final eventImageUrl = input.imageUrl?.trim();
-    final hasEventImage =
-        eventImageUrl != null && eventImageUrl.isNotEmpty;
+    final hasImageUrl = eventImageUrl != null && eventImageUrl.isNotEmpty;
+    final hasSourceEvent =
+        input.sourceEventId?.trim().isNotEmpty == true;
 
-    // Eventfrog-Cover hat Vorrang – verhindert Pexels/generate-stock-image.
-    if (hasEventImage) {
+    // Cover-URL setzen (Eventfrog oder Pexels).
+    if (hasImageUrl) {
       payload['image_url'] = eventImageUrl;
-      payload['image_source'] = 'external';
+      payload['image_source'] = hasSourceEvent ? 'external' : 'pexels';
     }
 
     final sourceEventId = input.sourceEventId?.trim();
@@ -295,7 +296,7 @@ class ActivityRemoteDatasource {
 
     final activityId = response['id'] as String;
 
-    if (!hasEventImage &&
+    if (!hasImageUrl &&
         coverImageBytes != null &&
         coverImageBytes.isNotEmpty) {
       final extension = _extensionFromFileName(coverImageFileName);

@@ -96,6 +96,7 @@ class _ProfileBody extends ConsumerWidget {
             profile: profile,
             isOwnProfile: isOwnProfile,
             level: level,
+            showBackButton: !embedded,
           ),
         ),
         SliverToBoxAdapter(
@@ -170,15 +171,18 @@ class _ProfileCoverHeader extends StatelessWidget {
     required this.profile,
     required this.isOwnProfile,
     required this.level,
+    this.showBackButton = false,
   });
 
   final UserProfile profile;
   final bool isOwnProfile;
   final int level;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
 
     return SizedBox(
       height: 280,
@@ -211,6 +215,12 @@ class _ProfileCoverHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (showBackButton)
+            Positioned(
+              top: topInset + 8,
+              left: 12,
+              child: const _QuietBackButton(),
+            ),
           Positioned(
             left: 24,
             bottom: 0,
@@ -295,6 +305,41 @@ class _ProfileCoverHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Dezenter Zurück-Button für Banner-Overlays (Quiet Luxury).
+class _QuietBackButton extends StatelessWidget {
+  const _QuietBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.28),
+      shape: const CircleBorder(),
+      elevation: 0,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            context.pop();
+          }
+        },
+        child: const SizedBox(
+          width: 36,
+          height: 36,
+          child: Icon(
+            Icons.arrow_back_ios_new,
+            size: 16,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

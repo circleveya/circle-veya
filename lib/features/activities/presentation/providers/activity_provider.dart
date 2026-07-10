@@ -62,34 +62,39 @@ class DiscoverActivitiesController
   @override
   DiscoverActivitiesState build() {
     ref.listen(locationCoordsKeyProvider, (_, __) {
-      unawaited(goToPage(1));
+      unawaited(goToPage(0));
     });
     ref.listen(discoverFiltersProvider, (_, __) {
-      unawaited(goToPage(1));
+      unawaited(goToPage(0));
     });
-    Future.microtask(() => goToPage(1));
+    Future.microtask(() => goToPage(0));
     return const DiscoverActivitiesState(isLoading: true);
   }
 
-  Future<void> refresh() => goToPage(1);
+  Future<void> refresh() => goToPage(0);
 
-  /// Lädt die nächste Seite und hängt sie an (Infinite Scroll).
-  Future<void> loadMore() async {
-    if (_fetchInFlight || state.isLoading || state.isLoadingMore) return;
-    if (!state.hasNextPage) return;
-    await goToPage(state.page + 1, append: true);
+  Future<void> nextPage() {
+    if (!state.hasNextPage || state.isLoading) {
+      return Future.value();
+    }
+    return goToPage(state.currentPage + 1);
   }
 
-  Future<void> goToPage(int page, {bool append = false}) async {
+  Future<void> previousPage() {
+    if (!state.hasPreviousPage || state.isLoading) {
+      return Future.value();
+    }
+    return goToPage(state.currentPage - 1);
+  }
+
+  Future<void> goToPage(int currentPage) async {
     if (_fetchInFlight) return;
-    if (page < 1) page = 1;
-    if (append && !state.hasNextPage) return;
+    if (currentPage < 0) currentPage = 0;
     _fetchInFlight = true;
 
     state = state.copyWith(
-      isLoading: !append,
-      isLoadingMore: append,
-      page: append ? state.page : page,
+      isLoading: true,
+      currentPage: currentPage,
       clearError: true,
     );
 
@@ -99,31 +104,34 @@ class DiscoverActivitiesController
       final cache = ref.read(externalEventsCacheDatasourceProvider);
 
       final result = await cache.fetchPage(
-        page: page,
-        pageSize: discoverActivitiesPageSize,
+        currentPage: currentPage,
+        itemsPerPage: itemsPerPage,
+        userLat: location.latitude,
+        userLong: location.longitude,
+        maxDistanceKm: filters.maxDistanceKm,
         filters: filters,
         cityHint: _cityHint(location),
       );
 
+      // Server filtert bereits per PostGIS; hier nur Sortierung beibehalten.
       final filtered = ActivityDistanceFilter.apply(
         result.events,
-        maxDistanceKm: filters.maxDistanceKm,
+        maxDistanceKm: null,
       );
 
-      final totalPages = result.totalCount <= 0
-          ? 1
-          : ((result.totalCount - 1) ~/ discoverActivitiesPageSize) + 1;
-      final safePage = page > totalPages ? totalPages : page;
-
-      final activities = append
-          ? _mergeUnique(state.activities, filtered)
-          : filtered;
+      // Debug: Distanz je Event (zusätzlich zum Datasource-Log).
+      for (final activity in filtered) {
+        // ignore: avoid_print
+        print(
+          'CircleVeya distance (UI): "${activity.title}" = '
+          '${activity.distanceKm?.toStringAsFixed(2) ?? "null"} km',
+        );
+      }
 
       state = DiscoverActivitiesState(
-        activities: activities,
+        activities: filtered,
         isLoading: false,
-        isLoadingMore: false,
-        page: safePage,
+        currentPage: currentPage,
         totalCount: result.totalCount,
       );
 
@@ -132,40 +140,16 @@ class DiscoverActivitiesController
         unawaited(_triggerBackgroundSync());
       }
     } catch (error) {
-      if (append) {
-        state = state.copyWith(
-          isLoading: false,
-          isLoadingMore: false,
-          error: error,
-        );
-      } else {
-        state = DiscoverActivitiesState(
-          activities: const [],
-          isLoading: false,
-          isLoadingMore: false,
-          page: page,
-          totalCount: 0,
-          error: error,
-        );
-      }
+      state = DiscoverActivitiesState(
+        activities: const [],
+        isLoading: false,
+        currentPage: currentPage,
+        totalCount: 0,
+        error: error,
+      );
     } finally {
       _fetchInFlight = false;
     }
-  }
-
-  List<DiscoverableActivity> _mergeUnique(
-    List<DiscoverableActivity> existing,
-    List<DiscoverableActivity> incoming,
-  ) {
-    if (incoming.isEmpty) return existing;
-    final seen = existing.map((a) => a.id).toSet();
-    final merged = List<DiscoverableActivity>.of(existing);
-    for (final activity in incoming) {
-      if (seen.add(activity.id)) {
-        merged.add(activity);
-      }
-    }
-    return merged;
   }
 
   UserLocation _resolveLocation() {

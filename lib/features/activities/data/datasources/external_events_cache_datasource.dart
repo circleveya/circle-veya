@@ -19,52 +19,74 @@ class ExternalEventsPageResult {
   final int totalCount;
 }
 
-/// Liest den Eventfrog-Cache (`public.external_events`) – schnell, paginiert.
+/// Entdecken: Eventfrog-Cache via PostGIS-RPC `get_activities_by_distance`.
 class ExternalEventsCacheDatasource {
   ExternalEventsCacheDatasource(this._client);
 
   final SupabaseClient _client;
 
-  static const _selectColumns =
-      'id, title, start_date, end_date, city, location_name, '
-      'image_url, external_url, latitude, longitude, provider, external_id';
-
   Future<ExternalEventsPageResult> fetchPage({
-    required int page,
-    int pageSize = discoverActivitiesPageSize,
+    /// 0-basierter Seitenindex (`currentPage`).
+    required int currentPage,
+    required double userLat,
+    required double userLong,
+    int itemsPerPage = discoverActivitiesPageSize,
+    double? maxDistanceKm,
     ActivityDiscoverFilters filters = const ActivityDiscoverFilters.empty(),
     String? cityHint,
   }) async {
-    final safePage = page < 1 ? 1 : page;
-    final from = (safePage - 1) * pageSize;
-    final to = from + pageSize - 1;
+    final safePage = currentPage < 0 ? 0 : currentPage;
+    final offset = safePage * itemsPerPage;
     final dateRange = filters.dateRange;
     final city = cityHint?.trim();
+    final maxDistMeters =
+        maxDistanceKm == null ? null : maxDistanceKm * 1000.0;
 
     try {
-      final countBuilder = _applyFilters(
-        _client.from('external_events').select('id'),
-        dateRange: dateRange,
-        city: city,
-      );
-      final countResponse = await countBuilder.count(CountOption.exact);
-
-      final dataBuilder = _applyFilters(
-        _client.from('external_events').select(_selectColumns),
-        dateRange: dateRange,
-        city: city,
-      );
-      final rows = await dataBuilder
-          .order('start_date', ascending: true, nullsFirst: false)
-          .range(from, to)
+      final rows = await _client
+          .rpc(
+            'get_activities_by_distance',
+            params: {
+              'user_lat': userLat,
+              'user_long': userLong,
+              'max_dist_meters': maxDistMeters,
+              'p_limit': itemsPerPage,
+              'p_offset': offset,
+              'p_date_from': dateRange.start?.toUtc().toIso8601String(),
+              'p_date_to': dateRange.end?.toUtc().toIso8601String(),
+              'p_city': (city != null &&
+                      city.isNotEmpty &&
+                      city.toLowerCase() != 'gps')
+                  ? city
+                  : null,
+            },
+          )
           .timeout(const Duration(seconds: 15));
 
       final events = <DiscoverableActivity>[];
+      var totalCount = 0;
+
       for (final row in rows as List) {
         if (row is! Map) continue;
         final map = Map<String, dynamic>.from(row);
         try {
-          events.add(_mapRow(map));
+          final activity = _mapRow(map);
+          events.add(activity);
+
+          // Debug: Distanzberechnung sichtbar machen.
+          // ignore: avoid_print
+          print(
+            'CircleVeya distance: "${activity.title}" → '
+            '${activity.distanceKm?.toStringAsFixed(2) ?? "null"} km '
+            '(${_asDouble(map['distance_meters'])?.toStringAsFixed(0) ?? "null"} m)',
+          );
+
+          final count = map['total_count'];
+          if (count is int) {
+            totalCount = count;
+          } else if (count is num) {
+            totalCount = count.toInt();
+          }
         } catch (error, stackTrace) {
           if (kDebugMode) {
             debugPrint(
@@ -74,45 +96,33 @@ class ExternalEventsCacheDatasource {
         }
       }
 
+      if (kDebugMode) {
+        debugPrint(
+          'CircleVeya: get_activities_by_distance '
+          'page=$safePage limit=$itemsPerPage '
+          'maxDistKm=$maxDistanceKm → ${events.length} rows '
+          '(total=$totalCount)',
+        );
+      }
+
       return ExternalEventsPageResult(
         events: events,
-        totalCount: countResponse.count,
+        totalCount: totalCount,
       );
     } on PostgrestException catch (error) {
       if (kDebugMode) {
-        debugPrint('CircleVeya: external_events Query-Fehler: ${error.message}');
+        debugPrint(
+          'CircleVeya: get_activities_by_distance Fehler: ${error.message}',
+        );
       }
       rethrow;
     }
   }
 
-  PostgrestFilterBuilder _applyFilters(
-    PostgrestFilterBuilder query, {
-    required ({DateTime? start, DateTime? end}) dateRange,
-    required String? city,
-  }) {
-    var q = query.eq('is_cancelled', false);
-
-    if (dateRange.start != null) {
-      q = q.gte('start_date', dateRange.start!.toUtc().toIso8601String());
-    }
-    if (dateRange.end != null) {
-      q = q.lte('start_date', dateRange.end!.toUtc().toIso8601String());
-    }
-    if (city != null && city.isNotEmpty && city.toLowerCase() != 'gps') {
-      q = q.ilike('city', '%$city%');
-    }
-    if (dateRange.start == null && dateRange.end == null) {
-      q = q.or(
-        'start_date.is.null,start_date.gte.${DateTime.now().toUtc().toIso8601String()}',
-      );
-    }
-    return q;
-  }
-
   DiscoverableActivity _mapRow(Map<String, dynamic> map) {
     final id = (map['id'] as String?) ?? '';
     final title = (map['title'] as String?)?.trim();
+    final distanceKm = _asDouble(map['distance_km']);
 
     return DiscoverableActivity(
       id: id,
@@ -129,7 +139,7 @@ class ExternalEventsCacheDatasource {
       weatherCondition: WeatherCondition.sun,
       locationName: _optionalString(map['location_name']) ??
           _optionalString(map['city']),
-      distanceKm: null,
+      distanceKm: distanceKm,
       visibleAs: VisibleAs.stranger,
       viewerAction: ViewerAction.externalLink,
       isSponsored: false,
@@ -139,6 +149,15 @@ class ExternalEventsCacheDatasource {
       createdAt: null,
       participantAvatarUrls: const [],
     );
+  }
+
+  double? _asDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   String? _optionalString(dynamic value) {

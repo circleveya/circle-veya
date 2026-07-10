@@ -1,6 +1,6 @@
 import '../../features/activities/domain/entities/activity.dart';
 
-/// Clientseitige Entfernungs-Filterung und Sortierung nach Nähe.
+/// Clientseitige Sortierung nach Nähe (Distanzfilter läuft serverseitig).
 abstract final class ActivityDistanceFilter {
   static List<DiscoverableActivity> apply(
     List<DiscoverableActivity> activities, {
@@ -11,10 +11,7 @@ abstract final class ActivityDistanceFilter {
     if (maxDistanceKm != null) {
       result = result.where((activity) {
         final distance = activity.distanceKm;
-        if (distance == null) {
-          // Externe Events ohne Koordinate weiter anzeigen.
-          return activity.isExternal;
-        }
+        if (distance == null) return false;
         return distance <= maxDistanceKm;
       }).toList();
     }

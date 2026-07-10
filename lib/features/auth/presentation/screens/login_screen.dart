@@ -61,14 +61,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: CircleVeyaBrand(
-                          showSlogan: true,
-                          logoHeight: 64,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
+                        child: CircleVeyaBrand(logoHeight: 48),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     Text(
                       'Willkommen zurück',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(

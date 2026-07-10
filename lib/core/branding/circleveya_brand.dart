@@ -2,48 +2,45 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// CircleVeya Logo (+ optional Slogan).
+/// CircleVeya Logo – clean, ohne Slogan.
 ///
 /// Assets:
 /// - [logoAsset] horizontale Wortmarke (Icon + Text)
 /// - [emblemAsset] nur das C-Emblem für enge Flächen
 ///
-/// Skalierung immer über Höhe + [BoxFit.contain], nie feste Breite,
-/// damit das Logo nicht gestaucht oder unscharf wirkt.
+/// Skalierung über Höhe + [BoxFit.contain], transparenter Hintergrund.
 class CircleVeyaBrand extends StatelessWidget {
   const CircleVeyaBrand({
     super.key,
     this.onTap,
-    this.showSlogan = false,
     this.compact = false,
-    this.logoHeight = 40,
+    this.logoHeight = 36,
     this.emblemOnly = false,
+    @Deprecated('Slogan entfernt – Parameter wird ignoriert')
+    this.showSlogan = false,
   });
 
   static const logoAsset = 'assets/branding/circleveya_logo.png';
   static const emblemAsset = 'assets/branding/circleveya_emblem.png';
 
   /// Ungefähres Seitenverhältnis der Wortmarke (Breite / Höhe).
-  static const logoAspectRatio = 887 / 230;
+  static const logoAspectRatio = 883 / 226;
 
   static const appName = 'CircleVeya';
-  static const slogan = 'Find people. Create memories.';
 
   final VoidCallback? onTap;
-  final bool showSlogan;
   final bool compact;
   final double logoHeight;
   final bool emblemOnly;
 
+  @Deprecated('Slogan entfernt')
+  final bool showSlogan;
+
   @override
   Widget build(BuildContext context) {
-    final useEmblem = compact ||
-        emblemOnly ||
-        (showSlogan == false &&
-            MediaQuery.sizeOf(context).width < AppColors.webBreakpoint);
-
-    final content =
-        useEmblem ? _buildEmblemOnly() : _buildFullBrand(context);
+    // Emblem nur bei explizitem compact/emblemOnly (z.B. Mobile-AppBar).
+    final useEmblem = compact || emblemOnly;
+    final content = useEmblem ? _buildEmblemOnly() : _buildFullLogo();
 
     if (onTap == null) return content;
 
@@ -51,62 +48,36 @@ class CircleVeyaBrand extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        hoverColor: AppColors.seed.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+        hoverColor: AppColors.seed.withValues(alpha: 0.05),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           child: content,
         ),
       ),
     );
   }
 
-  Widget _buildFullBrand(BuildContext context) {
+  Widget _buildFullLogo() {
     final naturalWidth = logoHeight * logoAspectRatio;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Genug horizontaler Platz – Höhe steuert die Skalierung.
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: logoHeight,
-            maxWidth: naturalWidth,
-          ),
-          child: SizedBox(
-            height: logoHeight,
-            width: naturalWidth,
-            child: Image.asset(
-              logoAsset,
-              fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
-              filterQuality: FilterQuality.high,
-              isAntiAlias: true,
-              errorBuilder: (_, _, _) => _FallbackWordmark(
-                height: logoHeight,
-                showEmblem: true,
-              ),
-            ),
-          ),
+    return SizedBox(
+      height: logoHeight,
+      width: naturalWidth,
+      child: Image.asset(
+        logoAsset,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) => _FallbackWordmark(
+          height: logoHeight,
+          showEmblem: true,
         ),
-        if (showSlogan) ...[
-          SizedBox(height: logoHeight * 0.16),
-          Text(
-            slogan,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.brandNavy.withValues(alpha: 0.62),
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: 0.15,
-                  height: 1.2,
-                ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 
-  /// Eigenes Emblem-Asset – quadratisch, BoxFit.contain.
   Widget _buildEmblemOnly() {
     final size = logoHeight;
     return SizedBox(

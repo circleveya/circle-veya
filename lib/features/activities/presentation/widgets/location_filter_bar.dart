@@ -13,10 +13,14 @@ class LocationFilterBar extends ConsumerStatefulWidget {
     super.key,
     required this.filters,
     required this.onFiltersChanged,
+    this.embedded = false,
   });
 
   final ActivityDiscoverFilters filters;
   final ValueChanged<ActivityDiscoverFilters> onFiltersChanged;
+
+  /// Ohne Card/Rahmen – für eingebettete Filter-Panels.
+  final bool embedded;
 
   @override
   ConsumerState<LocationFilterBar> createState() => _LocationFilterBarState();
@@ -76,6 +80,122 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
     final theme = Theme.of(context);
     final locationAsync = ref.watch(userLocationProvider);
     final activeSource = locationAsync.valueOrNull?.source;
+    final embedded = widget.embedded;
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.place_outlined,
+              size: 18,
+              color: AppColors.brandNavy.withValues(alpha: 0.65),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Standort',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.brandNavy.withValues(alpha: 0.9),
+              ),
+            ),
+            const Spacer(),
+            locationAsync.when(
+              loading: () => const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              error: (_, _) => const SizedBox.shrink(),
+              data: (location) => Text(
+                location.displayLabel,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.seed,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _searchController,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Ort suchen (Zürich, Basel, Bern…)',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: _applySearch,
+              tooltip: 'Ort übernehmen',
+            ),
+            isDense: true,
+          ),
+          onSubmitted: (_) => _applySearch(),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _gpsLoading ? null : _handleGps,
+            icon: _gpsLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location),
+            label: const Text('Aktueller Standort (GPS)'),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (final preset in LocationPreset.values)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    label: Text(preset.label),
+                    onPressed: () {
+                      ref
+                          .read(userLocationProvider.notifier)
+                          .selectPreset(preset);
+                      _searchController.text = preset.label;
+                      ref.invalidate(discoverActivitiesProvider);
+                    },
+                    backgroundColor: activeSource == preset.source
+                        ? AppColors.seed.withValues(alpha: 0.15)
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (locationAsync.valueOrNull?.isMock == true &&
+            activeSource != LocationSource.gps)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(
+              'Test-Standort aktiv. GPS oder Ort-Chip überschreibt den Mock.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    if (embedded) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        child: body,
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
@@ -90,108 +210,7 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.place_outlined, size: 20, color: AppColors.seed),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Standort & Entfernung',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  locationAsync.when(
-                    loading: () => const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    error: (_, _) => const SizedBox.shrink(),
-                    data: (location) => Text(
-                      location.displayLabel,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.seed,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Ort suchen (Zürich, Basel, Bern…)',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: _applySearch,
-                    tooltip: 'Ort übernehmen',
-                  ),
-                  isDense: true,
-                ),
-                onSubmitted: (_) => _applySearch(),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _gpsLoading ? null : _handleGps,
-                  icon: _gpsLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.my_location),
-                  label: const Text('Aktueller Standort (GPS)'),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    for (final preset in LocationPreset.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          label: Text(preset.label),
-                          onPressed: () {
-                            ref
-                                .read(userLocationProvider.notifier)
-                                .selectPreset(preset);
-                            _searchController.text = preset.label;
-                            ref.invalidate(discoverActivitiesProvider);
-                          },
-                          backgroundColor: activeSource == preset.source
-                              ? AppColors.seed.withValues(alpha: 0.15)
-                              : null,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (locationAsync.valueOrNull?.isMock == true &&
-                  activeSource != LocationSource.gps)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    'Test-Standort aktiv. GPS oder Ort-Chip überschreibt den Mock.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          child: body,
         ),
       ),
     );

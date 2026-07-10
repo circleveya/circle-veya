@@ -7,150 +7,168 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
 
-/// Immer sichtbare Schnellfilter: Zeitraum (Chips + Von/Bis) + Entfernung.
+/// Schnellfilter: Zeitraum (Chips + Von/Bis) + Entfernung.
 class DiscoverQuickFiltersBar extends ConsumerWidget {
   const DiscoverQuickFiltersBar({
     super.key,
     required this.filters,
     required this.onFiltersChanged,
+    this.compact = false,
   });
 
   final ActivityDiscoverFilters filters;
   final ValueChanged<ActivityDiscoverFilters> onFiltersChanged;
+
+  /// Ohne Elevation – für eingebettete Filter-Panels.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
-    return Material(
-      color: theme.colorScheme.surface,
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.event_outlined, size: 18, color: AppColors.seed),
-                const SizedBox(width: 6),
-                Text(
-                  'Wann?',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final option in DiscoverDateFilterOption.quickFilters)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _QuickFilterChip(
-                        label: option.label,
-                        selected: filters.dateFilter == option,
-                        onTap: () => _toggleDateFilter(option),
-                      ),
-                    ),
-                ],
+    final content = Padding(
+      padding: EdgeInsets.fromLTRB(16, compact ? 12 : 10, 16, compact ? 8 : 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.event_outlined,
+                size: 18,
+                color: AppColors.brandNavy.withValues(alpha: 0.65),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
+              const SizedBox(width: 6),
+              Text(
+                'Wann?',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.brandNavy.withValues(alpha: 0.9),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                Expanded(
-                  child: _DateFieldButton(
-                    label: 'Von',
-                    value: filters.customDateFrom == null
-                        ? null
-                        : dateFormat.format(filters.customDateFrom!),
-                    onTap: () => _pickFrom(context),
-                    onClear: filters.customDateFrom == null
-                        ? null
-                        : () {
-                            final stillHasTo = filters.customDateTo != null;
-                            onFiltersChanged(
-                              filters.copyWith(
-                                clearCustomDateFrom: true,
-                                dateFilter: stillHasTo
-                                    ? DiscoverDateFilterOption.custom
-                                    : DiscoverDateFilterOption.all,
-                              ),
-                            );
-                          },
+                for (final option in DiscoverDateFilterOption.quickFilters)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _QuickFilterChip(
+                      label: option.label,
+                      selected: filters.dateFilter == option,
+                      onTap: () => _toggleDateFilter(option),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DateFieldButton(
-                    label: 'Bis',
-                    value: filters.customDateTo == null
-                        ? null
-                        : dateFormat.format(filters.customDateTo!),
-                    onTap: () => _pickTo(context),
-                    onClear: filters.customDateTo == null
-                        ? null
-                        : () {
-                            final stillHasFrom = filters.customDateFrom != null;
-                            onFiltersChanged(
-                              filters.copyWith(
-                                clearCustomDateTo: true,
-                                dateFilter: stillHasFrom
-                                    ? DiscoverDateFilterOption.custom
-                                    : DiscoverDateFilterOption.all,
-                              ),
-                            );
-                          },
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.straighten_outlined, size: 18, color: AppColors.seed),
-                const SizedBox(width: 6),
-                Text(
-                  'Entfernung',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final option in DistanceFilterOption.values)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _QuickFilterChip(
-                        label: option.label,
-                        selected: filters.distanceOption == option,
-                        onTap: () {
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _DateFieldButton(
+                  label: 'Von',
+                  value: filters.customDateFrom == null
+                      ? null
+                      : dateFormat.format(filters.customDateFrom!),
+                  onTap: () => _pickFrom(context),
+                  onClear: filters.customDateFrom == null
+                      ? null
+                      : () {
+                          final stillHasTo = filters.customDateTo != null;
                           onFiltersChanged(
                             filters.copyWith(
-                              distanceOption: option,
-                              maxDistanceKm: option.maxKm,
-                              clearMaxDistance: option.maxKm == null,
+                              clearCustomDateFrom: true,
+                              dateFilter: stillHasTo
+                                  ? DiscoverDateFilterOption.custom
+                                  : DiscoverDateFilterOption.all,
                             ),
                           );
                         },
-                      ),
-                    ),
-                ],
+                ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _DateFieldButton(
+                  label: 'Bis',
+                  value: filters.customDateTo == null
+                      ? null
+                      : dateFormat.format(filters.customDateTo!),
+                  onTap: () => _pickTo(context),
+                  onClear: filters.customDateTo == null
+                      ? null
+                      : () {
+                          final stillHasFrom = filters.customDateFrom != null;
+                          onFiltersChanged(
+                            filters.copyWith(
+                              clearCustomDateTo: true,
+                              dateFilter: stillHasFrom
+                                  ? DiscoverDateFilterOption.custom
+                                  : DiscoverDateFilterOption.all,
+                            ),
+                          );
+                        },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.straighten_outlined,
+                size: 18,
+                color: AppColors.brandNavy.withValues(alpha: 0.65),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Entfernung',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.brandNavy.withValues(alpha: 0.9),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final option in DistanceFilterOption.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _QuickFilterChip(
+                      label: option.label,
+                      selected: filters.distanceOption == option,
+                      onTap: () {
+                        onFiltersChanged(
+                          filters.copyWith(
+                            distanceOption: option,
+                            maxDistanceKm: option.maxKm,
+                            clearMaxDistance: option.maxKm == null,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+
+    if (compact) return content;
+
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 1,
+      child: content,
     );
   }
 
@@ -277,8 +295,8 @@ class _QuickFilterChip extends StatelessWidget {
 
     return Material(
       color: selected
-          ? AppColors.seed
-          : theme.colorScheme.surfaceContainerHighest,
+          ? AppColors.brandNavy.withValues(alpha: 0.9)
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
@@ -288,8 +306,10 @@ class _QuickFilterChip extends StatelessWidget {
           child: Text(
             label,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: selected ? Colors.white : theme.colorScheme.onSurface,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected
+                  ? Colors.white
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.85),
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),

@@ -7,17 +7,15 @@ import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/domain/entities/discover_activities_state.dart';
 import '../../../activities/domain/entities/discover_filters.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
-import '../../../activities/presentation/widgets/discover_filter_bar.dart';
-import '../../../activities/presentation/widgets/discover_quick_filters_bar.dart';
-import '../../../activities/presentation/widgets/location_filter_bar.dart';
 import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../domain/discover_activity_grouper.dart';
 import '../../domain/discover_feed_item.dart';
 import '../widgets/discover_activity_grid.dart';
-import '../widgets/discover_hero.dart';
 import '../widgets/discover_occurrence_picker.dart';
+import '../widgets/discover_page_navigation.dart';
+import '../widgets/discover_search_header.dart';
 
 class DiscoverFeedScreen extends ConsumerStatefulWidget {
   const DiscoverFeedScreen({super.key});
@@ -31,28 +29,22 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
 
-  static const double _loadMoreThreshold = 320;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels < position.maxScrollExtent - _loadMoreThreshold) {
-      return;
+  Future<void> _goToPageAndScrollTop(Future<void> Function() action) async {
+    await action();
+    if (!mounted) return;
+    if (_scrollController.hasClients) {
+      await _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
     }
-    ref.read(discoverActivitiesProvider.notifier).loadMore();
   }
 
   @override
@@ -62,30 +54,11 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
     final filters = ref.watch(discoverFiltersProvider);
     final isActionLoading = actionsState.isLoading;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DiscoverFilterBar(
-          filters: filters,
-          onChanged: (next) {
-            ref.read(discoverFiltersProvider.notifier).state = next;
-          },
-        ),
-        DiscoverQuickFiltersBar(
-          filters: filters,
-          onFiltersChanged: (next) {
-            ref.read(discoverFiltersProvider.notifier).state = next;
-          },
-        ),
-        Expanded(
-          child: _buildBody(
-            context,
-            feedState: feedState,
-            filters: filters,
-            isActionLoading: isActionLoading,
-          ),
-        ),
-      ],
+    return _buildBody(
+      context,
+      feedState: feedState,
+      filters: filters,
+      isActionLoading: isActionLoading,
     );
   }
 
@@ -96,16 +69,32 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
     required bool isActionLoading,
   }) {
     if (feedState.isInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return ListView(
+        children: [
+          DiscoverSearchHeader(onSearch: _onSearch),
+          const SizedBox(
+            height: 240,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
+      );
     }
 
     if (feedState.hasError) {
-      return _ErrorState(
-        message: _friendlyErrorMessage(feedState.error!),
-        onRetry: () {
-          ref.invalidate(userLocationProvider);
-          ref.invalidate(discoverActivitiesProvider);
-        },
+      return ListView(
+        children: [
+          DiscoverSearchHeader(onSearch: _onSearch),
+          SizedBox(
+            height: 240,
+            child: _ErrorState(
+              message: _friendlyErrorMessage(feedState.error!),
+              onRetry: () {
+                ref.invalidate(userLocationProvider);
+                ref.invalidate(discoverActivitiesProvider);
+              },
+            ),
+          ),
+        ],
       );
     }
 
@@ -126,13 +115,7 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
       return ListView(
         controller: _scrollController,
         children: [
-          LocationFilterBar(
-            filters: filters,
-            onFiltersChanged: (next) {
-              ref.read(discoverFiltersProvider.notifier).state = next;
-            },
-          ),
-          DiscoverHero(onSearch: _onSearch),
+          DiscoverSearchHeader(onSearch: _onSearch),
           SizedBox(
             height: 200,
             child: _EmptyState(
@@ -165,13 +148,7 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
       child: ListView(
         controller: _scrollController,
         children: [
-          LocationFilterBar(
-            filters: filters,
-            onFiltersChanged: (next) {
-              ref.read(discoverFiltersProvider.notifier).state = next;
-            },
-          ),
-          DiscoverHero(onSearch: _onSearch),
+          DiscoverSearchHeader(onSearch: _onSearch),
           if (featured.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -187,7 +164,15 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
             onTap: (item) => _openFeedItem(context, item),
             onAction: (activity) => _handleAction(context, ref, activity),
           ),
-          _InfiniteScrollFooter(state: feedState),
+          DiscoverPageNavigation(
+            state: feedState,
+            onPrevious: () => _goToPageAndScrollTop(
+              () => ref.read(discoverActivitiesProvider.notifier).previousPage(),
+            ),
+            onNext: () => _goToPageAndScrollTop(
+              () => ref.read(discoverActivitiesProvider.notifier).nextPage(),
+            ),
+          ),
         ],
       ),
     );
@@ -271,41 +256,6 @@ String _friendlyErrorMessage(Object error) {
     return 'Standort-Datenbank nicht vollständig eingerichtet (PostGIS).';
   }
   return 'Aktivitäten konnten nicht geladen werden. Standort prüfen und erneut versuchen.';
-}
-
-class _InfiniteScrollFooter extends StatelessWidget {
-  const _InfiniteScrollFooter({required this.state});
-
-  final DiscoverActivitiesState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.isLoadingMore) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(24, 8, 24, 32),
-        child: Center(
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(strokeWidth: 2.5),
-          ),
-        ),
-      );
-    }
-
-    if (!state.hasNextPage && state.activities.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
-        child: Text(
-          'Alle ${state.activities.length} Events geladen',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      );
-    }
-
-    return const SizedBox(height: 24);
-  }
 }
 
 class _EmptyState extends StatelessWidget {

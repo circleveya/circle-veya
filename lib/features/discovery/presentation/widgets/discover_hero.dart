@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/branding/circleveya_brand.dart';
 
-/// Hero-Bereich für Entdecken (image_2.jpg).
+/// Kompakter Such-Hero für Entdecken – ohne Slogan.
 class DiscoverHero extends StatelessWidget {
   const DiscoverHero({
     super.key,
@@ -16,56 +15,51 @@ class DiscoverHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: AppColors.premiumGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.seed.withValues(alpha: 0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            CircleVeyaBrand.slogan,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
+            'Entdecken',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.brandNavy,
+              letterSpacing: -0.2,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Entdecke Aktivitäten in deiner Nähe – mit Freunden, '
-            'der Community und Events aus deiner Region.',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.92),
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           TextField(
             onSubmitted: onSearch,
-            style: const TextStyle(color: Colors.black87),
             decoration: InputDecoration(
               hintText: 'Was möchtest du heute erleben?',
               filled: true,
-              fillColor: Colors.white,
-              prefixIcon: const Icon(Icons.search, color: AppColors.seed),
+              fillColor: theme.colorScheme.surface,
+              prefixIcon: Icon(
+                Icons.search,
+                color: AppColors.brandNavy.withValues(alpha: 0.55),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: AppColors.seed.withValues(alpha: 0.55),
+                ),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: 14,
               ),
             ),
           ),
