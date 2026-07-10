@@ -1,7 +1,8 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/storage/supabase_storage_helper.dart';
 import '../../domain/entities/gallery.dart';
 
 class GalleryRemoteDatasource {
@@ -21,9 +22,9 @@ class GalleryRemoteDatasource {
         title: map['title'] as String,
         dateTime: DateTime.parse(map['date_time'] as String),
         locationName: map['location_name'] as String?,
-        isHost: map['is_host'] as bool,
-        photoCount: (map['photo_count'] as num).toInt(),
-        canUpload: map['can_upload'] as bool,
+        isHost: map['is_host'] as bool? ?? false,
+        photoCount: (map['photo_count'] as num?)?.toInt() ?? 0,
+        canUpload: map['can_upload'] as bool? ?? false,
       );
     }).toList();
   }
@@ -39,7 +40,7 @@ class GalleryRemoteDatasource {
       return ActivityPhoto(
         id: map['id'] as String,
         uploaderId: map['uploader_id'] as String,
-        uploaderUsername: map['uploader_username'] as String,
+        uploaderUsername: map['uploader_username'] as String? ?? 'Du',
         publicUrl: map['public_url'] as String,
         caption: map['caption'] as String?,
         createdAt: DateTime.parse(map['created_at'] as String),
@@ -52,12 +53,12 @@ class GalleryRemoteDatasource {
       'can_upload_activity_photo',
       params: {'p_activity_id': activityId},
     );
-    return response as bool;
+    return response as bool? ?? false;
   }
 
   Future<void> uploadActivityPhoto({
     required String activityId,
-    required String filePath,
+    required XFile file,
     String? caption,
   }) async {
     final userId = _userId;
@@ -65,18 +66,16 @@ class GalleryRemoteDatasource {
       throw const AuthException('Nicht angemeldet');
     }
 
-    final file = File(filePath);
-    final extension = filePath.split('.').last.toLowerCase();
+    final extension = SupabaseStorageHelper.extensionFrom(file);
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final storagePath = '$activityId/$userId/$timestamp.$extension';
 
-    await _client.storage.from('activity-photos').upload(
-          storagePath,
-          file,
-        );
-
-    final publicUrl =
-        _client.storage.from('activity-photos').getPublicUrl(storagePath);
+    final helper = SupabaseStorageHelper(_client);
+    final publicUrl = await helper.uploadImage(
+      bucket: 'activity-photos',
+      path: storagePath,
+      file: file,
+    );
 
     await _client.rpc('register_activity_photo', params: {
       'p_activity_id': activityId,
@@ -84,5 +83,9 @@ class GalleryRemoteDatasource {
       'p_public_url': publicUrl,
       'p_caption': caption,
     });
+
+    if (kDebugMode) {
+      debugPrint('CircleVeya: Erinnerungsfoto hochgeladen ($storagePath)');
+    }
   }
 }

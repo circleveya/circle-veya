@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 /// CircleVeya Logo (+ optional Slogan).
+///
+/// Nutzt getrennte Assets:
+/// - [logoAsset] horizontale Wortmarke (Icon + Text)
+/// - [emblemAsset] nur das C-Emblem für enge Flächen
 class CircleVeyaBrand extends StatelessWidget {
   const CircleVeyaBrand({
     super.key,
@@ -14,6 +18,7 @@ class CircleVeyaBrand extends StatelessWidget {
   });
 
   static const logoAsset = 'assets/branding/circleveya_logo.png';
+  static const emblemAsset = 'assets/branding/circleveya_emblem.png';
 
   static const appName = 'CircleVeya';
   static const slogan = 'Find people. Create memories.';
@@ -26,12 +31,13 @@ class CircleVeyaBrand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final useCompact = compact ||
+    final useEmblem = compact ||
         emblemOnly ||
         (showSlogan == false &&
             MediaQuery.sizeOf(context).width < AppColors.webBreakpoint);
 
-    final content = useCompact ? _buildEmblemOnly() : _buildFullBrand(context);
+    final content =
+        useEmblem ? _buildEmblemOnly() : _buildFullBrand(context);
 
     if (onTap == null) return content;
 
@@ -60,9 +66,13 @@ class CircleVeyaBrand extends StatelessWidget {
           fit: BoxFit.contain,
           alignment: Alignment.centerLeft,
           filterQuality: FilterQuality.high,
+          errorBuilder: (_, _, _) => _FallbackWordmark(
+            height: logoHeight,
+            showEmblem: true,
+          ),
         ),
         if (showSlogan) ...[
-          SizedBox(height: logoHeight * 0.14),
+          SizedBox(height: logoHeight * 0.18),
           Text(
             slogan,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -77,24 +87,66 @@ class CircleVeyaBrand extends StatelessWidget {
     );
   }
 
-  /// Nur das Emblem (linker Teil des Logos) – für enge Viewports.
+  /// Eigenes Emblem-Asset – keine Clipping-Hacks mehr.
   Widget _buildEmblemOnly() {
-    final size = logoHeight + 4;
+    final size = logoHeight;
     return SizedBox(
       width: size,
       height: size,
-      child: ClipRect(
-        child: Align(
-          alignment: Alignment.centerLeft,
-          widthFactor: 0.34,
-          child: Image.asset(
-            logoAsset,
-            height: size,
-            fit: BoxFit.fitHeight,
-            filterQuality: FilterQuality.high,
-          ),
+      child: Image.asset(
+        emblemAsset,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, _, _) => Icon(
+          Icons.circle_outlined,
+          size: size * 0.85,
+          color: AppColors.seed,
         ),
       ),
+    );
+  }
+}
+
+class _FallbackWordmark extends StatelessWidget {
+  const _FallbackWordmark({
+    required this.height,
+    required this.showEmblem,
+  });
+
+  final double height;
+  final bool showEmblem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showEmblem) ...[
+          Image.asset(
+            CircleVeyaBrand.emblemAsset,
+            height: height,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, _, _) => Icon(
+              Icons.circle_outlined,
+              size: height * 0.9,
+              color: AppColors.seed,
+            ),
+          ),
+          SizedBox(width: height * 0.22),
+        ],
+        Text(
+          CircleVeyaBrand.appName,
+          style: TextStyle(
+            fontSize: height * 0.55,
+            fontWeight: FontWeight.w700,
+            color: AppColors.brandNavy,
+            height: 1,
+          ),
+        ),
+      ],
     );
   }
 }

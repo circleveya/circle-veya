@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Center(
                       child: CircleVeyaBrand(
                         showSlogan: true,
-                        logoHeight: 48,
+                        logoHeight: 56,
                       ),
                     ),
                     const SizedBox(height: 24),

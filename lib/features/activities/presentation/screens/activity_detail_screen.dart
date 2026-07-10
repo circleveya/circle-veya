@@ -93,7 +93,7 @@ class ActivityDetailScreen extends ConsumerWidget {
                 extra: activity?.title,
               ),
               icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Event-Galerie'),
+              label: const Text('Erinnerungen'),
             ),
           ],
           if (isHost) ...[

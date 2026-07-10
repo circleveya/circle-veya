@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/failures.dart';
@@ -44,13 +45,13 @@ class GalleryRepositoryImpl implements GalleryRepository {
   @override
   Future<void> uploadActivityPhoto({
     required String activityId,
-    required String filePath,
+    required XFile file,
     String? caption,
   }) async {
     try {
       await _datasource.uploadActivityPhoto(
         activityId: activityId,
-        filePath: filePath,
+        file: file,
         caption: caption,
       );
     } on StorageException catch (error) {

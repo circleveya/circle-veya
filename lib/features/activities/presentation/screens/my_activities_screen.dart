@@ -6,80 +6,114 @@ import '../providers/activity_provider.dart';
 import '../widgets/activity_card.dart';
 import '../../../../core/router/route_names.dart';
 import '../../domain/entities/activity.dart';
+import '../../domain/entities/activity_enums.dart';
 
 class MyActivitiesScreen extends ConsumerWidget {
   const MyActivitiesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hostedAsync = ref.watch(hostedActivitiesProvider);
+    final myAsync = ref.watch(myActivitiesProvider);
     final isDeleting = ref.watch(activityActionsProvider).isLoading;
 
-    return hostedAsync.when(
+    return myAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text(error.toString())),
       data: (activities) {
-        if (activities.isEmpty) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _GalleryCard(),
-              const SizedBox(height: 32),
-              const Center(
-                child: Text('Du hast noch keine Aktivitäten erstellt.'),
-              ),
-            ],
-          );
-        }
+        final created = activities
+            .where((a) => a.viewerAction == ViewerAction.host)
+            .toList();
+        final joined = activities
+            .where((a) => a.viewerAction == ViewerAction.joined)
+            .toList();
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(hostedActivitiesProvider);
-            await ref.read(hostedActivitiesProvider.future);
+            ref.invalidate(myActivitiesProvider);
+            await ref.read(myActivitiesProvider.future);
           },
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _GalleryCard(),
               const SizedBox(height: 16),
-              Text(
-                'Meine erstellten Aktivitäten',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              ...activities.map(
-                (activity) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ActivityCard(
+              if (created.isEmpty && joined.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text(
+                      'Noch keine eigenen Aktivitäten.\n'
+                      'Erstelle eine oder sage bei Freunden zu.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              else ...[
+                if (created.isNotEmpty) ...[
+                  Text(
+                    'Erstellt',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  ...created.map(
+                    (activity) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ActivityCard(
+                            activity: activity,
+                            compactImage: true,
+                            onTap: () => context.pushNamed(
+                              RouteNames.activityDetail,
+                              pathParameters: {'id': activity.id},
+                              extra: activity,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () =>
+                                      _confirmDelete(context, ref, activity),
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              label: const Text('Löschen'),
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                if (joined.isNotEmpty) ...[
+                  if (created.isNotEmpty) const SizedBox(height: 8),
+                  Text(
+                    'Zugesagt',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  ...joined.map(
+                    (activity) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ActivityCard(
                         activity: activity,
+                        compactImage: true,
                         onTap: () => context.pushNamed(
                           RouteNames.activityDetail,
                           pathParameters: {'id': activity.id},
                           extra: activity,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: isDeleting
-                              ? null
-                              : () => _confirmDelete(context, ref, activity),
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          label: const Text('Löschen'),
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                ],
+              ],
             ],
           ),
         );
@@ -143,9 +177,9 @@ class _GalleryCard extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.photo_library_outlined),
-        title: const Text('Event-Galerien'),
+        title: const Text('Erinnerungen'),
         subtitle: const Text(
-          'Fotos von vergangenen Events, an denen du teilgenommen hast',
+          'Fotos von abgeschlossenen Aktivitäten – nur für dich',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.pushNamed(RouteNames.gallery),

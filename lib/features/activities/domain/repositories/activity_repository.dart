@@ -13,6 +13,20 @@ abstract class ActivityRepository {
     int limit = discoverActivitiesPageSize,
   });
 
+  /// Aktivitäten von Freunden/Bekannten (als Host oder Teilnehmer).
+  Future<List<DiscoverableActivity>> getSocialFeed({
+    required double latitude,
+    required double longitude,
+    int offset = 0,
+    int limit = 50,
+  });
+
+  /// Eigene Aktivitäten: erstellt oder zugesagt (keine Interests).
+  Future<List<DiscoverableActivity>> getMyActivities({
+    int offset = 0,
+    int limit = 100,
+  });
+
   Future<List<DiscoverableActivity>> getHostedActivities();
 
   Future<void> createActivity(

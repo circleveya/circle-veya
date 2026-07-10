@@ -173,6 +173,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     });
 
     ref.invalidate(hostedActivitiesProvider);
+    ref.invalidate(myActivitiesProvider);
   }
 
   @override

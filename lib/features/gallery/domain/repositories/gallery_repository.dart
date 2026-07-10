@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 import '../entities/gallery.dart';
 
 abstract class GalleryRepository {
@@ -9,7 +11,7 @@ abstract class GalleryRepository {
 
   Future<void> uploadActivityPhoto({
     required String activityId,
-    required String filePath,
+    required XFile file,
     String? caption,
   });
 }

@@ -15,12 +15,16 @@ class ActivityCard extends StatelessWidget {
     this.onAction,
     this.onTap,
     this.isLoading = false,
+    this.compactImage = false,
   });
 
   final DiscoverableActivity activity;
   final VoidCallback? onAction;
   final VoidCallback? onTap;
   final bool isLoading;
+
+  /// Kompaktes Cover für den Social-Feed (deutlich kleiner).
+  final bool compactImage;
 
   bool get _showActionButton =>
       activity.viewerAction != ViewerAction.none &&
@@ -50,8 +54,8 @@ class ActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
+          SizedBox(
+            height: compactImage ? 72 : 160,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -60,7 +64,13 @@ class ActivityCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   placeholder: (_, _) => ColoredBox(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: CircularProgressIndicator()),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                   ),
                   errorWidget: (_, _, _) => ColoredBox(
                     color: theme.colorScheme.surfaceContainerHighest,
@@ -71,8 +81,8 @@ class ActivityCard extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  top: 10,
-                  left: 10,
+                  top: 8,
+                  left: 8,
                   child: ActivityStatusBadges(activity: activity),
                 ),
               ],

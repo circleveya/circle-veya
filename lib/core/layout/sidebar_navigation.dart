@@ -40,6 +40,7 @@ class SidebarNavigation extends ConsumerWidget {
               width: double.infinity,
               child: CircleVeyaBrand(
                 showSlogan: true,
+                logoHeight: 44,
                 onTap: () => onSelected(WebShellDestination.feed),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
@@ -40,14 +41,14 @@ class GalleryUploadController extends AutoDisposeAsyncNotifier<void> {
 
   Future<void> upload({
     required String activityId,
-    required String filePath,
+    required XFile file,
     String? caption,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(galleryRepositoryProvider).uploadActivityPhoto(
             activityId: activityId,
-            filePath: filePath,
+            file: file,
             caption: caption,
           ),
     );

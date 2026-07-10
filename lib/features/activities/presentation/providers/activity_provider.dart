@@ -167,6 +167,28 @@ final hostedActivitiesProvider =
   return ref.watch(activityRepositoryProvider).getHostedActivities();
 });
 
+/// Erstellt oder zugesagt – keine Interests, keine Discover-Events.
+final myActivitiesProvider =
+    FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {
+  return ref.watch(activityRepositoryProvider).getMyActivities();
+});
+
+/// Social Feed: nur User-Aktivitäten von Freunden & Bekannten (keine Eventfrog-Events).
+final socialFeedProvider =
+    FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {
+  ref.watch(locationCoordsKeyProvider);
+
+  final locationState = ref.watch(userLocationProvider);
+  final location = locationState.valueOrNull ?? UserLocation.mockFrauenfeld;
+  final repository = ref.watch(activityRepositoryProvider);
+
+  return repository.getSocialFeed(
+    latitude: location.latitude,
+    longitude: location.longitude,
+    limit: 50,
+  );
+});
+
 final activityInterestsProvider = FutureProvider.autoDispose
     .family<List<ActivityInterest>, String>((ref, activityId) async {
   return ref.watch(activityRepositoryProvider).getActivityInterests(activityId);
@@ -183,7 +205,9 @@ class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
     state = await AsyncValue.guard(() => _repo.joinDirect(activityId));
     if (!state.hasError) {
       ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
       ref.invalidate(hostedActivitiesProvider);
+      ref.invalidate(myActivitiesProvider);
     }
   }
 
@@ -194,6 +218,7 @@ class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
     );
     if (!state.hasError) {
       ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
     }
   }
 
@@ -203,7 +228,9 @@ class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
     if (!state.hasError) {
       ref.invalidate(activityInterestsProvider(activityId));
       ref.invalidate(hostedActivitiesProvider);
+      ref.invalidate(myActivitiesProvider);
       ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
     }
   }
 
@@ -220,7 +247,9 @@ class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
     state = await AsyncValue.guard(() => _repo.deleteActivity(activityId));
     if (!state.hasError) {
       ref.invalidate(hostedActivitiesProvider);
+      ref.invalidate(myActivitiesProvider);
       ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
     }
   }
 }
@@ -253,7 +282,9 @@ class CreateActivityController extends AutoDisposeAsyncNotifier<void> {
     });
     if (!state.hasError) {
       ref.invalidate(hostedActivitiesProvider);
+      ref.invalidate(myActivitiesProvider);
       ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
     }
   }
 }

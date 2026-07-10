@@ -133,7 +133,7 @@ class _ProfileBody extends ConsumerWidget {
               ),
               _PlaceholderTab(
                 icon: Icons.photo_library_outlined,
-                text: 'Event-Galerien – unter Erinnerungen.',
+                text: 'Erinnerungen – unter Erinnerungen in der Navigation.',
               ),
               _PlaceholderTab(
                 icon: Icons.star_outline,

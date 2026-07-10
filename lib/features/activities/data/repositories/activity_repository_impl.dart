@@ -45,6 +45,56 @@ class ActivityRepositoryImpl implements ActivityRepository {
   }
 
   @override
+  Future<List<DiscoverableActivity>> getSocialFeed({
+    required double latitude,
+    required double longitude,
+    int offset = 0,
+    int limit = 50,
+  }) async {
+    try {
+      return await _datasource.getSocialFeed(
+        latitude: latitude,
+        longitude: longitude,
+        offset: offset,
+        limit: limit,
+      );
+    } on PostgrestException catch (error) {
+      throw ActivityFailure(error.message);
+    } on AppAuthException catch (error) {
+      throw ActivityFailure(error.message);
+    } on FormatException catch (error) {
+      throw ActivityFailure(error.message);
+    } catch (error) {
+      throw ActivityFailure(
+        'Social Feed konnte nicht geladen werden: $error',
+      );
+    }
+  }
+
+  @override
+  Future<List<DiscoverableActivity>> getMyActivities({
+    int offset = 0,
+    int limit = 100,
+  }) async {
+    try {
+      return await _datasource.getMyActivities(
+        offset: offset,
+        limit: limit,
+      );
+    } on PostgrestException catch (error) {
+      throw ActivityFailure(error.message);
+    } on AppAuthException catch (error) {
+      throw ActivityFailure(error.message);
+    } on FormatException catch (error) {
+      throw ActivityFailure(error.message);
+    } catch (error) {
+      throw ActivityFailure(
+        'Meine Aktivitäten konnten nicht geladen werden: $error',
+      );
+    }
+  }
+
+  @override
   Future<List<DiscoverableActivity>> getHostedActivities() async {
     try {
       return await _datasource.getHostedActivities();

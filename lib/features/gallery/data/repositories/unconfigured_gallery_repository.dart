@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 import '../../domain/entities/gallery.dart';
 import '../../domain/repositories/gallery_repository.dart';
 
@@ -16,7 +18,7 @@ class UnconfiguredGalleryRepository implements GalleryRepository {
   @override
   Future<void> uploadActivityPhoto({
     required String activityId,
-    required String filePath,
+    required XFile file,
     String? caption,
   }) async {
     throw UnsupportedError('Supabase ist nicht konfiguriert.');

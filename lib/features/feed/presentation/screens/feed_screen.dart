@@ -9,84 +9,100 @@ import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/activity_card.dart';
 
-/// Social Feed – gruppiert nach sozialen Kreisen (Phase 1: Discover-Daten).
+/// Social Feed – nur Aktivitäten von Freunden & Bekannten.
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final feedState = ref.watch(discoverActivitiesProvider);
+    final feedAsync = ref.watch(socialFeedProvider);
     final actionsState = ref.watch(activityActionsProvider);
     final theme = Theme.of(context);
     final isActionLoading = actionsState.isLoading;
 
-    if (feedState.isInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (feedState.hasError) {
-      return Center(child: Text('${feedState.error}'));
-    }
-
-    final activities = feedState.activities;
-    final strangers =
-        activities.where((a) => a.visibleAs == VisibleAs.stranger).toList();
-    final acquaintances =
-        activities.where((a) => a.visibleAs == VisibleAs.acquaintance).toList();
-    final friends =
-        activities.where((a) => a.visibleAs == VisibleAs.friend).toList();
-    final sponsored = activities.where((a) => a.isFeatured).toList();
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-            child: Text(
-              'Feed',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+    return feedAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('$error', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => ref.invalidate(socialFeedProvider),
+                child: const Text('Erneut versuchen'),
               ),
-            ),
+            ],
           ),
         ),
-        SliverToBoxAdapter(child: _CategoryTabs()),
-        if (activities.isEmpty)
-          const SliverFillRemaining(
-            child: Center(child: Text('Noch keine Aktivitäten im Feed.')),
-          )
-        else ...[
-          _FeedSection(
-            title: 'Neue Leute',
-            activities: strangers,
-            isActionLoading: isActionLoading,
-            onTap: (a) => _openDetail(context, a),
-            onAction: (a) => _handleAction(context, ref, a),
-          ),
-          _FeedSection(
-            title: 'Bekannte',
-            activities: acquaintances,
-            isActionLoading: isActionLoading,
-            onTap: (a) => _openDetail(context, a),
-            onAction: (a) => _handleAction(context, ref, a),
-          ),
-          _FeedSection(
-            title: 'Freunde',
-            activities: friends,
-            isActionLoading: isActionLoading,
-            onTap: (a) => _openDetail(context, a),
-            onAction: (a) => _handleAction(context, ref, a),
-          ),
-          _FeedSection(
-            title: 'Gesponsert',
-            activities: sponsored,
-            isActionLoading: isActionLoading,
-            onTap: (a) => _openDetail(context, a),
-            onAction: (a) => _handleAction(context, ref, a),
-          ),
-        ],
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
-      ],
+      ),
+      data: (activities) {
+        final acquaintances = activities
+            .where((a) => a.visibleAs == VisibleAs.acquaintance)
+            .toList();
+        final friends =
+            activities.where((a) => a.visibleAs == VisibleAs.friend).toList();
+
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Feed',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Aktivitäten von Freunden und Bekannten',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (activities.isEmpty)
+              const SliverFillRemaining(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'Noch keine Aktivitäten von Freunden oder Bekannten.\n'
+                      'Füge Freunde hinzu oder warte auf neue Events in deinem Kreis.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              )
+            else ...[
+              _FeedSection(
+                title: 'Freunde',
+                activities: friends,
+                isActionLoading: isActionLoading,
+                onTap: (a) => _openDetail(context, a),
+                onAction: (a) => _handleAction(context, ref, a),
+              ),
+              _FeedSection(
+                title: 'Bekannte',
+                activities: acquaintances,
+                isActionLoading: isActionLoading,
+                onTap: (a) => _openDetail(context, a),
+                onAction: (a) => _handleAction(context, ref, a),
+              ),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        );
+      },
     );
   }
 
@@ -139,47 +155,8 @@ class FeedScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erfolgreich!')),
       );
-      ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
     }
-  }
-}
-
-class _CategoryTabs extends StatefulWidget {
-  @override
-  State<_CategoryTabs> createState() => _CategoryTabsState();
-}
-
-class _CategoryTabsState extends State<_CategoryTabs> {
-  int _selected = 0;
-  static const _tabs = [
-    'Alle',
-    'Outdoor',
-    'Sport',
-    'Kultur',
-    'Social',
-    'Gaming',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: _tabs.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final selected = index == _selected;
-          return FilterChip(
-            label: Text(_tabs[index]),
-            selected: selected,
-            onSelected: (_) => setState(() => _selected = index),
-            showCheckmark: false,
-          );
-        },
-      ),
-    );
   }
 }
 
@@ -200,7 +177,9 @@ class _FeedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (activities.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (activities.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: Padding(
@@ -220,6 +199,7 @@ class _FeedSection extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: ActivityCard(
                   activity: activity,
+                  compactImage: true,
                   isLoading: isActionLoading,
                   onTap: () => onTap(activity),
                   onAction: () => onAction(activity),

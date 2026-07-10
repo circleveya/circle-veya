@@ -79,6 +79,94 @@ class ActivityRemoteDatasource {
     }
   }
 
+  Future<List<DiscoverableActivity>> getSocialFeed({
+    required double latitude,
+    required double longitude,
+    int offset = 0,
+    int limit = 50,
+  }) async {
+    final from = offset < 0 ? 0 : offset;
+    final safeLimit = limit < 1 ? 50 : limit;
+
+    try {
+      final response = await _client
+          .rpc(
+            'social_feed_activities',
+            params: {
+              'p_lat': latitude,
+              'p_lng': longitude,
+              'p_limit': safeLimit,
+              'p_offset': from,
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response is! List) return const [];
+
+      final activities = <DiscoverableActivity>[];
+      for (final row in response) {
+        if (row is! Map<String, dynamic>) continue;
+        try {
+          activities.add(_mapDiscoverableActivity(row));
+        } catch (error, stackTrace) {
+          if (kDebugMode) {
+            debugPrint(
+              'CircleVeya: Social-Feed-Aktivität übersprungen '
+              '(id=${row['id']}): $error\n$stackTrace',
+            );
+          }
+        }
+      }
+      return activities;
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('CircleVeya: social_feed_activities Timeout – leere Liste');
+      }
+      return const [];
+    }
+  }
+
+  Future<List<DiscoverableActivity>> getMyActivities({
+    int offset = 0,
+    int limit = 100,
+  }) async {
+    final from = offset < 0 ? 0 : offset;
+    final safeLimit = limit < 1 ? 100 : limit;
+
+    try {
+      final response = await _client
+          .rpc(
+            'my_activities',
+            params: {
+              'p_limit': safeLimit,
+              'p_offset': from,
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response is! List) return const [];
+
+      final activities = <DiscoverableActivity>[];
+      for (final row in response) {
+        if (row is! Map<String, dynamic>) continue;
+        try {
+          activities.add(_mapDiscoverableActivity(row));
+        } catch (error, stackTrace) {
+          if (kDebugMode) {
+            debugPrint(
+              'CircleVeya: Meine-Aktivität übersprungen '
+              '(id=${row['id']}): $error\n$stackTrace',
+            );
+          }
+        }
+      }
+      return activities;
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('CircleVeya: my_activities Timeout – leere Liste');
+      }
+      return const [];
+    }
+  }
+
   Future<Map<String, dynamic>?> getCurrentProfile() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return null;

@@ -41,11 +41,27 @@ class UnconfiguredActivityRepository implements ActivityRepository {
       [];
 
   @override
+  Future<List<DiscoverableActivity>> getSocialFeed({
+    required double latitude,
+    required double longitude,
+    int offset = 0,
+    int limit = 50,
+  }) async =>
+      [];
+
+  @override
   Future<void> expressInterest(String activityId, {String? message}) async =>
       _throw();
 
   @override
   Future<List<ActivityInterest>> getActivityInterests(String activityId) async =>
+      [];
+
+  @override
+  Future<List<DiscoverableActivity>> getMyActivities({
+    int offset = 0,
+    int limit = 100,
+  }) async =>
       [];
 
   @override
