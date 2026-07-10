@@ -35,12 +35,12 @@ class SidebarNavigation extends ConsumerWidget {
         children: [
           const SizedBox(height: 24),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SizedBox(
-              width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
               child: CircleVeyaBrand(
                 showSlogan: true,
-                logoHeight: 44,
+                logoHeight: 48,
                 onTap: () => onSelected(WebShellDestination.feed),
               ),
             ),

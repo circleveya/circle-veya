@@ -1,12 +1,13 @@
 import 'activity.dart';
 
-/// Standard-Seitengröße für den Entdecken-Feed.
-const int discoverActivitiesPageSize = 10;
+/// Standard-Seitengröße für den Entdecken-Feed (genau 12 Events pro Seite).
+const int discoverActivitiesPageSize = 12;
 
 class DiscoverActivitiesState {
   const DiscoverActivitiesState({
     this.activities = const [],
     this.isLoading = false,
+    this.isLoadingMore = false,
     this.page = 1,
     this.totalCount = 0,
     this.error,
@@ -14,6 +15,7 @@ class DiscoverActivitiesState {
 
   final List<DiscoverableActivity> activities;
   final bool isLoading;
+  final bool isLoadingMore;
   final int page;
   final int totalCount;
   final Object? error;
@@ -34,6 +36,7 @@ class DiscoverActivitiesState {
   DiscoverActivitiesState copyWith({
     List<DiscoverableActivity>? activities,
     bool? isLoading,
+    bool? isLoadingMore,
     int? page,
     int? totalCount,
     Object? error,
@@ -42,6 +45,7 @@ class DiscoverActivitiesState {
     return DiscoverActivitiesState(
       activities: activities ?? this.activities,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       page: page ?? this.page,
       totalCount: totalCount ?? this.totalCount,
       error: clearError ? null : (error ?? this.error),

@@ -60,9 +60,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
-                      child: CircleVeyaBrand(
-                        showSlogan: true,
-                        logoHeight: 56,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: CircleVeyaBrand(
+                          showSlogan: true,
+                          logoHeight: 64,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

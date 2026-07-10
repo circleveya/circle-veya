@@ -73,14 +73,23 @@ class DiscoverActivitiesController
 
   Future<void> refresh() => goToPage(1);
 
-  Future<void> goToPage(int page) async {
+  /// Lädt die nächste Seite und hängt sie an (Infinite Scroll).
+  Future<void> loadMore() async {
+    if (_fetchInFlight || state.isLoading || state.isLoadingMore) return;
+    if (!state.hasNextPage) return;
+    await goToPage(state.page + 1, append: true);
+  }
+
+  Future<void> goToPage(int page, {bool append = false}) async {
     if (_fetchInFlight) return;
     if (page < 1) page = 1;
+    if (append && !state.hasNextPage) return;
     _fetchInFlight = true;
 
     state = state.copyWith(
-      isLoading: true,
-      page: page,
+      isLoading: !append,
+      isLoadingMore: append,
+      page: append ? state.page : page,
       clearError: true,
     );
 
@@ -106,9 +115,14 @@ class DiscoverActivitiesController
           : ((result.totalCount - 1) ~/ discoverActivitiesPageSize) + 1;
       final safePage = page > totalPages ? totalPages : page;
 
+      final activities = append
+          ? _mergeUnique(state.activities, filtered)
+          : filtered;
+
       state = DiscoverActivitiesState(
-        activities: filtered,
+        activities: activities,
         isLoading: false,
+        isLoadingMore: false,
         page: safePage,
         totalCount: result.totalCount,
       );
@@ -118,16 +132,40 @@ class DiscoverActivitiesController
         unawaited(_triggerBackgroundSync());
       }
     } catch (error) {
-      state = DiscoverActivitiesState(
-        activities: const [],
-        isLoading: false,
-        page: page,
-        totalCount: 0,
-        error: error,
-      );
+      if (append) {
+        state = state.copyWith(
+          isLoading: false,
+          isLoadingMore: false,
+          error: error,
+        );
+      } else {
+        state = DiscoverActivitiesState(
+          activities: const [],
+          isLoading: false,
+          isLoadingMore: false,
+          page: page,
+          totalCount: 0,
+          error: error,
+        );
+      }
     } finally {
       _fetchInFlight = false;
     }
+  }
+
+  List<DiscoverableActivity> _mergeUnique(
+    List<DiscoverableActivity> existing,
+    List<DiscoverableActivity> incoming,
+  ) {
+    if (incoming.isEmpty) return existing;
+    final seen = existing.map((a) => a.id).toSet();
+    final merged = List<DiscoverableActivity>.of(existing);
+    for (final activity in incoming) {
+      if (seen.add(activity.id)) {
+        merged.add(activity);
+      }
+    }
+    return merged;
   }
 
   UserLocation _resolveLocation() {

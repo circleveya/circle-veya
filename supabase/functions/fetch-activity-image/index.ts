@@ -53,7 +53,9 @@ Deno.serve(async (req: Request) => {
 
     const pexelsRes = await fetch(
       `https://api.pexels.com/v1/search?${params.toString()}`,
-      { headers: { Authorization: PEXELS_API_KEY } },
+      {
+        headers: { Authorization: Deno.env.get("PEXELS_API_KEY")! },
+      },
     );
 
     if (!pexelsRes.ok) {

@@ -90,11 +90,16 @@ serve(async (req) => {
     }
 
     const searchTerm = `${extractSearchTerm(record.title)} sport action`;
+    const params = new URLSearchParams({
+      query: searchTerm,
+      orientation: "landscape",
+      per_page: "5",
+    });
 
     const pexelsRes = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchTerm)}&orientation=landscape&per_page=5`,
+      `https://api.pexels.com/v1/search?${params.toString()}`,
       {
-        headers: { Authorization: PEXELS_API_KEY },
+        headers: { Authorization: Deno.env.get("PEXELS_API_KEY")! },
       },
     );
 

@@ -4,9 +4,12 @@ import '../theme/app_colors.dart';
 
 /// CircleVeya Logo (+ optional Slogan).
 ///
-/// Nutzt getrennte Assets:
+/// Assets:
 /// - [logoAsset] horizontale Wortmarke (Icon + Text)
 /// - [emblemAsset] nur das C-Emblem für enge Flächen
+///
+/// Skalierung immer über Höhe + [BoxFit.contain], nie feste Breite,
+/// damit das Logo nicht gestaucht oder unscharf wirkt.
 class CircleVeyaBrand extends StatelessWidget {
   const CircleVeyaBrand({
     super.key,
@@ -19,6 +22,9 @@ class CircleVeyaBrand extends StatelessWidget {
 
   static const logoAsset = 'assets/branding/circleveya_logo.png';
   static const emblemAsset = 'assets/branding/circleveya_emblem.png';
+
+  /// Ungefähres Seitenverhältnis der Wortmarke (Breite / Höhe).
+  static const logoAspectRatio = 887 / 230;
 
   static const appName = 'CircleVeya';
   static const slogan = 'Find people. Create memories.';
@@ -48,7 +54,7 @@ class CircleVeyaBrand extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         hoverColor: AppColors.seed.withValues(alpha: 0.06),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: content,
         ),
       ),
@@ -56,23 +62,36 @@ class CircleVeyaBrand extends StatelessWidget {
   }
 
   Widget _buildFullBrand(BuildContext context) {
+    final naturalWidth = logoHeight * logoAspectRatio;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(
-          logoAsset,
-          height: logoHeight,
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
-          filterQuality: FilterQuality.high,
-          errorBuilder: (_, _, _) => _FallbackWordmark(
+        // Genug horizontaler Platz – Höhe steuert die Skalierung.
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: logoHeight,
+            maxWidth: naturalWidth,
+          ),
+          child: SizedBox(
             height: logoHeight,
-            showEmblem: true,
+            width: naturalWidth,
+            child: Image.asset(
+              logoAsset,
+              fit: BoxFit.contain,
+              alignment: Alignment.centerLeft,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+              errorBuilder: (_, _, _) => _FallbackWordmark(
+                height: logoHeight,
+                showEmblem: true,
+              ),
+            ),
           ),
         ),
         if (showSlogan) ...[
-          SizedBox(height: logoHeight * 0.18),
+          SizedBox(height: logoHeight * 0.16),
           Text(
             slogan,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -87,7 +106,7 @@ class CircleVeyaBrand extends StatelessWidget {
     );
   }
 
-  /// Eigenes Emblem-Asset – keine Clipping-Hacks mehr.
+  /// Eigenes Emblem-Asset – quadratisch, BoxFit.contain.
   Widget _buildEmblemOnly() {
     final size = logoHeight;
     return SizedBox(
@@ -95,10 +114,9 @@ class CircleVeyaBrand extends StatelessWidget {
       height: size,
       child: Image.asset(
         emblemAsset,
-        width: size,
-        height: size,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
+        isAntiAlias: true,
         errorBuilder: (_, _, _) => Icon(
           Icons.circle_outlined,
           size: size * 0.85,
@@ -124,15 +142,19 @@ class _FallbackWordmark extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (showEmblem) ...[
-          Image.asset(
-            CircleVeyaBrand.emblemAsset,
+          SizedBox(
+            width: height,
             height: height,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (_, _, _) => Icon(
-              Icons.circle_outlined,
-              size: height * 0.9,
-              color: AppColors.seed,
+            child: Image.asset(
+              CircleVeyaBrand.emblemAsset,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+              errorBuilder: (_, _, _) => Icon(
+                Icons.circle_outlined,
+                size: height * 0.9,
+                color: AppColors.seed,
+              ),
             ),
           ),
           SizedBox(width: height * 0.22),

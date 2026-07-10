@@ -18,7 +18,6 @@ import '../../domain/discover_feed_item.dart';
 import '../widgets/discover_activity_grid.dart';
 import '../widgets/discover_hero.dart';
 import '../widgets/discover_occurrence_picker.dart';
-import '../widgets/discover_page_navigation.dart';
 
 class DiscoverFeedScreen extends ConsumerStatefulWidget {
   const DiscoverFeedScreen({super.key});
@@ -32,10 +31,28 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
 
+  static const double _loadMoreThreshold = 320;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels < position.maxScrollExtent - _loadMoreThreshold) {
+      return;
+    }
+    ref.read(discoverActivitiesProvider.notifier).loadMore();
   }
 
   @override
@@ -170,12 +187,7 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
             onTap: (item) => _openFeedItem(context, item),
             onAction: (activity) => _handleAction(context, ref, activity),
           ),
-          DiscoverPageNavigation(
-            state: feedState,
-            onPageSelected: (page) {
-              ref.read(discoverActivitiesProvider.notifier).goToPage(page);
-            },
-          ),
+          _InfiniteScrollFooter(state: feedState),
         ],
       ),
     );
@@ -259,6 +271,41 @@ String _friendlyErrorMessage(Object error) {
     return 'Standort-Datenbank nicht vollständig eingerichtet (PostGIS).';
   }
   return 'Aktivitäten konnten nicht geladen werden. Standort prüfen und erneut versuchen.';
+}
+
+class _InfiniteScrollFooter extends StatelessWidget {
+  const _InfiniteScrollFooter({required this.state});
+
+  final DiscoverActivitiesState state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Center(
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+
+    if (!state.hasNextPage && state.activities.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
+        child: Text(
+          'Alle ${state.activities.length} Events geladen',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      );
+    }
+
+    return const SizedBox(height: 24);
+  }
 }
 
 class _EmptyState extends StatelessWidget {

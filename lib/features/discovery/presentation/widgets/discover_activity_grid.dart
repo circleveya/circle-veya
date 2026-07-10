@@ -4,7 +4,7 @@ import '../../../activities/domain/entities/activity.dart';
 import '../../domain/discover_feed_item.dart';
 import 'discover_grid_card.dart';
 
-/// Responsives Aktivitäten-Grid für Entdecken.
+/// Responsives 2-/3-Spalten-Grid für Entdecken (Quiet Luxury).
 class DiscoverActivityGrid extends StatelessWidget {
   const DiscoverActivityGrid({
     super.key,
@@ -19,26 +19,24 @@ class DiscoverActivityGrid extends StatelessWidget {
   final void Function(DiscoverableActivity activity)? onAction;
   final bool isActionLoading;
 
+  static const double _spacing = 16;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final crossAxisCount = width >= 900
-            ? 3
-            : width >= 560
-                ? 2
-                : 1;
+        // Immer 2 oder 3 Spalten – saubere Optik bei 12 Events pro Seite.
+        final crossAxisCount = constraints.maxWidth >= 900 ? 3 : 2;
 
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: crossAxisCount == 1 ? 1.35 : 0.78,
+            mainAxisSpacing: _spacing,
+            crossAxisSpacing: _spacing,
+            childAspectRatio: crossAxisCount == 3 ? 0.78 : 0.82,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {
