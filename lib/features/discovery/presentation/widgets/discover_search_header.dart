@@ -9,33 +9,18 @@ import '../../../activities/presentation/widgets/location_filter_bar.dart';
 
 /// Entdecken-Hero: Gradient-Banner + Event-Suche + Filter-Sheet.
 /// Nur auf der Discover-Page – andere Tabs bleiben unberührt.
-class DiscoverSearchHeader extends ConsumerStatefulWidget {
+class DiscoverSearchHeader extends ConsumerWidget {
   const DiscoverSearchHeader({
     super.key,
+    required this.controller,
     this.onSearch,
   });
 
+  /// Vom Parent gehalten – bleibt beim Wechsel Ergebnis/Leerzustand erhalten.
+  final TextEditingController controller;
   final ValueChanged<String>? onSearch;
 
-  @override
-  ConsumerState<DiscoverSearchHeader> createState() =>
-      _DiscoverSearchHeaderState();
-}
-
-class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _emitSearch(String value) {
-    widget.onSearch?.call(value.trim());
-  }
-
-  Future<void> _openFilters() async {
+  Future<void> _openFilters(BuildContext context, WidgetRef ref) async {
     final initial = ref.read(discoverFiltersProvider);
 
     await showModalBottomSheet<void>(
@@ -58,7 +43,7 @@ class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final hasActive = ref.watch(discoverFiltersProvider).hasActiveFilters;
 
@@ -98,9 +83,9 @@ class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader> {
           ),
           const SizedBox(height: 22),
           TextField(
-            controller: _controller,
-            onChanged: _emitSearch,
-            onSubmitted: _emitSearch,
+            controller: controller,
+            onChanged: onSearch,
+            onSubmitted: onSearch,
             style: const TextStyle(color: Colors.black87),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
@@ -114,31 +99,53 @@ class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader> {
                 Icons.search,
                 color: Colors.black.withValues(alpha: 0.35),
               ),
-              suffixIcon: IconButton(
-                tooltip: 'Filter',
-                onPressed: _openFilters,
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      Icons.tune_rounded,
-                      color: AppColors.brandNavy.withValues(alpha: 0.7),
-                    ),
-                    if (hasActive)
-                      Positioned(
-                        right: -1,
-                        top: -1,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.seed,
-                            shape: BoxShape.circle,
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (value.text.isNotEmpty)
+                        IconButton(
+                          tooltip: 'Leeren',
+                          onPressed: () {
+                            controller.clear();
+                            onSearch?.call('');
+                          },
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.black.withValues(alpha: 0.35),
                           ),
                         ),
+                      IconButton(
+                        tooltip: 'Filter',
+                        onPressed: () => _openFilters(context, ref),
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              Icons.tune_rounded,
+                              color: AppColors.brandNavy.withValues(alpha: 0.7),
+                            ),
+                            if (hasActive)
+                              Positioned(
+                                right: -1,
+                                top: -1,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.seed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(999),

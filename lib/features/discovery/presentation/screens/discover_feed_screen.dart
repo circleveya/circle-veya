@@ -28,10 +28,12 @@ class DiscoverFeedScreen extends ConsumerStatefulWidget {
 class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -68,10 +70,15 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
     required ActivityDiscoverFilters filters,
     required bool isActionLoading,
   }) {
+    final header = DiscoverSearchHeader(
+      controller: _searchController,
+      onSearch: _onSearch,
+    );
+
     if (feedState.isInitialLoading) {
       return ListView(
         children: [
-          DiscoverSearchHeader(onSearch: _onSearch),
+          header,
           const SizedBox(
             height: 240,
             child: Center(child: CircularProgressIndicator()),
@@ -83,56 +90,27 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
     if (feedState.hasError) {
       return ListView(
         children: [
-          DiscoverSearchHeader(onSearch: _onSearch),
-          SizedBox(
-            height: 240,
-            child: _ErrorState(
-              message: _friendlyErrorMessage(feedState.error!),
-              onRetry: () {
-                ref.invalidate(userLocationProvider);
-                ref.invalidate(discoverActivitiesProvider);
-              },
-            ),
+          header,
+          _ErrorState(
+            message: _friendlyErrorMessage(feedState.error!),
+            onRetry: () {
+              ref.invalidate(userLocationProvider);
+              ref.invalidate(discoverActivitiesProvider);
+            },
           ),
         ],
       );
     }
 
-    final filtered = _searchQuery.isEmpty
+    final query = _searchQuery.trim().toLowerCase();
+    final filtered = query.isEmpty
         ? feedState.activities
         : feedState.activities.where((a) {
-            final q = _searchQuery.toLowerCase();
-            return a.title.toLowerCase().contains(q) ||
-                (a.locationName?.toLowerCase().contains(q) ?? false) ||
-                (a.description?.toLowerCase().contains(q) ?? false) ||
-                (a.sourceEventTitle?.toLowerCase().contains(q) ?? false);
+            return a.title.toLowerCase().contains(query) ||
+                (a.locationName?.toLowerCase().contains(query) ?? false) ||
+                (a.description?.toLowerCase().contains(query) ?? false) ||
+                (a.sourceEventTitle?.toLowerCase().contains(query) ?? false);
           }).toList();
-
-    if (filtered.isEmpty) {
-      return ListView(
-        controller: _scrollController,
-        children: [
-          DiscoverSearchHeader(onSearch: _onSearch),
-          SizedBox(
-            height: 200,
-            child: _EmptyState(
-              hasFilters:
-                  filters.hasActiveFilters || _searchQuery.isNotEmpty,
-              onRefresh: () =>
-                  ref.read(discoverActivitiesProvider.notifier).refresh(),
-              onClearFilters: filters.hasActiveFilters
-                  ? () {
-                      ref.read(discoverFiltersProvider.notifier).state =
-                          const ActivityDiscoverFilters.empty();
-                      setState(() => _searchQuery = '');
-                      ref.invalidate(discoverActivitiesProvider);
-                    }
-                  : null,
-            ),
-          ),
-        ],
-      );
-    }
 
     final grouped = DiscoverActivityGrouper.group(filtered);
     final featured = grouped.where((item) => item.primary.isFeatured).toList();
@@ -145,38 +123,57 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
       child: ListView(
         controller: _scrollController,
         children: [
-          DiscoverSearchHeader(onSearch: _onSearch),
-          if (featured.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              child: Text(
-                'Featured Partner',
-                style: Theme.of(context).textTheme.titleMedium,
+          header,
+          if (filtered.isEmpty)
+            _EmptyState(
+              hasFilters: filters.hasActiveFilters || query.isNotEmpty,
+              onRefresh: () =>
+                  ref.read(discoverActivitiesProvider.notifier).refresh(),
+              onClearFilters: (filters.hasActiveFilters || query.isNotEmpty)
+                  ? () {
+                      if (filters.hasActiveFilters) {
+                        ref.read(discoverFiltersProvider.notifier).state =
+                            const ActivityDiscoverFilters.empty();
+                      }
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                      ref.invalidate(discoverActivitiesProvider);
+                    }
+                  : null,
+            )
+          else ...[
+            if (featured.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Text(
+                  'Featured Partner',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            DiscoverActivityGrid(
+              items: gridItems,
+              isActionLoading: isActionLoading,
+              onTap: (item) => _openFeedItem(context, item),
+              onAction: (activity) => _handleAction(context, ref, activity),
+            ),
+            DiscoverPageNavigation(
+              state: feedState,
+              onPrevious: () => _goToPageAndScrollTop(
+                () =>
+                    ref.read(discoverActivitiesProvider.notifier).previousPage(),
+              ),
+              onNext: () => _goToPageAndScrollTop(
+                () => ref.read(discoverActivitiesProvider.notifier).nextPage(),
               ),
             ),
           ],
-          DiscoverActivityGrid(
-            items: gridItems,
-            isActionLoading: isActionLoading,
-            onTap: (item) => _openFeedItem(context, item),
-            onAction: (activity) => _handleAction(context, ref, activity),
-          ),
-          DiscoverPageNavigation(
-            state: feedState,
-            onPrevious: () => _goToPageAndScrollTop(
-              () => ref.read(discoverActivitiesProvider.notifier).previousPage(),
-            ),
-            onNext: () => _goToPageAndScrollTop(
-              () => ref.read(discoverActivitiesProvider.notifier).nextPage(),
-            ),
-          ),
         ],
       ),
     );
   }
 
   void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim());
+    setState(() => _searchQuery = query);
   }
 
   Future<void> _openFeedItem(BuildContext context, DiscoverFeedItem item) async {
@@ -268,37 +265,40 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              hasFilters ? Icons.filter_alt_off_outlined : Icons.explore_outlined,
-              size: 64,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              hasFilters
-                  ? 'Keine Aktivitäten für diese Suche'
-                  : 'Keine Aktivitäten in deiner Nähe',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            if (onClearFilters != null)
-              FilledButton(
-                onPressed: onClearFilters,
-                child: const Text('Filter zurücksetzen'),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 40, 32, 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasFilters ? Icons.filter_alt_off_outlined : Icons.explore_outlined,
+            size: 56,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            hasFilters
+                ? 'Keine Aktivitäten für diese Suche'
+                : 'Keine Aktivitäten in deiner Nähe',
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          if (onClearFilters != null) ...[
+            FilledButton(
+              onPressed: onClearFilters,
+              child: Text(
+                hasFilters ? 'Suche / Filter zurücksetzen' : 'Zurücksetzen',
               ),
-            OutlinedButton.icon(
-              onPressed: onRefresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Aktualisieren'),
             ),
+            const SizedBox(height: 12),
           ],
-        ),
+          OutlinedButton.icon(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Aktualisieren'),
+          ),
+        ],
       ),
     );
   }
@@ -312,22 +312,24 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.location_off_outlined, size: 64),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Erneut versuchen'),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 40, 32, 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.location_off_outlined,
+            size: 56,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          FilledButton(
+            onPressed: onRetry,
+            child: const Text('Erneut versuchen'),
+          ),
+        ],
       ),
     );
   }
