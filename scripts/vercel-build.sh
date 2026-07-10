@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Vercel Build-Skript für Flutter Web
-# Vercel-Builder laufen oft als root – Flutter blockiert das. Daher: SDK im HOME
-# installieren und alle Flutter-Befehle als dedizierter Build-User ausführen.
+# Vercel läuft oft als root – Flutter darf das nicht. Build daher als User "vercel".
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 BUILD_USER="${BUILD_USER:-vercel}"
-FLUTTER_HOME="${FLUTTER_HOME:-${HOME}/.flutter-sdk}"
-PUB_CACHE="${PUB_CACHE:-${HOME}/.pub-cache}"
+FLUTTER_HOME="${FLUTTER_HOME:-/tmp/flutter-sdk}"
+PUB_CACHE="${PUB_CACHE:-/tmp/pub-cache}"
 DART_DEFINE_FILE="${PROJECT_DIR}/dart_define.json"
+WORK_DIR=""
 
 log() {
   echo "==> $*"
@@ -31,7 +31,7 @@ ensure_build_user() {
   elif command -v adduser &>/dev/null; then
     adduser --disabled-password --gecos "Vercel Flutter Build" "$BUILD_USER"
   else
-    log "WARNUNG: Kein useradd/adduser – Flutter wird direkt versucht"
+    log "WARNUNG: Kein useradd/adduser – versuche Build als root"
   fi
 }
 
@@ -47,21 +47,12 @@ install_flutter_sdk() {
   git config --global --add safe.directory "$PROJECT_DIR" || true
 }
 
-prepare_permissions() {
-  chmod -R u+rwX "$FLUTTER_HOME" "$PUB_CACHE" 2>/dev/null || true
-
-  if [ "$(id -u)" -eq 0 ] && id "$BUILD_USER" &>/dev/null; then
-    chown -R "$BUILD_USER:$BUILD_USER" "$FLUTTER_HOME" "$PUB_CACHE" "$PROJECT_DIR"
-  fi
-}
-
 write_dart_define() {
   if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
     echo "FEHLER: SUPABASE_URL und SUPABASE_ANON_KEY müssen in Vercel → Settings → Environment Variables gesetzt sein."
     exit 1
   fi
 
-  # Leerzeichen/Zeilenumbrüche entfernen (häufige Copy-Paste-Fehler in Vercel)
   SUPABASE_URL="$(printf '%s' "${SUPABASE_URL}" | tr -d '[:space:]')"
   SUPABASE_ANON_KEY="$(printf '%s' "${SUPABASE_ANON_KEY}" | tr -d '[:space:]')"
 
@@ -72,7 +63,7 @@ write_dart_define() {
   fi
 
   if [[ "$SUPABASE_URL" != *".supabase.co"* ]]; then
-    echo "FEHLER: SUPABASE_URL muss auf .supabase.co enden (z. B. https://DEIN-PROJECT.supabase.co)."
+    echo "FEHLER: SUPABASE_URL muss auf .supabase.co enden."
     exit 1
   fi
 
@@ -86,8 +77,31 @@ write_dart_define() {
 EOF
 }
 
+# Vercel-Mount /vercel/path0 lässt oft kein chown zu → in Home-Verzeichnis kopieren
+prepare_workdir() {
+  if [ "$(id -u)" -ne 0 ] || ! id "$BUILD_USER" &>/dev/null; then
+    WORK_DIR="$PROJECT_DIR"
+    return 0
+  fi
+
+  local build_user_home
+  build_user_home="$(getent passwd "$BUILD_USER" | cut -d: -f6)"
+  if [ -z "$build_user_home" ]; then
+    build_user_home="/home/$BUILD_USER"
+  fi
+
+  WORK_DIR="$build_user_home/circle-build"
+  log "Projekt nach $WORK_DIR kopieren (Vercel-Mount ist für Build-User oft nicht beschreibbar)..."
+  rm -rf "$WORK_DIR"
+  mkdir -p "$WORK_DIR"
+  # Inhalt kopieren, nicht den Mount-Punkt selbst chownen
+  cp -a "$PROJECT_DIR"/. "$WORK_DIR"/
+  chown -R "$BUILD_USER:$BUILD_USER" "$FLUTTER_HOME" "$PUB_CACHE" "$WORK_DIR"
+}
+
 run_flutter() {
   local flutter_path="$FLUTTER_HOME/bin/flutter"
+  local target_dir="${WORK_DIR:-$PROJECT_DIR}"
   local build_user_home
 
   if [ "$(id -u)" -eq 0 ] && id "$BUILD_USER" &>/dev/null; then
@@ -95,6 +109,8 @@ run_flutter() {
     if [ -z "$build_user_home" ]; then
       build_user_home="/home/$BUILD_USER"
     fi
+
+    local cmd="cd '$target_dir' && '$flutter_path' $*"
 
     if command -v runuser &>/dev/null; then
       runuser -u "$BUILD_USER" -- env \
@@ -104,7 +120,7 @@ run_flutter() {
         FLUTTER_HOME="$FLUTTER_HOME" \
         CI=true \
         FLUTTER_SUPPRESS_ANALYTICS=true \
-        bash -c "cd '$PROJECT_DIR' && '$flutter_path' $*"
+        bash -lc "$cmd"
       return
     fi
 
@@ -115,8 +131,7 @@ run_flutter() {
       export FLUTTER_HOME='$FLUTTER_HOME'
       export CI=true
       export FLUTTER_SUPPRESS_ANALYTICS=true
-      cd '$PROJECT_DIR'
-      '$flutter_path' $*
+      $cmd
     "
     return
   fi
@@ -126,8 +141,25 @@ run_flutter() {
   export FLUTTER_HOME
   export CI=true
   export FLUTTER_SUPPRESS_ANALYTICS=true
-  cd "$PROJECT_DIR"
+  cd "$target_dir"
   "$flutter_path" "$@"
+}
+
+copy_build_output() {
+  local target_dir="${WORK_DIR:-$PROJECT_DIR}"
+  if [ "$target_dir" = "$PROJECT_DIR" ]; then
+    return 0
+  fi
+
+  if [ ! -d "$target_dir/build/web" ]; then
+    echo "FEHLER: build/web wurde nicht erzeugt in $target_dir"
+    exit 1
+  fi
+
+  log "Build-Output zurück nach $PROJECT_DIR/build/web kopieren..."
+  rm -rf "$PROJECT_DIR/build/web"
+  mkdir -p "$PROJECT_DIR/build"
+  cp -a "$target_dir/build/web" "$PROJECT_DIR/build/web"
 }
 
 main() {
@@ -137,13 +169,16 @@ main() {
   ensure_build_user
   install_flutter_sdk
   write_dart_define
-  prepare_permissions
+  prepare_workdir
 
+  log "Flutter Web Build..."
   run_flutter --version
   run_flutter config --enable-web --no-analytics
   run_flutter precache --web
   run_flutter pub get
   run_flutter build web --release --dart-define-from-file=dart_define.json
+
+  copy_build_output
 
   if [ ! -d "$PROJECT_DIR/build/web" ]; then
     echo "FEHLER: build/web wurde nicht erzeugt."
