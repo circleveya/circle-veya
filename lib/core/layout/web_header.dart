@@ -11,6 +11,7 @@ import '../router/route_names.dart';
 import '../search/global_search_provider.dart';
 import '../search/search_models.dart';
 import '../theme/app_colors.dart';
+import 'shell_destination_provider.dart';
 import 'web_shell_destination.dart';
 
 /// Globaler Web-Header mit kontextsensitiver Suche, Benachrichtigungen und Profil.
@@ -52,6 +53,10 @@ class WebHeader extends ConsumerWidget {
       );
     }
 
+    // Entdecken hat eigenes Such-/Filter-Layout im Body – globaler Header bleibt clean.
+    final destination = ref.watch(shellDestinationProvider);
+    final isDiscover = destination == WebShellDestination.discover;
+
     return Container(
       height: 72,
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
@@ -65,7 +70,21 @@ class WebHeader extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Expanded(child: _ContextualSearchField()),
+          Expanded(
+            child: isDiscover
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Entdecken',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.brandNavy,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  )
+                : const _ContextualSearchField(),
+          ),
           const SizedBox(width: 16),
           _HeaderIconButton(
             icon: Icons.notifications_outlined,

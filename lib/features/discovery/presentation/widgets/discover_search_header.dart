@@ -7,8 +7,9 @@ import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_quick_filters_bar.dart';
 import '../../../activities/presentation/widgets/location_filter_bar.dart';
 
-/// Entdecken-Header: Suche + dezenter Filter-Toggle mit Animation.
-class DiscoverSearchHeader extends ConsumerStatefulWidget {
+/// Nur für Entdecken: Suchfeld + Filter-Button (öffnet ModalBottomSheet).
+/// Andere Shell-Tabs nutzen weiterhin den globalen [WebHeader].
+class DiscoverSearchHeader extends ConsumerWidget {
   const DiscoverSearchHeader({
     super.key,
     this.onSearch,
@@ -16,122 +17,80 @@ class DiscoverSearchHeader extends ConsumerStatefulWidget {
 
   final ValueChanged<String>? onSearch;
 
-  @override
-  ConsumerState<DiscoverSearchHeader> createState() =>
-      _DiscoverSearchHeaderState();
-}
+  Future<void> _openFilters(BuildContext context, WidgetRef ref) async {
+    final initial = ref.read(discoverFiltersProvider);
 
-class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _expandAnimation;
-  bool _filtersOpen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return _DiscoverFiltersSheet(
+          initialFilters: initial,
+          onApply: (next) {
+            ref.read(discoverFiltersProvider.notifier).state = next;
+          },
+        );
+      },
     );
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _toggleFilters() {
-    setState(() => _filtersOpen = !_filtersOpen);
-    if (_filtersOpen) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final filters = ref.watch(discoverFiltersProvider);
-    final hasActive = filters.hasActiveFilters;
+    final hasActive = ref.watch(discoverFiltersProvider).hasActiveFilters;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: TextField(
-                  onSubmitted: widget.onSearch,
-                  decoration: InputDecoration(
-                    hintText: 'Was möchtest du heute erleben?',
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: AppColors.brandNavy.withValues(alpha: 0.5),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.65),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.65),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(
-                        color: AppColors.seed.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
+          Expanded(
+            child: TextField(
+              onSubmitted: onSearch,
+              decoration: InputDecoration(
+                hintText: 'Was möchtest du heute erleben?',
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.brandNavy.withValues(alpha: 0.5),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.65),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              _FilterToggleButton(
-                isOpen: _filtersOpen,
-                hasActiveFilters: hasActive,
-                onPressed: _toggleFilters,
-              ),
-            ],
-          ),
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            axis: Axis.vertical,
-            alignment: Alignment.topCenter,
-            child: FadeTransition(
-              opacity: _expandAnimation,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: _FilterPanel(
-                  filters: filters,
-                  onFiltersChanged: (next) {
-                    ref.read(discoverFiltersProvider.notifier).state = next;
-                  },
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.65),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: AppColors.seed.withValues(alpha: 0.5),
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
                 ),
               ),
             ),
+          ),
+          const SizedBox(width: 10),
+          _FilterButton(
+            hasActiveFilters: hasActive,
+            onPressed: () => _openFilters(context, ref),
           ),
         ],
       ),
@@ -139,14 +98,12 @@ class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader>
   }
 }
 
-class _FilterToggleButton extends StatelessWidget {
-  const _FilterToggleButton({
-    required this.isOpen,
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({
     required this.hasActiveFilters,
     required this.onPressed,
   });
 
-  final bool isOpen;
   final bool hasActiveFilters;
   final VoidCallback onPressed;
 
@@ -155,15 +112,11 @@ class _FilterToggleButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: isOpen
-          ? AppColors.brandNavy.withValues(alpha: 0.06)
-          : theme.colorScheme.surface,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: isOpen
-              ? AppColors.brandNavy.withValues(alpha: 0.18)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.65),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.65),
         ),
       ),
       child: InkWell(
@@ -217,56 +170,105 @@ class _FilterToggleButton extends StatelessWidget {
   }
 }
 
-class _FilterPanel extends StatelessWidget {
-  const _FilterPanel({
-    required this.filters,
-    required this.onFiltersChanged,
+/// Filter-Inhalt nur für Entdecken (Standort, Wann, Entfernung).
+class _DiscoverFiltersSheet extends StatefulWidget {
+  const _DiscoverFiltersSheet({
+    required this.initialFilters,
+    required this.onApply,
   });
 
-  final ActivityDiscoverFilters filters;
-  final ValueChanged<ActivityDiscoverFilters> onFiltersChanged;
+  final ActivityDiscoverFilters initialFilters;
+  final ValueChanged<ActivityDiscoverFilters> onApply;
+
+  @override
+  State<_DiscoverFiltersSheet> createState() => _DiscoverFiltersSheetState();
+}
+
+class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
+  late ActivityDiscoverFilters _filters;
+
+  @override
+  void initState() {
+    super.initState();
+    _filters = widget.initialFilters;
+  }
+
+  void _update(ActivityDiscoverFilters next) {
+    setState(() => _filters = next);
+    widget.onApply(next);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Standort ohne äußeres Padding-Duplikat
-          LocationFilterBar(
-            filters: filters,
-            onFiltersChanged: onFiltersChanged,
-            embedded: true,
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.82,
           ),
-          Divider(
-            height: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-          // Wann + Entfernung – ohne laute Elevation
-          DiscoverQuickFiltersBar(
-            filters: filters,
-            onFiltersChanged: onFiltersChanged,
-            compact: true,
-          ),
-          if (filters.hasActiveFilters)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () =>
-                    onFiltersChanged(const ActivityDiscoverFilters.empty()),
-                child: const Text('Filter zurücksetzen'),
-              ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Filter',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.brandNavy,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_filters.hasActiveFilters)
+                        TextButton(
+                          onPressed: () =>
+                              _update(const ActivityDiscoverFilters.empty()),
+                          child: const Text('Zurücksetzen'),
+                        ),
+                    ],
+                  ),
+                ),
+                LocationFilterBar(
+                  filters: _filters,
+                  onFiltersChanged: _update,
+                  embedded: true,
+                ),
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+                DiscoverQuickFiltersBar(
+                  filters: _filters,
+                  onFiltersChanged: _update,
+                  compact: true,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brandNavy,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('Fertig'),
+                  ),
+                ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
