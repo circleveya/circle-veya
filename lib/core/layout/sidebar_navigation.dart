@@ -34,18 +34,12 @@ class SidebarNavigation extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: CircleVeyaBrand.minLogoExtent,
-                maxHeight: 44,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: CircleVeyaBrand(
-                  logoHeight: 40,
-                  onTap: () => onSelected(WebShellDestination.feed),
-                ),
+            padding: const EdgeInsets.fromLTRB(16, 22, 16, 18),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: CircleVeyaBrand(
+                logoHeight: 52,
+                onTap: () => onSelected(WebShellDestination.feed),
               ),
             ),
           ),
