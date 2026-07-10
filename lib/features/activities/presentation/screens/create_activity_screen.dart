@@ -1,14 +1,17 @@
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/location/location_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_filters.dart';
 import '../providers/activity_provider.dart';
+import '../providers/event_selection_provider.dart';
 import '../widgets/visibility_selector.dart';
-import '../../../../core/location/location_provider.dart';
 
 class CreateActivityScreen extends ConsumerStatefulWidget {
   const CreateActivityScreen({super.key});
@@ -29,6 +32,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
   XFile? _coverImage;
+  String? _prefilledImageUrl;
+  String? _sourceEventId;
+  String? _sourceEventTitle;
   LocationType _locationType = LocationType.outdoor;
   WeatherCondition _weatherCondition = WeatherCondition.sun;
   bool _visibleToFriends = true;
@@ -36,6 +42,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   bool _visibleToStrangers = false;
   bool _isSponsored = false;
   double _radiusKm = 20;
+  bool _appliedSelection = false;
 
   @override
   void dispose() {
@@ -44,6 +51,36 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     _maxParticipantsController.dispose();
     _locationNameController.dispose();
     super.dispose();
+  }
+
+  void _applyEventSelection(EventSelection selection) {
+    _titleController.text = selection.title;
+    if (selection.locationName != null) {
+      _locationNameController.text = selection.locationName!;
+    }
+    final dateTime = selection.dateTime;
+    setState(() {
+      _sourceEventId = selection.sourceEventId;
+      _sourceEventTitle = selection.title;
+      _prefilledImageUrl = selection.imageUrl;
+      _coverImage = null;
+      if (dateTime != null) {
+        _hasDate = true;
+        _selectedDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+        _selectedTime = TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+      }
+      _visibleToFriends = true;
+      _appliedSelection = true;
+    });
+  }
+
+  void _clearEventSelectionState() {
+    setState(() {
+      _sourceEventId = null;
+      _sourceEventTitle = null;
+      _prefilledImageUrl = null;
+      _appliedSelection = false;
+    });
   }
 
   Future<void> _pickDate() async {
@@ -138,6 +175,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             visibleToStrangers: _visibleToStrangers,
             discoveryRadiusKm: _radiusKm,
             isSponsored: _isSponsored,
+            imageUrl: _prefilledImageUrl,
+            sourceEventId: _sourceEventId,
+            sourceEventTitle: _sourceEventTitle,
           ),
           coverImage: _coverImage,
         );
@@ -156,6 +196,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       const SnackBar(content: Text('Aktivität erstellt!')),
     );
 
+    ref.read(eventSelectionProvider.notifier).clear();
     _formKey.currentState!.reset();
     _titleController.clear();
     _descriptionController.clear();
@@ -163,6 +204,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     setState(() {
       _hasDate = true;
       _coverImage = null;
+      _prefilledImageUrl = null;
+      _sourceEventId = null;
+      _sourceEventTitle = null;
+      _appliedSelection = false;
       _visibleToFriends = true;
       _visibleToAcquaintances = false;
       _visibleToStrangers = false;
@@ -181,6 +226,25 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     final isLoading = ref.watch(createActivityProvider).isLoading;
     final isCompany = ref.watch(isCompanyPartnerProvider);
     final theme = Theme.of(context);
+    final eventSelection = ref.watch(eventSelectionProvider);
+
+    ref.listen(eventSelectionProvider, (previous, next) {
+      if (next != null && next != previous) {
+        _applyEventSelection(next);
+      }
+    });
+
+    if (!_appliedSelection && eventSelection != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _appliedSelection) return;
+        final current = ref.read(eventSelectionProvider);
+        if (current != null) _applyEventSelection(current);
+      });
+    }
+
+    final planningTitle = _sourceEventTitle ?? eventSelection?.title;
+    final showEventBanner =
+        planningTitle != null && planningTitle.trim().isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -189,6 +253,45 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (showEventBanner) ...[
+              Card(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.confirmation_number_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(
+                    'Du planst gerade: $planningTitle',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.brandNavy,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Titel, Datum und Bild sind vorausgefüllt – du kannst alles anpassen.',
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Übernahme verwerfen',
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            ref.read(eventSelectionProvider.notifier).clear();
+                            _clearEventSelectionState();
+                          },
+                    icon: const Icon(Icons.close),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (isCompany)
               Card(
                 color: theme.colorScheme.tertiaryContainer,
@@ -212,61 +315,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
-                  child: _coverImage == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 40,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Titelbild hinzufügen (optional)',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: FutureBuilder<Uint8List>(
-                                future: _coverImage!.readAsBytes(),
-                                builder: (context, snapshot) {
-                                  if (!snapshot.hasData) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-                                  return Image.memory(
-                                    snapshot.data!,
-                                    fit: BoxFit.cover,
-                                  );
-                                },
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: IconButton.filled(
-                                onPressed: isLoading
-                                    ? null
-                                    : () => setState(() => _coverImage = null),
-                                icon: const Icon(Icons.close),
-                                style: IconButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.black.withValues(alpha: 0.55),
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                  child: _coverPreview(theme),
                 ),
               ),
             ),
@@ -423,6 +472,109 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _coverPreview(ThemeData theme) {
+    if (_coverImage != null) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: FutureBuilder<Uint8List>(
+              future: _coverImage!.readAsBytes(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return Image.memory(snapshot.data!, fit: BoxFit.cover);
+              },
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton.filled(
+              onPressed: () => setState(() => _coverImage = null),
+              icon: const Icon(Icons.close),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: 0.55),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final prefilled = _prefilledImageUrl?.trim();
+    if (prefilled != null && prefilled.isNotEmpty) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: CachedNetworkImage(
+              imageUrl: prefilled,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              placeholder: (_, _) => const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              errorWidget: (_, _, _) => const ColoredBox(
+                color: Color(0xFFE8ECF4),
+                child: Icon(Icons.broken_image_outlined),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 10,
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Event-Bild',
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton.filled(
+              onPressed: () => setState(() => _prefilledImageUrl = null),
+              icon: const Icon(Icons.close),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: 0.55),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 40,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Titelbild hinzufügen (optional)',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,0 +1,6 @@
+-- =============================================================================
+-- Migration 00024: host_avatar_url_in_feed
+-- Zweck: Host-Avatar in Social-Feed und Meine-Aktivitäten mitliefern.
+-- Betrifft: social_feed_activities, my_activities (host_avatar_url)
+-- =============================================================================
+-- Applied via Supabase MCP; see live function definitions.

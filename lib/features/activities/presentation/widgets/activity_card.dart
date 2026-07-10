@@ -25,6 +25,7 @@ class ActivityCard extends StatelessWidget {
   final bool isLoading;
 
   bool get _showActionButton =>
+      onAction != null &&
       activity.viewerAction != ViewerAction.none &&
       activity.viewerAction != ViewerAction.host;
 
@@ -67,6 +68,14 @@ class ActivityCard extends StatelessWidget {
                 const _SponsoredLabel(),
                 const SizedBox(height: 8),
               ],
+              if (activity.isEventTakeover) ...[
+                _VisitedEventLabel(
+                  title: activity.sourceEventTitle?.trim().isNotEmpty == true
+                      ? activity.sourceEventTitle!
+                      : activity.title,
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
                 activity.title,
                 maxLines: 2,
@@ -78,15 +87,27 @@ class ActivityCard extends StatelessWidget {
                   color: AppColors.brandNavy,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                _hostLine,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _HostAvatar(
+                    username: activity.hostUsername,
+                    avatarUrl: activity.hostAvatarUrl,
+                    isCompany: activity.hostIsCompany,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _hostLine,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               _MetaRow(activity: activity),
@@ -118,6 +139,58 @@ class ActivityCard extends StatelessWidget {
     ];
     if (activity.isNew) parts.add('Neu');
     return parts.join(' · ');
+  }
+}
+
+/// Runder Host-Avatar mit Initialen-Fallback (Quiet Luxury).
+class _HostAvatar extends StatelessWidget {
+  const _HostAvatar({
+    required this.username,
+    required this.avatarUrl,
+    required this.isCompany,
+  });
+
+  static const double diameter = 36;
+
+  final String username;
+  final String? avatarUrl;
+  final bool isCompany;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final initial = username.trim().isNotEmpty
+        ? username.trim()[0].toUpperCase()
+        : '?';
+    final url = avatarUrl?.trim();
+    final hasUrl = url != null && url.isNotEmpty;
+    final bg = isCompany
+        ? theme.colorScheme.tertiaryContainer
+        : theme.colorScheme.primaryContainer;
+    final fg = isCompany
+        ? theme.colorScheme.onTertiaryContainer
+        : theme.colorScheme.onPrimaryContainer;
+
+    return SizedBox(
+      width: diameter,
+      height: diameter,
+      child: CircleAvatar(
+        radius: diameter / 2,
+        backgroundColor: bg,
+        foregroundColor: fg,
+        backgroundImage: hasUrl ? CachedNetworkImageProvider(url) : null,
+        onBackgroundImageError: hasUrl ? (_, _) {} : null,
+        child: hasUrl
+            ? null
+            : Text(
+                initial,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: fg,
+                ),
+              ),
+      ),
+    );
   }
 }
 
@@ -293,6 +366,27 @@ class _ActionButton extends StatelessWidget {
         ),
       ),
       child: child,
+    );
+  }
+}
+
+class _VisitedEventLabel extends StatelessWidget {
+  const _VisitedEventLabel({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      'Besucht: $title',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
     );
   }
 }

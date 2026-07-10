@@ -9,6 +9,7 @@ class DiscoverableActivity extends Equatable {
     required this.hostId,
     required this.hostUsername,
     required this.hostIsCompany,
+    this.hostAvatarUrl,
     required this.title,
     this.description,
     this.maxParticipants,
@@ -25,6 +26,8 @@ class DiscoverableActivity extends Equatable {
     this.isFeatured = false,
     this.source = ActivitySource.user,
     this.externalUrl,
+    this.sourceEventId,
+    this.sourceEventTitle,
     this.createdAt,
     this.participantAvatarUrls = const [],
   });
@@ -33,6 +36,7 @@ class DiscoverableActivity extends Equatable {
   final String hostId;
   final String hostUsername;
   final bool hostIsCompany;
+  final String? hostAvatarUrl;
   final String title;
   final String? description;
   final int? maxParticipants;
@@ -49,10 +53,17 @@ class DiscoverableActivity extends Equatable {
   final bool isFeatured;
   final ActivitySource source;
   final String? externalUrl;
+  /// ID des übernommenen Entdecken-Events (z.B. external_events.id).
+  final String? sourceEventId;
+  /// Originaltitel des übernommenen Events (für Feed-Hinweis).
+  final String? sourceEventTitle;
   final DateTime? createdAt;
   final List<String> participantAvatarUrls;
 
   bool get isExternal => source == ActivitySource.external;
+
+  bool get isEventTakeover =>
+      sourceEventId != null && sourceEventId!.trim().isNotEmpty;
 
   /// Fallback-Cover, wenn Eventfrog kein Bild liefert.
   static const defaultCoverImageUrl =
@@ -82,6 +93,7 @@ class DiscoverableActivity extends Equatable {
         hostId,
         hostUsername,
         hostIsCompany,
+        hostAvatarUrl,
         title,
         description,
         maxParticipants,
@@ -98,6 +110,8 @@ class DiscoverableActivity extends Equatable {
         isFeatured,
         source,
         externalUrl,
+        sourceEventId,
+        sourceEventTitle,
         createdAt,
         participantAvatarUrls,
       ];
@@ -129,6 +143,9 @@ class CreateActivityInput extends Equatable {
     required this.visibleToStrangers,
     this.discoveryRadiusKm = 20,
     this.isSponsored = false,
+    this.imageUrl,
+    this.sourceEventId,
+    this.sourceEventTitle,
   });
 
   final String title;
@@ -145,6 +162,10 @@ class CreateActivityInput extends Equatable {
   final bool visibleToStrangers;
   final double discoveryRadiusKm;
   final bool isSponsored;
+  /// Vorhandenes Cover (z.B. Eventfrog) – hat Vorrang vor Pexels/Upload.
+  final String? imageUrl;
+  final String? sourceEventId;
+  final String? sourceEventTitle;
 
   @override
   List<Object?> get props => [
@@ -162,6 +183,9 @@ class CreateActivityInput extends Equatable {
         visibleToStrangers,
         discoveryRadiusKm,
         isSponsored,
+        imageUrl,
+        sourceEventId,
+        sourceEventTitle,
       ];
 }
 

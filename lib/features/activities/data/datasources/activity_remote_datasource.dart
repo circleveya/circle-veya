@@ -189,8 +189,9 @@ class ActivityRemoteDatasource {
         .select(
           'id, host_id, title, description, max_participants, current_participants, '
           'date_time, image_url, location_type, weather_condition, location_name, '
-          'is_sponsored, status, source, external_url, created_at, '
-          'profiles!activities_host_id_fkey(username, user_type)',
+          'is_sponsored, status, source, external_url, source_event_id, '
+          'source_event_title, created_at, '
+          'profiles!activities_host_id_fkey(username, user_type, avatar_url)',
         )
         .eq('host_id', userId)
         .order('date_time', ascending: true, nullsFirst: false);
@@ -208,6 +209,7 @@ class ActivityRemoteDatasource {
             hostUsername:
                 _optionalString(profile?['username']) ?? 'Du',
             hostIsCompany: profile?['user_type'] == 'company',
+            hostAvatarUrl: _optionalString(profile?['avatar_url']),
             title: _requireString(map['title'], fallback: 'Aktivität'),
             description: _optionalString(map['description']),
             maxParticipants: _optionalInt(map['max_participants']),
@@ -225,6 +227,8 @@ class ActivityRemoteDatasource {
                 profile?['user_type'] == 'company',
             source: ActivitySource.fromDb(map['source'] as String?),
             externalUrl: _optionalString(map['external_url']),
+            sourceEventId: _optionalString(map['source_event_id']),
+            sourceEventTitle: _optionalString(map['source_event_title']),
             createdAt: _parseOptionalDateTime(map['created_at']),
           ),
         );
@@ -267,6 +271,22 @@ class ActivityRemoteDatasource {
       payload['date_time'] = input.dateTime!.toUtc().toIso8601String();
     }
 
+    final eventImageUrl = input.imageUrl?.trim();
+    final hasEventImage =
+        eventImageUrl != null && eventImageUrl.isNotEmpty;
+
+    // Eventfrog-Cover hat Vorrang – verhindert Pexels/generate-stock-image.
+    if (hasEventImage) {
+      payload['image_url'] = eventImageUrl;
+      payload['image_source'] = 'external';
+    }
+
+    final sourceEventId = input.sourceEventId?.trim();
+    if (sourceEventId != null && sourceEventId.isNotEmpty) {
+      payload['source_event_id'] = sourceEventId;
+      payload['source_event_title'] = input.sourceEventTitle?.trim();
+    }
+
     final response = await _client
         .from('activities')
         .insert(payload)
@@ -275,7 +295,9 @@ class ActivityRemoteDatasource {
 
     final activityId = response['id'] as String;
 
-    if (coverImageBytes != null && coverImageBytes.isNotEmpty) {
+    if (!hasEventImage &&
+        coverImageBytes != null &&
+        coverImageBytes.isNotEmpty) {
       final extension = _extensionFromFileName(coverImageFileName);
       final path = '$userId/$activityId.$extension';
 
@@ -291,10 +313,10 @@ class ActivityRemoteDatasource {
       final publicUrl =
           _client.storage.from('activity-images').getPublicUrl(path);
 
-      await _client
-          .from('activities')
-          .update({'image_url': publicUrl})
-          .eq('id', activityId);
+      await _client.from('activities').update({
+        'image_url': publicUrl,
+        'image_source': 'user',
+      }).eq('id', activityId);
     }
   }
 
@@ -364,6 +386,7 @@ class ActivityRemoteDatasource {
       hostUsername:
           _optionalString(map['host_username']) ?? 'CircleVeya',
       hostIsCompany: map['host_is_company'] as bool? ?? false,
+      hostAvatarUrl: _optionalString(map['host_avatar_url']),
       title: _requireString(map['title'], fallback: 'Event'),
       description: _optionalString(map['description']),
       maxParticipants: _optionalInt(map['max_participants']),
@@ -384,6 +407,8 @@ class ActivityRemoteDatasource {
       isFeatured: map['is_featured'] as bool? ?? false,
       source: ActivitySource.fromDb(map['source'] as String?),
       externalUrl: _optionalString(map['external_url']),
+      sourceEventId: _optionalString(map['source_event_id']),
+      sourceEventTitle: _optionalString(map['source_event_title']),
       createdAt: _parseOptionalDateTime(map['created_at']),
       participantAvatarUrls: _parseAvatarUrls(map['participant_avatar_urls']),
     );

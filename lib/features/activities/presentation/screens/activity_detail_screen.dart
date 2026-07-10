@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/layout/shell_destination_request.dart';
+import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 import '../providers/activity_provider.dart';
+import '../providers/event_selection_provider.dart';
 import '../widgets/activity_card.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
@@ -51,12 +54,29 @@ class ActivityDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (activity != null)
+          if (activity != null) ...[
             ActivityCard(
               activity: activity!,
               isLoading: actionsState.isLoading,
-              onAction: () => _handleAction(context, ref, activity!),
+              onAction: activity!.isExternal
+                  ? null
+                  : () => _handleAction(context, ref, activity!),
             ),
+            if (activity!.isExternal) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => _planWithFriends(context, ref, activity!),
+                icon: const Icon(Icons.group_add_outlined),
+                label: const Text('Mit Freunden zum Event'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _handleAction(context, ref, activity!),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Zur Event-Quelle'),
+              ),
+            ],
+          ],
           if (isHost || isParticipant)
             groupChatAsync.when(
               loading: () => const SizedBox.shrink(),
@@ -153,6 +173,19 @@ class ActivityDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _planWithFriends(
+    BuildContext context,
+    WidgetRef ref,
+    DiscoverableActivity activity,
+  ) {
+    ref.read(eventSelectionProvider.notifier).selectFromActivity(activity);
+    ref
+        .read(shellDestinationRequestProvider.notifier)
+        .goTo(WebShellDestination.create);
+    context.goNamed(RouteNames.home);
+    return Future.value();
   }
 
   Future<void> _handleAction(

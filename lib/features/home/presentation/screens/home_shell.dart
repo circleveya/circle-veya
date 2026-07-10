@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_layout_scaffold.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/branding/circleveya_brand.dart';
@@ -81,6 +82,23 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     ref.watch(presenceHeartbeatProvider);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
     final useWebLayout = kIsWeb && WebLayoutScaffold.isDesktop(context);
+
+    ref.listen(shellDestinationRequestProvider, (previous, next) {
+      if (next == null) return;
+      _onDestinationChanged(next);
+      ref.read(shellDestinationRequestProvider.notifier).clear();
+    });
+
+    final pendingDestination = ref.watch(shellDestinationRequestProvider);
+    if (pendingDestination != null && _destination != pendingDestination) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final pending = ref.read(shellDestinationRequestProvider);
+        if (pending == null) return;
+        _onDestinationChanged(pending);
+        ref.read(shellDestinationRequestProvider.notifier).clear();
+      });
+    }
 
     if (useWebLayout) {
       return WebLayoutScaffold(
