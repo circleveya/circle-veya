@@ -7,9 +7,9 @@ import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_quick_filters_bar.dart';
 import '../../../activities/presentation/widgets/location_filter_bar.dart';
 
-/// Nur für Entdecken: Suchfeld + Filter-Button (öffnet ModalBottomSheet).
-/// Andere Shell-Tabs nutzen weiterhin den globalen [WebHeader].
-class DiscoverSearchHeader extends ConsumerWidget {
+/// Entdecken-Hero: Gradient-Banner + Event-Suche + Filter-Sheet.
+/// Nur auf der Discover-Page – andere Tabs bleiben unberührt.
+class DiscoverSearchHeader extends ConsumerStatefulWidget {
   const DiscoverSearchHeader({
     super.key,
     this.onSearch,
@@ -17,7 +17,25 @@ class DiscoverSearchHeader extends ConsumerWidget {
 
   final ValueChanged<String>? onSearch;
 
-  Future<void> _openFilters(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<DiscoverSearchHeader> createState() =>
+      _DiscoverSearchHeaderState();
+}
+
+class _DiscoverSearchHeaderState extends ConsumerState<DiscoverSearchHeader> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _emitSearch(String value) {
+    widget.onSearch?.call(value.trim());
+  }
+
+  Future<void> _openFilters() async {
     final initial = ref.read(discoverFiltersProvider);
 
     await showModalBottomSheet<void>(
@@ -40,57 +58,105 @@ class DiscoverSearchHeader extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasActive = ref.watch(discoverFiltersProvider).hasActiveFilters;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+      decoration: BoxDecoration(
+        gradient: AppColors.premiumGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.seed.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TextField(
-              onSubmitted: onSearch,
-              decoration: InputDecoration(
-                hintText: 'Was möchtest du heute erleben?',
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.brandNavy.withValues(alpha: 0.5),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.65),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.65),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: AppColors.seed.withValues(alpha: 0.5),
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
+          Text(
+            'Find people. Create memories.',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
             ),
           ),
-          const SizedBox(width: 10),
-          _FilterButton(
-            hasActiveFilters: hasActive,
-            onPressed: () => _openFilters(context, ref),
+          const SizedBox(height: 8),
+          Text(
+            'Entdecke Aktivitäten in deiner Nähe – mit Freunden, '
+            'der Community und Events aus deiner Region.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.white.withValues(alpha: 0.92),
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 22),
+          TextField(
+            controller: _controller,
+            onChanged: _emitSearch,
+            onSubmitted: _emitSearch,
+            style: const TextStyle(color: Colors.black87),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Was möchtest du heute erleben?',
+              hintStyle: TextStyle(
+                color: Colors.black.withValues(alpha: 0.38),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.black.withValues(alpha: 0.35),
+              ),
+              suffixIcon: IconButton(
+                tooltip: 'Filter',
+                onPressed: _openFilters,
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      color: AppColors.brandNavy.withValues(alpha: 0.7),
+                    ),
+                    if (hasActive)
+                      Positioned(
+                        right: -1,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.seed,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 16,
+              ),
+            ),
           ),
         ],
       ),
@@ -98,79 +164,6 @@ class DiscoverSearchHeader extends ConsumerWidget {
   }
 }
 
-class _FilterButton extends StatelessWidget {
-  const _FilterButton({
-    required this.hasActiveFilters,
-    required this.onPressed,
-  });
-
-  final bool hasActiveFilters;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.65),
-        ),
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    Icons.tune_rounded,
-                    size: 20,
-                    color: AppColors.brandNavy.withValues(alpha: 0.75),
-                  ),
-                  if (hasActiveFilters)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: AppColors.seed,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.colorScheme.surface,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Filter',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.brandNavy.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Filter-Inhalt nur für Entdecken (Standort, Wann, Entfernung).
 class _DiscoverFiltersSheet extends StatefulWidget {
   const _DiscoverFiltersSheet({
     required this.initialFilters,

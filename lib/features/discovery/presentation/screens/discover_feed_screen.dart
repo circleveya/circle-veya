@@ -100,16 +100,13 @@ class _DiscoverFeedScreenState extends ConsumerState<DiscoverFeedScreen> {
 
     final filtered = _searchQuery.isEmpty
         ? feedState.activities
-        : feedState.activities
-            .where(
-              (a) =>
-                  a.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  (a.locationName?.toLowerCase().contains(
-                        _searchQuery.toLowerCase(),
-                      ) ??
-                      false),
-            )
-            .toList();
+        : feedState.activities.where((a) {
+            final q = _searchQuery.toLowerCase();
+            return a.title.toLowerCase().contains(q) ||
+                (a.locationName?.toLowerCase().contains(q) ?? false) ||
+                (a.description?.toLowerCase().contains(q) ?? false) ||
+                (a.sourceEventTitle?.toLowerCase().contains(q) ?? false);
+          }).toList();
 
     if (filtered.isEmpty) {
       return ListView(
