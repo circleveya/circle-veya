@@ -7,14 +7,13 @@ import '../theme/app_colors.dart';
 /// Assets:
 /// - [logoAsset] horizontale Wortmarke (Icon + Text)
 /// - [emblemAsset] nur das C-Emblem für enge Flächen
-///
-/// Feste [logoHeight] + [BoxFit.contain] – keine künstliche Verkleinerung.
 class CircleVeyaBrand extends StatelessWidget {
   const CircleVeyaBrand({
     super.key,
     this.onTap,
     this.compact = false,
-    this.logoHeight = 52,
+    this.logoHeight = 56,
+    this.fillWidth = false,
     this.emblemOnly = false,
     @Deprecated('Slogan entfernt – Parameter wird ignoriert')
     this.showSlogan = false,
@@ -32,7 +31,13 @@ class CircleVeyaBrand extends StatelessWidget {
 
   final VoidCallback? onTap;
   final bool compact;
+
+  /// Bevorzugte Höhe, wenn [fillWidth] false ist.
   final double logoHeight;
+
+  /// Füllt die verfügbare Breite (Sidebar) – gleiche Optik lokal & live.
+  final bool fillWidth;
+
   final bool emblemOnly;
 
   @Deprecated('Slogan entfernt')
@@ -57,18 +62,39 @@ class CircleVeyaBrand extends StatelessWidget {
   }
 
   Widget _buildFullLogo() {
-    final height = logoHeight < minLogoExtent ? minLogoExtent : logoHeight;
-    final width = height * logoAspectRatio;
+    if (fillWidth) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final maxW = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : logoHeight * logoAspectRatio;
+          final height = (maxW / logoAspectRatio).clamp(48.0, 72.0);
+          final width = height * logoAspectRatio;
+          return _logoImage(width: width, height: height);
+        },
+      );
+    }
 
-    return SizedBox(
+    final height = logoHeight < minLogoExtent ? minLogoExtent : logoHeight;
+    return _logoImage(
+      width: height * logoAspectRatio,
       height: height,
+    );
+  }
+
+  Widget _logoImage({required double width, required double height}) {
+    return SizedBox(
       width: width,
+      height: height,
       child: Image.asset(
         logoAsset,
+        width: width,
+        height: height,
         fit: BoxFit.contain,
         alignment: Alignment.centerLeft,
         filterQuality: FilterQuality.high,
         isAntiAlias: true,
+        gaplessPlayback: true,
         errorBuilder: (_, _, _) => _FallbackWordmark(
           height: height,
           showEmblem: true,
@@ -85,6 +111,8 @@ class CircleVeyaBrand extends StatelessWidget {
       height: size,
       child: Image.asset(
         emblemAsset,
+        width: size,
+        height: size,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
         isAntiAlias: true,

@@ -38,10 +38,10 @@ class WebSidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 22, 16, 18),
-            child: const Align(
-              alignment: Alignment.centerLeft,
-              child: CircleVeyaBrand(logoHeight: 52),
+            padding: const EdgeInsets.fromLTRB(14, 20, 14, 16),
+            child: const CircleVeyaBrand(
+              fillWidth: true,
+              logoHeight: 64,
             ),
           ),
           Expanded(
