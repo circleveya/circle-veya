@@ -14,7 +14,6 @@ class MyActivitiesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final myAsync = ref.watch(myActivitiesProvider);
-    final isDeleting = ref.watch(activityActionsProvider).isLoading;
 
     return myAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -58,34 +57,34 @@ class MyActivitiesScreen extends ConsumerWidget {
                   ...created.map(
                     (activity) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ActivityCard(
-                            activity: activity,
-                            onTap: () => context.pushNamed(
-                              RouteNames.activityDetail,
-                              pathParameters: {'id': activity.id},
-                              extra: activity,
-                            ),
+                      child: Dismissible(
+                        key: ValueKey('delete-${activity.id}'),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) =>
+                            _confirmDelete(context, ref, activity),
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .errorContainer
+                                .withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 4),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: isDeleting
-                                  ? null
-                                  : () =>
-                                      _confirmDelete(context, ref, activity),
-                              icon: const Icon(Icons.delete_outline, size: 18),
-                              label: const Text('Löschen'),
-                              style: TextButton.styleFrom(
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+                          child: Icon(
+                            Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error,
                           ),
-                        ],
+                        ),
+                        child: ActivityCard(
+                          activity: activity,
+                          onTap: () => context.pushNamed(
+                            RouteNames.activityDetail,
+                            pathParameters: {'id': activity.id},
+                            extra: activity,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -119,7 +118,7 @@ class MyActivitiesScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(
+  Future<bool> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
     DiscoverableActivity activity,
@@ -148,24 +147,26 @@ class MyActivitiesScreen extends ConsumerWidget {
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !context.mounted) return false;
 
     await ref
         .read(activityActionsProvider.notifier)
         .deleteActivity(activity.id);
 
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
     final error = ref.read(activityActionsProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$error')),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivität gelöscht')),
-      );
+      return false;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Aktivität gelöscht')),
+    );
+    return true;
   }
 }
 

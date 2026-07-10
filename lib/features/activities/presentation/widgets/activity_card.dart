@@ -7,7 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 
-/// Kompakte Aktivitätskarte (Quiet Luxury) mit 120px Cover.
+/// Kompakte horizontale Aktivitätskarte (Quiet Luxury).
 class ActivityCard extends StatelessWidget {
   const ActivityCard({
     super.key,
@@ -17,7 +17,7 @@ class ActivityCard extends StatelessWidget {
     this.isLoading = false,
   });
 
-  static const double coverHeight = 120;
+  static const double thumbnailSize = 80;
 
   final DiscoverableActivity activity;
   final VoidCallback? onAction;
@@ -37,112 +37,199 @@ class ActivityCard extends StatelessWidget {
     return Material(
       color: isFeatured
           ? Color.alphaBlend(
-              Colors.amber.withValues(alpha: 0.06),
+              Colors.amber.withValues(alpha: 0.05),
               theme.colorScheme.surface,
             )
           : theme.colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isFeatured
-              ? Colors.amber.shade600.withValues(alpha: 0.55)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
+              ? Colors.amber.shade600.withValues(alpha: 0.45)
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ActivityCoverImage(
-                imageUrl: activity.imageUrl,
-                height: coverHeight,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              const SizedBox(height: 16),
-              if (isFeatured) ...[
-                const _SponsoredLabel(),
-                const SizedBox(height: 8),
-              ],
-              if (activity.isEventTakeover) ...[
-                _VisitedEventLabel(
-                  title: activity.sourceEventTitle?.trim().isNotEmpty == true
-                      ? activity.sourceEventTitle!
-                      : activity.title,
-                ),
-                const SizedBox(height: 8),
-              ],
-              Text(
-                activity.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  height: 1.25,
-                  letterSpacing: -0.2,
-                  color: AppColors.brandNavy,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _HostAvatar(
-                    username: activity.hostUsername,
-                    avatarUrl: activity.hostAvatarUrl,
-                    isCompany: activity.hostIsCompany,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _hostLine,
-                      maxLines: 1,
+              _ActivityThumbnail(imageUrl: activity.imageUrl),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isFeatured || activity.isEventTakeover) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          if (isFeatured) const _SponsoredLabel(),
+                          if (activity.isEventTakeover)
+                            _VisitedEventLabel(
+                              title: activity.sourceEventTitle
+                                          ?.trim()
+                                          .isNotEmpty ==
+                                      true
+                                  ? activity.sourceEventTitle!
+                                  : activity.title,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                    Text(
+                      activity.title,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        letterSpacing: -0.15,
+                        color: AppColors.brandNavy,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _MetaRow(activity: activity),
-              if (_showActionButton) ...[
-                const SizedBox(height: 14),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _ActionButton(
-                    label: activity.viewerAction.buttonLabel,
-                    enabled: activity.viewerAction.canTap && !isLoading,
-                    isLoading: isLoading,
-                    emphasized:
-                        activity.viewerAction == ViewerAction.directJoin,
-                    onPressed: onAction,
-                  ),
+                    const SizedBox(height: 8),
+                    _MetaRow(activity: activity),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _HostAvatar(
+                          username: activity.hostUsername,
+                          avatarUrl: activity.hostAvatarUrl,
+                          isCompany: activity.hostIsCompany,
+                        ),
+                        const SizedBox(width: 8),
+                        _RelationBadge(label: activity.visibleAs.label),
+                        if (activity.isNew) ...[
+                          const SizedBox(width: 6),
+                          _RelationBadge(
+                            label: 'Neu',
+                            muted: true,
+                          ),
+                        ],
+                        const Spacer(),
+                        if (_showActionButton)
+                          _ActionButton(
+                            label: activity.viewerAction.buttonLabel,
+                            enabled:
+                                activity.viewerAction.canTap && !isLoading,
+                            isLoading: isLoading,
+                            emphasized: activity.viewerAction ==
+                                ViewerAction.directJoin,
+                            onPressed: onAction,
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  String get _hostLine {
-    final parts = <String>[
-      activity.hostUsername,
-      activity.visibleAs.label,
-    ];
-    if (activity.isNew) parts.add('Neu');
-    return parts.join(' · ');
+class _ActivityThumbnail extends StatelessWidget {
+  const _ActivityThumbnail({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    final hasUrl = url != null && url.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: ActivityCard.thumbnailSize,
+        height: ActivityCard.thumbnailSize,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasUrl)
+              CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                placeholder: (_, _) => const _FallbackThumbnail(),
+                errorWidget: (_, _, _) => const _FallbackThumbnail(),
+              )
+            else
+              const _FallbackThumbnail(),
+          ],
+        ),
+      ),
+    );
   }
 }
 
-/// Runder Host-Avatar mit Initialen-Fallback (Quiet Luxury).
+/// Sehr blasser Brand-Gradient + linker Akzentstreifen als Thumbnail-Fallback.
+class _FallbackThumbnail extends StatelessWidget {
+  const _FallbackThumbnail();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Stack(
+      fit: StackFit.expand,
+      children: [
+        _SoftGradientFill(),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: 3,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.brandOrange,
+                    AppColors.brandMagenta,
+                    AppColors.brandPurple,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Sehr blasser Brand-Gradient als Thumbnail-Fallback.
+class _SoftGradientFill extends StatelessWidget {
+  const _SoftGradientFill();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.brandOrange.withValues(alpha: 0.12),
+            AppColors.brandMagenta.withValues(alpha: 0.10),
+            AppColors.brandPurple.withValues(alpha: 0.12),
+            AppColors.tertiary.withValues(alpha: 0.10),
+          ],
+        ),
+      ),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
 class _HostAvatar extends StatelessWidget {
   const _HostAvatar({
     required this.username,
@@ -150,7 +237,7 @@ class _HostAvatar extends StatelessWidget {
     required this.isCompany,
   });
 
-  static const double diameter = 36;
+  static const double diameter = 24;
 
   final String username;
   final String? avatarUrl;
@@ -184,7 +271,8 @@ class _HostAvatar extends StatelessWidget {
             ? null
             : Text(
                 initial,
-                style: theme.textTheme.labelLarge?.copyWith(
+                style: TextStyle(
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: fg,
                 ),
@@ -194,51 +282,35 @@ class _HostAvatar extends StatelessWidget {
   }
 }
 
-/// Cover mit fester Höhe, zentriertem Crop und Brand-Gradient als Fallback.
-class ActivityCoverImage extends StatelessWidget {
-  const ActivityCoverImage({
-    super.key,
-    required this.imageUrl,
-    this.height = ActivityCard.coverHeight,
-    this.borderRadius = const BorderRadius.all(Radius.circular(14)),
+class _RelationBadge extends StatelessWidget {
+  const _RelationBadge({
+    required this.label,
+    this.muted = false,
   });
 
-  final String? imageUrl;
-  final double height;
-  final BorderRadius borderRadius;
+  final String label;
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
-    final url = imageUrl?.trim();
-    final hasUrl = url != null && url.isNotEmpty;
-
-    return ClipRRect(
-      borderRadius: borderRadius,
-      child: SizedBox(
-        height: height,
-        width: double.infinity,
-        child: hasUrl
-            ? CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                placeholder: (_, _) => const _BrandGradientFallback(),
-                errorWidget: (_, _, _) => const _BrandGradientFallback(),
-              )
-            : const _BrandGradientFallback(),
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: muted
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
       ),
-    );
-  }
-}
-
-class _BrandGradientFallback extends StatelessWidget {
-  const _BrandGradientFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(gradient: AppColors.brandGradient),
-      child: SizedBox.expand(),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: muted
+              ? theme.colorScheme.onSurfaceVariant
+              : theme.colorScheme.onPrimaryContainer,
+        ),
+      ),
     );
   }
 }
@@ -260,7 +332,6 @@ class _MetaRow extends StatelessWidget {
         )
       else
         const _MetaItem(Icons.event_available_outlined, 'Flexibel'),
-      _MetaItem(Icons.people_outline, activity.participantsLabel),
       if (DistanceDisplay.placeLabel(activity) != null)
         _MetaItem(
           Icons.place_outlined,
@@ -270,8 +341,11 @@ class _MetaRow extends StatelessWidget {
         _MetaItem(
           Icons.near_me_outlined,
           DistanceDisplay.forActivity(activity),
-        ),
-      _MetaItem(activity.locationType.icon, activity.locationType.label),
+        )
+      else if (activity.locationName != null &&
+          activity.locationName!.trim().isNotEmpty)
+        _MetaItem(Icons.place_outlined, activity.locationName!.trim()),
+      _MetaItem(Icons.people_outline, activity.participantsLabel),
     ];
 
     return SingleChildScrollView(
@@ -281,27 +355,26 @@ class _MetaRow extends StatelessWidget {
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 '·',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.outline,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
             ],
             Icon(
               items[i].icon,
-              size: 14,
+              size: 13,
               color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 3),
             Text(
               items[i].label,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
-                letterSpacing: 0.1,
               ),
             ),
           ],
@@ -335,37 +408,29 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = isLoading
-        ? const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Text(label);
+    if (isLoading) {
+      return const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
 
-    return OutlinedButton(
+    return TextButton(
       onPressed: enabled ? onPressed : null,
-      style: OutlinedButton.styleFrom(
+      style: TextButton.styleFrom(
         visualDensity: VisualDensity.compact,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor:
+            emphasized ? AppColors.seed : Theme.of(context).colorScheme.primary,
         textStyle: const TextStyle(
           fontWeight: FontWeight.w600,
-          fontSize: 13,
-          letterSpacing: 0.1,
-        ),
-        side: BorderSide(
-          color: emphasized
-              ? AppColors.seed.withValues(alpha: 0.55)
-              : Theme.of(context).colorScheme.outlineVariant,
-        ),
-        foregroundColor: emphasized
-            ? AppColors.seed
-            : Theme.of(context).colorScheme.onSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          fontSize: 12,
         ),
       ),
-      child: child,
+      child: Text(label),
     );
   }
 }
@@ -385,7 +450,7 @@ class _VisitedEventLabel extends StatelessWidget {
       style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+            letterSpacing: 0.15,
           ),
     );
   }
@@ -401,7 +466,7 @@ class _SponsoredLabel extends StatelessWidget {
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: Colors.amber.shade800,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
+            letterSpacing: 0.3,
           ),
     );
   }

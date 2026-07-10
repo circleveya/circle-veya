@@ -305,17 +305,23 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 ),
               ),
             if (isCompany) const SizedBox(height: 16),
-            GestureDetector(
-              onTap: isLoading ? null : _pickCoverImage,
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Material(
+                color: theme.colorScheme.surfaceContainerHighest,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: theme.colorScheme.outlineVariant),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 200,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isLoading ? null : _pickCoverImage,
+                    child: _coverPreview(theme),
                   ),
-                  child: _coverPreview(theme),
                 ),
               ),
             ),
@@ -480,17 +486,20 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       return Stack(
         fit: StackFit.expand,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: FutureBuilder<Uint8List>(
-              future: _coverImage!.readAsBytes(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return Image.memory(snapshot.data!, fit: BoxFit.cover);
-              },
-            ),
+          FutureBuilder<Uint8List>(
+            future: _coverImage!.readAsBytes(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                width: double.infinity,
+                height: double.infinity,
+              );
+            },
           ),
           Positioned(
             top: 8,
@@ -513,18 +522,20 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       return Stack(
         fit: StackFit.expand,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: CachedNetworkImage(
-              imageUrl: prefilled,
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              placeholder: (_, _) => const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              errorWidget: (_, _, _) => const ColoredBox(
-                color: Color(0xFFE8ECF4),
-                child: Icon(Icons.broken_image_outlined),
+          CachedNetworkImage(
+            imageUrl: prefilled,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            width: double.infinity,
+            height: double.infinity,
+            placeholder: (_, _) => const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            errorWidget: (_, _, _) => ColoredBox(
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.broken_image_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -564,7 +575,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       children: [
         Icon(
           Icons.add_photo_alternate_outlined,
-          size: 40,
+          size: 36,
           color: theme.colorScheme.primary,
         ),
         const SizedBox(height: 8),
