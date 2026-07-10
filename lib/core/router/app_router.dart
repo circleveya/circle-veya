@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activities/domain/entities/activity.dart';
 import '../../features/activities/presentation/screens/activity_detail_screen.dart';
+import '../../features/activities/presentation/screens/edit_activity_screen.dart';
 import '../../features/chat/domain/entities/chat.dart';
 import '../../features/chat/presentation/screens/chat_room_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
@@ -63,6 +64,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             activityId: state.pathParameters['id']!,
             activity: activity,
           );
+        },
+      ),
+      GoRoute(
+        path: '/activity/:id/edit',
+        name: RouteNames.activityEdit,
+        builder: (context, state) {
+          final activity = state.extra as DiscoverableActivity?;
+          if (activity == null) {
+            return const Scaffold(
+              body: Center(child: Text('Aktivität nicht gefunden')),
+            );
+          }
+          return EditActivityScreen(activity: activity);
         },
       ),
       GoRoute(

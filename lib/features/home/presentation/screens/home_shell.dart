@@ -155,9 +155,17 @@ class _MobileHomeShell extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            const CircleVeyaBrand(compact: true, logoHeight: 32),
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: CircleVeyaBrand.minLogoExtent,
+                maxHeight: 36,
+                minWidth: CircleVeyaBrand.minLogoExtent,
+                maxWidth: 36,
+              ),
+              child: const CircleVeyaBrand(compact: true, logoHeight: 36),
+            ),
             const SizedBox(width: 12),
-            Text(_titles[currentIndex]),
+            Flexible(child: Text(_titles[currentIndex])),
           ],
         ),
         actions: [

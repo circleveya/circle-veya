@@ -274,6 +274,17 @@ class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
       ref.invalidate(socialFeedProvider);
     }
   }
+
+  Future<void> updateActivity(UpdateActivityInput input) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _repo.updateActivity(input));
+    if (!state.hasError) {
+      ref.invalidate(hostedActivitiesProvider);
+      ref.invalidate(myActivitiesProvider);
+      ref.invalidate(discoverActivitiesProvider);
+      ref.invalidate(socialFeedProvider);
+    }
+  }
 }
 
 final activityActionsProvider = AutoDisposeAsyncNotifierProvider<

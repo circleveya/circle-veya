@@ -58,7 +58,10 @@ class ActivityCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ActivityThumbnail(imageUrl: activity.imageUrl),
+              Hero(
+                tag: 'activity-image-${activity.id}',
+                child: _ActivityThumbnail(imageUrl: activity.imageUrl),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

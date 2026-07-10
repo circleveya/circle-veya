@@ -25,6 +25,9 @@ class UnconfiguredActivityRepository implements ActivityRepository {
       _throw();
 
   @override
+  Future<void> updateActivity(UpdateActivityInput input) async => _throw();
+
+  @override
   Future<void> declineInterest(String interestId) async => _throw();
 
   @override

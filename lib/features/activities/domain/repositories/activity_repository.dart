@@ -35,6 +35,8 @@ abstract class ActivityRepository {
     String? coverImageFileName,
   });
 
+  Future<void> updateActivity(UpdateActivityInput input);
+
   Future<void> joinDirect(String activityId);
 
   Future<void> expressInterest(String activityId, {String? message});

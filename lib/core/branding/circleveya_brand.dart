@@ -8,13 +8,13 @@ import '../theme/app_colors.dart';
 /// - [logoAsset] horizontale Wortmarke (Icon + Text)
 /// - [emblemAsset] nur das C-Emblem für enge Flächen
 ///
-/// Skalierung über Höhe + [BoxFit.contain], transparenter Hintergrund.
+/// Skalierung über [ConstrainedBox] + [AspectRatio] (kein starres 20×20).
 class CircleVeyaBrand extends StatelessWidget {
   const CircleVeyaBrand({
     super.key,
     this.onTap,
     this.compact = false,
-    this.logoHeight = 36,
+    this.logoHeight = 40,
     this.emblemOnly = false,
     @Deprecated('Slogan entfernt – Parameter wird ignoriert')
     this.showSlogan = false,
@@ -25,6 +25,9 @@ class CircleVeyaBrand extends StatelessWidget {
 
   /// Ungefähres Seitenverhältnis der Wortmarke (Breite / Höhe).
   static const logoAspectRatio = 883 / 226;
+
+  /// Untere Grenze – verhindert „zu klein“-Wirkung im Live-Build.
+  static const minLogoExtent = 28.0;
 
   static const appName = 'CircleVeya';
 
@@ -59,41 +62,85 @@ class CircleVeyaBrand extends StatelessWidget {
   }
 
   Widget _buildFullLogo() {
-    final naturalWidth = logoHeight * logoAspectRatio;
+    final preferred = logoHeight.clamp(minLogoExtent, 72.0);
 
-    return SizedBox(
-      height: logoHeight,
-      width: naturalWidth,
-      child: Image.asset(
-        logoAsset,
-        fit: BoxFit.contain,
-        alignment: Alignment.centerLeft,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        errorBuilder: (_, _, _) => _FallbackWordmark(
-          height: logoHeight,
-          showEmblem: true,
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var maxH = preferred;
+        if (constraints.maxHeight.isFinite) {
+          maxH = maxH < constraints.maxHeight ? maxH : constraints.maxHeight;
+        }
+        if (constraints.maxWidth.isFinite) {
+          final fromWidth = constraints.maxWidth / logoAspectRatio;
+          maxH = maxH < fromWidth ? maxH : fromWidth;
+        }
+        final minH =
+            maxH < minLogoExtent ? maxH : minLogoExtent;
+        final height = preferred.clamp(minH, maxH);
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: minH,
+            maxHeight: height,
+            maxWidth: height * logoAspectRatio,
+          ),
+          child: AspectRatio(
+            aspectRatio: logoAspectRatio,
+            child: Image.asset(
+              logoAsset,
+              fit: BoxFit.contain,
+              alignment: Alignment.centerLeft,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+              errorBuilder: (_, _, _) => _FallbackWordmark(
+                height: height,
+                showEmblem: true,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildEmblemOnly() {
-    final size = logoHeight;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Image.asset(
-        emblemAsset,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        errorBuilder: (_, _, _) => Icon(
-          Icons.circle_outlined,
-          size: size * 0.85,
-          color: AppColors.seed,
-        ),
-      ),
+    final preferred = logoHeight.clamp(minLogoExtent, 56.0);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var maxS = preferred;
+        if (constraints.maxHeight.isFinite) {
+          maxS = maxS < constraints.maxHeight ? maxS : constraints.maxHeight;
+        }
+        if (constraints.maxWidth.isFinite) {
+          maxS = maxS < constraints.maxWidth ? maxS : constraints.maxWidth;
+        }
+        final minS = maxS < minLogoExtent ? maxS : minLogoExtent;
+        final size = preferred.clamp(minS, maxS);
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: minS,
+            minHeight: minS,
+            maxWidth: size,
+            maxHeight: size,
+          ),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Image.asset(
+              emblemAsset,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+              errorBuilder: (_, _, _) => Icon(
+                Icons.circle_outlined,
+                size: size * 0.85,
+                color: AppColors.seed,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

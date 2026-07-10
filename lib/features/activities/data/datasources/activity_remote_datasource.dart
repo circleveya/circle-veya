@@ -321,6 +321,31 @@ class ActivityRemoteDatasource {
     }
   }
 
+  Future<void> updateActivity(UpdateActivityInput input) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw const AppAuthException('Nicht angemeldet');
+    }
+
+    final payload = <String, dynamic>{
+      'title': input.title,
+      'description': input.description,
+      'location_name': input.locationName,
+    };
+
+    if (input.clearDateTime) {
+      payload['date_time'] = null;
+    } else if (input.dateTime != null) {
+      payload['date_time'] = input.dateTime!.toUtc().toIso8601String();
+    }
+
+    await _client
+        .from('activities')
+        .update(payload)
+        .eq('id', input.activityId)
+        .eq('host_id', userId);
+  }
+
   Future<void> joinDirect(String activityId) async {
     await _client.rpc('join_activity_direct', params: {
       'p_activity_id': activityId,

@@ -3,9 +3,13 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/layout/shell_destination_request.dart';
+import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/location/location_provider.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity.dart';
@@ -208,10 +212,6 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Aktivität erstellt!')),
-    );
-
     ref.read(eventSelectionProvider.notifier).clear();
     _formKey.currentState!.reset();
     _titleController.clear();
@@ -235,6 +235,12 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
 
     ref.invalidate(hostedActivitiesProvider);
     ref.invalidate(myActivitiesProvider);
+
+    // Direkt zu „Meine Aktivitäten“ – kein Erstellt-Popup.
+    ref
+        .read(shellDestinationRequestProvider.notifier)
+        .goTo(WebShellDestination.myActivities);
+    context.goNamed(RouteNames.home);
   }
 
   @override

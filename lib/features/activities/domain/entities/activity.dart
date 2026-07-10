@@ -87,6 +87,47 @@ class DiscoverableActivity extends Equatable {
     return '$currentParticipants';
   }
 
+  DiscoverableActivity copyWith({
+    String? title,
+    String? description,
+    bool clearDescription = false,
+    String? locationName,
+    bool clearLocationName = false,
+    DateTime? dateTime,
+    bool clearDateTime = false,
+    String? imageUrl,
+  }) {
+    return DiscoverableActivity(
+      id: id,
+      hostId: hostId,
+      hostUsername: hostUsername,
+      hostIsCompany: hostIsCompany,
+      hostAvatarUrl: hostAvatarUrl,
+      title: title ?? this.title,
+      description:
+          clearDescription ? null : (description ?? this.description),
+      maxParticipants: maxParticipants,
+      currentParticipants: currentParticipants,
+      dateTime: clearDateTime ? null : (dateTime ?? this.dateTime),
+      imageUrl: imageUrl ?? this.imageUrl,
+      locationType: locationType,
+      weatherCondition: weatherCondition,
+      locationName:
+          clearLocationName ? null : (locationName ?? this.locationName),
+      distanceKm: distanceKm,
+      visibleAs: visibleAs,
+      viewerAction: viewerAction,
+      isSponsored: isSponsored,
+      isFeatured: isFeatured,
+      source: source,
+      externalUrl: externalUrl,
+      sourceEventId: sourceEventId,
+      sourceEventTitle: sourceEventTitle,
+      createdAt: createdAt,
+      participantAvatarUrls: participantAvatarUrls,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -186,6 +227,35 @@ class CreateActivityInput extends Equatable {
         imageUrl,
         sourceEventId,
         sourceEventTitle,
+      ];
+}
+
+/// Teil-Update für Host-Bearbeitung (Titel, Ort, Datum, Beschreibung).
+class UpdateActivityInput extends Equatable {
+  const UpdateActivityInput({
+    required this.activityId,
+    required this.title,
+    this.description,
+    this.locationName,
+    this.dateTime,
+    this.clearDateTime = false,
+  });
+
+  final String activityId;
+  final String title;
+  final String? description;
+  final String? locationName;
+  final DateTime? dateTime;
+  final bool clearDateTime;
+
+  @override
+  List<Object?> get props => [
+        activityId,
+        title,
+        description,
+        locationName,
+        dateTime,
+        clearDateTime,
       ];
 }
 

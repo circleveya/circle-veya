@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,15 +7,15 @@ import 'package:intl/intl.dart';
 import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../chat/presentation/providers/chat_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/url_utils.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 import '../providers/activity_provider.dart';
 import '../providers/event_selection_provider.dart';
-import '../widgets/activity_card.dart';
 
-class ActivityDetailScreen extends ConsumerWidget {
+class ActivityDetailScreen extends ConsumerStatefulWidget {
   const ActivityDetailScreen({
     super.key,
     required this.activityId,
@@ -25,159 +26,395 @@ class ActivityDetailScreen extends ConsumerWidget {
   final DiscoverableActivity? activity;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final interestsAsync = ref.watch(activityInterestsProvider(activityId));
+  ConsumerState<ActivityDetailScreen> createState() =>
+      _ActivityDetailScreenState();
+}
+
+class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
+  late DiscoverableActivity? _activity;
+
+  @override
+  void initState() {
+    super.initState();
+    _activity = widget.activity;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activity = _activity;
+    final interestsAsync = ref.watch(activityInterestsProvider(widget.activityId));
     final actionsState = ref.watch(activityActionsProvider);
     final isHost = activity?.viewerAction == ViewerAction.host;
     final isParticipant = activity?.viewerAction == ViewerAction.joined;
     final isPastEvent = activity != null &&
-        activity!.dateTime != null &&
-        activity!.dateTime!.isBefore(DateTime.now());
+        activity.dateTime != null &&
+        activity.dateTime!.isBefore(DateTime.now());
     final groupChatAsync = (isHost || isParticipant)
-        ? ref.watch(activityGroupChatProvider(activityId))
+        ? ref.watch(activityGroupChatProvider(widget.activityId))
         : const AsyncValue<String?>.data(null);
 
+    final imageUrl = activity?.imageUrl?.trim();
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat('EEEE, dd.MM.yyyy · HH:mm');
+
+    final screen = MediaQuery.sizeOf(context);
+    // Rechteckiges Hero (4:3), zentriert – nicht über die volle Breite gezogen.
+    const heroAspect = 4 / 3;
+    final heroMaxWidth = (screen.width - 48).clamp(280.0, 520.0);
+    final heroHeight = heroMaxWidth / heroAspect;
+    final expandedHeight = heroHeight + 24;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(activity?.title ?? 'Aktivität'),
-        actions: [
-          if (isHost)
-            IconButton(
-              onPressed: actionsState.isLoading
-                  ? null
-                  : () => _confirmDelete(context, ref, activity!),
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Aktivität löschen',
-            ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (activity != null) ...[
-            ActivityCard(
-              activity: activity!,
-              isLoading: actionsState.isLoading,
-              onAction: activity!.isExternal
-                  ? null
-                  : () => _handleAction(context, ref, activity!),
-            ),
-            if (activity!.isExternal) ...[
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: () => _planWithFriends(context, ref, activity!),
-                icon: const Icon(Icons.group_add_outlined),
-                label: const Text('Mit Freunden zum Event'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => _handleAction(context, ref, activity!),
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Zur Event-Quelle'),
-              ),
+      backgroundColor: theme.colorScheme.surface,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: expandedHeight,
+            pinned: true,
+            stretch: false,
+            backgroundColor: theme.colorScheme.surface,
+            foregroundColor: AppColors.brandNavy,
+            actions: [
+              if (isHost && activity != null) ...[
+                IconButton(
+                  tooltip: 'Bearbeiten',
+                  onPressed: actionsState.isLoading
+                      ? null
+                      : () => _openEdit(context, activity),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                IconButton(
+                  tooltip: 'Löschen',
+                  onPressed: actionsState.isLoading
+                      ? null
+                      : () => _confirmDelete(context, activity),
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
             ],
-          ],
-          if (isHost || isParticipant)
-            groupChatAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
-              data: (chatId) {
-                if (chatId == null) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: Text(
-                      'Gruppenchat wird freigeschaltet, sobald weitere '
-                      'Teilnehmer beitreten.',
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
+              background: ColoredBox(
+                color: theme.colorScheme.surface,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 12),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: heroMaxWidth),
+                      child: AspectRatio(
+                        aspectRatio: heroAspect,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Hero(
+                                tag: 'activity-image-${widget.activityId}',
+                                child: hasImage
+                                    ? CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.center,
+                                        placeholder: (_, _) =>
+                                            const _HeroFallback(),
+                                        errorWidget: (_, _, _) =>
+                                            const _HeroFallback(),
+                                      )
+                                    : const _HeroFallback(),
+                              ),
+                              const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black12,
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: FilledButton.icon(
-                    onPressed: () => context.pushNamed(
-                      RouteNames.chatRoom,
-                      pathParameters: {'id': chatId},
-                    ),
-                    icon: const Icon(Icons.groups),
-                    label: const Text('Zum Gruppenchat'),
                   ),
-                );
-              },
-            ),
-          if ((isHost || isParticipant) && isPastEvent) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () => context.pushNamed(
-                RouteNames.activityGallery,
-                pathParameters: {'id': activityId},
-                extra: activity?.title,
+                ),
               ),
-              icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Erinnerungen'),
             ),
-          ],
-          if (isHost) ...[
-            const SizedBox(height: 24),
-            Text(
-              'Interessierte',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            interestsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text(e.toString()),
-              data: (interests) {
-                final pending =
-                    interests.where((i) => i.isPending).toList();
-                final others =
-                    interests.where((i) => !i.isPending).toList();
-
-                if (interests.isEmpty) {
-                  return const Text('Noch keine Interessenten.');
-                }
-
-                return Column(
-                  children: [
-                    ...pending.map(
-                      (interest) => _InterestTile(
-                        interest: interest,
-                        isLoading: actionsState.isLoading,
-                        onTap: () => context.pushNamed(
-                          RouteNames.profileView,
-                          pathParameters: {'id': interest.profileId},
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 48),
+              child: activity == null
+                  ? Text(
+                      'Details nicht geladen.',
+                      style: theme.textTheme.bodyLarge,
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          activity.title,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brandNavy,
+                            letterSpacing: -0.3,
+                            height: 1.25,
+                          ),
                         ),
-                        onMessage: () => _startDm(context, ref, interest.id),
-                        onAccept: () => ref
-                            .read(activityActionsProvider.notifier)
-                            .acceptInterest(interest.id, activityId),
-                        onDecline: () => ref
-                            .read(activityActionsProvider.notifier)
-                            .declineInterest(interest.id, activityId),
-                      ),
-                    ),
-                    ...others.map(
-                      (interest) => _InterestTile(
-                        interest: interest,
-                        showActions: false,
-                        onTap: () => context.pushNamed(
-                          RouteNames.profileView,
-                          pathParameters: {'id': interest.profileId},
+                        const SizedBox(height: 20),
+                        if (activity.dateTime != null) ...[
+                          _MetaRow(
+                            icon: Icons.schedule_outlined,
+                            label: dateFormat.format(activity.dateTime!.toLocal()),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (activity.locationName != null &&
+                            activity.locationName!.trim().isNotEmpty) ...[
+                          _MetaRow(
+                            icon: Icons.place_outlined,
+                            label: activity.locationName!,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        _MetaRow(
+                          icon: Icons.people_outline,
+                          label: '${activity.participantsLabel} Teilnehmer',
                         ),
-                      ),
+                        _MetaRow(
+                          icon: Icons.person_outline,
+                          label: 'Host: ${activity.hostUsername}',
+                        ),
+                        if (activity.description != null &&
+                            activity.description!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 28),
+                          Text(
+                            'Beschreibung',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandNavy,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            activity.description!,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              height: 1.55,
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 32),
+                        if (!activity.isExternal &&
+                            activity.viewerAction != ViewerAction.host &&
+                            activity.viewerAction != ViewerAction.none &&
+                            activity.viewerAction != ViewerAction.joined)
+                          FilledButton(
+                            onPressed: actionsState.isLoading
+                                ? null
+                                : () => _handleAction(context, activity),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.brandNavy,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              activity.viewerAction == ViewerAction.directJoin
+                                  ? 'Zusagen'
+                                  : 'Interesse bekunden',
+                            ),
+                          ),
+                        if (activity.isExternal) ...[
+                          FilledButton.icon(
+                            onPressed: () =>
+                                _planWithFriends(context, activity),
+                            icon: const Icon(Icons.group_add_outlined),
+                            label: const Text('Mit Freunden zum Event'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.brandNavy,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
+                            onPressed: () => _handleAction(context, activity),
+                            icon: const Icon(Icons.open_in_new),
+                            label: const Text('Zur Event-Quelle'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (isHost || isParticipant)
+                          groupChatAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
+                            data: (chatId) {
+                              if (chatId == null) {
+                                return const Padding(
+                                  padding: EdgeInsets.only(top: 20),
+                                  child: Text(
+                                    'Gruppenchat wird freigeschaltet, sobald '
+                                    'weitere Teilnehmer beitreten.',
+                                  ),
+                                );
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: OutlinedButton.icon(
+                                  onPressed: () => context.pushNamed(
+                                    RouteNames.chatRoom,
+                                    pathParameters: {'id': chatId},
+                                  ),
+                                  icon: const Icon(Icons.groups_outlined),
+                                  label: const Text('Zum Gruppenchat'),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(52),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        if ((isHost || isParticipant) && isPastEvent) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () => context.pushNamed(
+                              RouteNames.activityGallery,
+                              pathParameters: {'id': widget.activityId},
+                              extra: activity.title,
+                            ),
+                            icon: const Icon(Icons.photo_library_outlined),
+                            label: const Text('Erinnerungen'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (isHost) ...[
+                          const SizedBox(height: 40),
+                          Text(
+                            'Interessierte',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandNavy,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          interestsAsync.when(
+                            loading: () => const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            error: (e, _) => Text(e.toString()),
+                            data: (interests) {
+                              if (interests.isEmpty) {
+                                return Text(
+                                  'Noch keine Interessenten.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                );
+                              }
+                              final pending =
+                                  interests.where((i) => i.isPending).toList();
+                              final others =
+                                  interests.where((i) => !i.isPending).toList();
+                              return Column(
+                                children: [
+                                  ...pending.map(
+                                    (interest) => _InterestTile(
+                                      interest: interest,
+                                      isLoading: actionsState.isLoading,
+                                      onTap: () => context.pushNamed(
+                                        RouteNames.profileView,
+                                        pathParameters: {
+                                          'id': interest.profileId,
+                                        },
+                                      ),
+                                      onMessage: () =>
+                                          _startDm(context, interest.id),
+                                      onAccept: () => ref
+                                          .read(
+                                            activityActionsProvider.notifier,
+                                          )
+                                          .acceptInterest(
+                                            interest.id,
+                                            widget.activityId,
+                                          ),
+                                      onDecline: () => ref
+                                          .read(
+                                            activityActionsProvider.notifier,
+                                          )
+                                          .declineInterest(
+                                            interest.id,
+                                            widget.activityId,
+                                          ),
+                                    ),
+                                  ),
+                                  ...others.map(
+                                    (interest) => _InterestTile(
+                                      interest: interest,
+                                      showActions: false,
+                                      onTap: () => context.pushNamed(
+                                        RouteNames.profileView,
+                                        pathParameters: {
+                                          'id': interest.profileId,
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                );
-              },
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 
+  Future<void> _openEdit(
+    BuildContext context,
+    DiscoverableActivity activity,
+  ) async {
+    final updated = await context.pushNamed<DiscoverableActivity>(
+      RouteNames.activityEdit,
+      pathParameters: {'id': activity.id},
+      extra: activity,
+    );
+    if (updated != null && mounted) {
+      setState(() => _activity = updated);
+    }
+  }
+
   Future<void> _planWithFriends(
     BuildContext context,
-    WidgetRef ref,
     DiscoverableActivity activity,
   ) {
     ref.read(eventSelectionProvider.notifier).selectFromActivity(activity);
@@ -190,7 +427,6 @@ class ActivityDetailScreen extends ConsumerWidget {
 
   Future<void> _handleAction(
     BuildContext context,
-    WidgetRef ref,
     DiscoverableActivity activity,
   ) async {
     if (activity.viewerAction == ViewerAction.externalLink) {
@@ -234,16 +470,13 @@ class ActivityDetailScreen extends ConsumerWidget {
 
   Future<void> _confirmDelete(
     BuildContext context,
-    WidgetRef ref,
     DiscoverableActivity activity,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Aktivität löschen?'),
-        content: Text(
-          '„${activity.title}“ wird unwiderruflich gelöscht.',
-        ),
+        content: Text('„${activity.title}“ wird unwiderruflich gelöscht.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -281,11 +514,7 @@ class ActivityDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _startDm(
-    BuildContext context,
-    WidgetRef ref,
-    String interestId,
-  ) async {
+  Future<void> _startDm(BuildContext context, String interestId) async {
     try {
       final chatId =
           await ref.read(chatActionsProvider.notifier).startDmChat(interestId);
@@ -300,6 +529,55 @@ class ActivityDetailScreen extends ConsumerWidget {
         SnackBar(content: Text(error.toString())),
       );
     }
+  }
+}
+
+class _HeroFallback extends StatelessWidget {
+  const _HeroFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(gradient: AppColors.premiumGradient),
+      child: Center(
+        child: Icon(Icons.explore_outlined, size: 64, color: Colors.white70),
+      ),
+    );
+  }
+}
+
+class _MetaRow extends StatelessWidget {
+  const _MetaRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: AppColors.brandNavy.withValues(alpha: 0.55),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                height: 1.4,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -326,10 +604,13 @@ class _InterestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
 
-    return Card(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         onTap: onTap,
         leading: CircleAvatar(
+          backgroundColor: AppColors.brandNavy.withValues(alpha: 0.08),
           child: Text(interest.username[0].toUpperCase()),
         ),
         title: Text(interest.username),

@@ -20,8 +20,9 @@
 
 - **Auth** – Login/Register per E-Mail
 - **Entdecken** – Aktivitäten im Feed, Filter (ein-/ausklappbar), Zusagen/Interesse
-- **Erstellen** – Aktivität mit optionalem Datum & Titelbild, Sichtbarkeit (Freunde/Bekannte/Fremde)
-- **Meine Events** – eigene Aktivitäten ansehen und **löschen**
+- **Erstellen** – Aktivität mit optionalem Datum & Titelbild; danach Sprung zu Meine Aktivitäten
+- **Meine Events** – eigene Aktivitäten ansehen, **bearbeiten** und **löschen**
+- **Aktivitäts-Detail** – Hero-Bild / SliverAppBar, Quiet Luxury
 - **Freunde** – suchen, hinzufügen, **Direktnachrichten**
 - **Chats** – Gruppenchat pro Event, DM bei Interesse, DM mit Freunden
 - **Profil** – ansehen/bearbeiten, Avatar (Web-kompatibel), Cover-Banner, Level, Interessen
@@ -120,6 +121,30 @@ flutter run \
 ```sql
 SELECT public.seed_demo_data('DEINE-USER-UUID');
 ```
+
+---
+
+## v2.5 – 10.07.2026 (Session-Update)
+
+### Entdecken / UI
+1. Filter in aufklappbares Panel / ModalBottomSheet (Wann, Entfernung, Standort)
+2. Gradient-Hero „Find people. Create memories.“ + Event-Suche
+3. Suchtext bleibt erhalten bei „keine Ergebnisse“ (Parent-Controller)
+4. Globale Header-Suche nur außerhalb Entdecken; Entdecken hat eigenen Hero
+
+### Bilder (Edge Function `fetch-activity-image`)
+5. Groq → englisches Keyword → Pexels-Suche
+6. Emblem-Fallback bei Fehler; detailliertes Logging
+7. Bekanntes Live-Problem: **Pexels HTTP 401** = ungültiger `PEXELS_API_KEY` in Secrets
+
+### Aktivitäten-Erlebnis
+8. Detailansicht: voller Hero/`SliverAppBar`, `Hero`-Übergang vom Kartenbild
+9. Host kann bearbeiten (Stift): Titel, Ort, Datum, Beschreibung
+10. Nach Erstellen: Navigation zu **Meine Aktivitäten** (kein Erstellt-Popup)
+
+### Deploy
+- Frontend: Push auf `main` → Vercel
+- Edge Functions: `npx supabase functions deploy fetch-activity-image`
 
 ---
 

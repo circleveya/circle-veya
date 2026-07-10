@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../branding/circleveya_brand.dart';
 import '../theme/app_colors.dart';
 import 'web_nav_item.dart';
 
@@ -38,28 +39,15 @@ class WebSidebar extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.hub, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Circle',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: CircleVeyaBrand.minLogoExtent,
+                maxHeight: 44,
+              ),
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: CircleVeyaBrand(logoHeight: 40),
+              ),
             ),
           ),
           Expanded(

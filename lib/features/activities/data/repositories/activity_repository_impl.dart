@@ -127,6 +127,17 @@ class ActivityRepositoryImpl implements ActivityRepository {
   }
 
   @override
+  Future<void> updateActivity(UpdateActivityInput input) async {
+    try {
+      await _datasource.updateActivity(input);
+    } on PostgrestException catch (error) {
+      throw ActivityFailure(error.message);
+    } on AppAuthException catch (error) {
+      throw ActivityFailure(error.message);
+    }
+  }
+
+  @override
   Future<void> joinDirect(String activityId) async {
     try {
       await _datasource.joinDirect(activityId);
