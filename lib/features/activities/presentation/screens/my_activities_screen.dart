@@ -63,7 +63,6 @@ class MyActivitiesScreen extends ConsumerWidget {
                         children: [
                           ActivityCard(
                             activity: activity,
-                            compactImage: true,
                             onTap: () => context.pushNamed(
                               RouteNames.activityDetail,
                               pathParameters: {'id': activity.id},
@@ -103,7 +102,6 @@ class MyActivitiesScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: ActivityCard(
                         activity: activity,
-                        compactImage: true,
                         onTap: () => context.pushNamed(
                           RouteNames.activityDetail,
                           pathParameters: {'id': activity.id},

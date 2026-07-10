@@ -89,10 +89,10 @@ serve(async (req) => {
       throw new Error("PEXELS_API_KEY ist nicht gesetzt");
     }
 
-    const searchTerm = extractSearchTerm(record.title);
+    const searchTerm = `${extractSearchTerm(record.title)} sport action`;
 
     const pexelsRes = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchTerm)}&per_page=1`,
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchTerm)}&orientation=landscape&per_page=5`,
       {
         headers: { Authorization: PEXELS_API_KEY },
       },
@@ -103,8 +103,13 @@ serve(async (req) => {
     }
 
     const pexelsData = await pexelsRes.json();
+    const photos = Array.isArray(pexelsData.photos) ? pexelsData.photos : [];
+    const chosen =
+      photos.length > 0
+        ? photos[Math.floor(Math.random() * photos.length)]
+        : null;
     let finalImageUrl: string | null =
-      pexelsData.photos?.[0]?.src?.large ?? null;
+      chosen?.src?.large ?? chosen?.src?.landscape ?? chosen?.src?.medium ?? null;
     let imageSource = "pexels";
 
     if (!finalImageUrl) {

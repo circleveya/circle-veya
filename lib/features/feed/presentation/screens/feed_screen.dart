@@ -199,7 +199,6 @@ class _FeedSection extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: ActivityCard(
                   activity: activity,
-                  compactImage: true,
                   isLoading: isActionLoading,
                   onTap: () => onTap(activity),
                   onAction: () => onAction(activity),
