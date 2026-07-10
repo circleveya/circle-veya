@@ -19,6 +19,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** Nur Prefix – nie den vollen Key loggen. */
+function keyStatus(name: string, value: string | undefined): string {
+  if (!value) return `${name}=FEHLT`;
+  const prefix = value.length >= 4 ? value.slice(0, 4) : "????";
+  return `${name}=gesetzt (len=${value.length}, prefix=${prefix}…)`;
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -40,7 +47,6 @@ function sanitizeKeyword(raw: string): string {
     .slice(0, 80);
 }
 
-/** Einfacher Fallback ohne KI, falls Groq nicht erreichbar ist. */
 function heuristicKeyword(activityName: string): string {
   const stop = new Set([
     "mit",
@@ -84,18 +90,38 @@ function heuristicKeyword(activityName: string): string {
   return tokens.slice(0, 3).join(" ") || "friends outdoor activity";
 }
 
+function fallbackPayload(
+  activityName: string,
+  extras: Record<string, unknown> = {},
+): Record<string, unknown> {
+  console.log("Using FALLBACK_EMBLEM_URL:", FALLBACK_EMBLEM_URL);
+  return {
+    image_url: FALLBACK_EMBLEM_URL,
+    fallback: true,
+    fallback_emblem_url: FALLBACK_EMBLEM_URL,
+    activityName,
+    ...extras,
+  };
+}
+
 async function extractKeywordWithGroq(
   activityName: string,
 ): Promise<{ keyword: string; source: "groq" | "heuristic" }> {
+  console.log("Groq: start keyword extraction for:", activityName);
+
   if (!GROQ_API_KEY) {
-    console.warn("fetch-activity-image: GROQ_API_KEY fehlt – Heuristik");
-    return { keyword: heuristicKeyword(activityName), source: "heuristic" };
+    console.error("catch/env: GROQ_API_KEY is not loaded");
+    const keyword = heuristicKeyword(activityName);
+    console.log("Extracted Keyword:", keyword);
+    console.log("Keyword source: heuristic (no GROQ_API_KEY)");
+    return { keyword, source: "heuristic" };
   }
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8_000);
 
+    console.log("Groq: POST", GROQ_URL, "model=", GROQ_MODEL);
     const res = await fetch(GROQ_URL, {
       method: "POST",
       signal: controller.signal,
@@ -126,32 +152,54 @@ async function extractKeywordWithGroq(
 
     clearTimeout(timeout);
 
+    const groqText = await res.text();
+    console.log("Groq Status:", res.status);
+    console.log("Groq Response:", groqText.slice(0, 1500));
+
     if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      console.error(
-        "fetch-activity-image: Groq HTTP",
-        res.status,
-        errBody.slice(0, 300),
-      );
-      return { keyword: heuristicKeyword(activityName), source: "heuristic" };
+      console.error("catch/http: Groq request failed with status", res.status);
+      const keyword = heuristicKeyword(activityName);
+      console.log("Extracted Keyword:", keyword);
+      console.log("Keyword source: heuristic (Groq HTTP error)");
+      return { keyword, source: "heuristic" };
     }
 
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(groqText) as Record<string, unknown>;
+    } catch (parseErr) {
+      console.error("catch: Groq JSON parse failed", parseErr);
+      const keyword = heuristicKeyword(activityName);
+      console.log("Extracted Keyword:", keyword);
+      console.log("Keyword source: heuristic (Groq parse error)");
+      return { keyword, source: "heuristic" };
+    }
+
+    const choices = data?.choices;
+    const first = Array.isArray(choices) ? choices[0] : undefined;
+    const message = (first as Record<string, unknown> | undefined)?.message;
+    const content = (message as Record<string, unknown> | undefined)?.content;
     const keyword =
       typeof content === "string" ? sanitizeKeyword(content) : "";
 
     if (!keyword) {
-      console.warn("fetch-activity-image: Groq leere Antwort – Heuristik");
-      return { keyword: heuristicKeyword(activityName), source: "heuristic" };
+      console.warn("Groq returned empty keyword – using heuristic");
+      const fallbackKeyword = heuristicKeyword(activityName);
+      console.log("Extracted Keyword:", fallbackKeyword);
+      console.log("Keyword source: heuristic (empty Groq content)");
+      return { keyword: fallbackKeyword, source: "heuristic" };
     }
 
-    console.log("fetch-activity-image: Groq keyword:", keyword);
+    console.log("Extracted Keyword:", keyword);
+    console.log("Keyword source: groq");
     return { keyword, source: "groq" };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("fetch-activity-image: Groq exception", message);
-    return { keyword: heuristicKeyword(activityName), source: "heuristic" };
+    console.error("catch: Groq exception", message);
+    const keyword = heuristicKeyword(activityName);
+    console.log("Extracted Keyword:", keyword);
+    console.log("Keyword source: heuristic (Groq exception)");
+    return { keyword, source: "heuristic" };
   }
 }
 
@@ -161,8 +209,12 @@ async function searchPexels(
   imageUrl: string | null;
   photographer: string | null;
   error?: string;
+  status?: number;
 }> {
+  console.log("Pexels: start search for query:", query);
+
   if (!PEXELS_API_KEY) {
+    console.error("catch/env: PEXELS_API_KEY is not loaded");
     return {
       imageUrl: null,
       photographer: null,
@@ -176,34 +228,51 @@ async function searchPexels(
       orientation: "landscape",
       per_page: "8",
     });
+    const pexelsUrl = `https://api.pexels.com/v1/search?${params.toString()}`;
+    console.log("Pexels URL:", pexelsUrl);
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    const res = await fetch(
-      `https://api.pexels.com/v1/search?${params.toString()}`,
-      {
-        signal: controller.signal,
-        headers: { Authorization: PEXELS_API_KEY },
-      },
-    );
+    const pexelsResponse = await fetch(pexelsUrl, {
+      signal: controller.signal,
+      headers: { Authorization: PEXELS_API_KEY },
+    });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
+    const responseText = await pexelsResponse.text();
+    console.log("Pexels Status:", pexelsResponse.status);
+    console.log("Pexels Response:", responseText.slice(0, 2000));
+
+    if (!pexelsResponse.ok) {
       console.error(
-        "fetch-activity-image: Pexels HTTP",
-        res.status,
-        errBody.slice(0, 300),
+        "catch/http: Pexels request failed with status",
+        pexelsResponse.status,
       );
       return {
         imageUrl: null,
         photographer: null,
-        error: `Pexels ${res.status}`,
+        error: `Pexels ${pexelsResponse.status}`,
+        status: pexelsResponse.status,
       };
     }
 
-    const data = await res.json();
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(responseText) as Record<string, unknown>;
+    } catch (parseErr) {
+      console.error("catch: Pexels JSON parse failed", parseErr);
+      return {
+        imageUrl: null,
+        photographer: null,
+        error: "Pexels JSON parse failed",
+        status: pexelsResponse.status,
+      };
+    }
+
     const photos = Array.isArray(data?.photos) ? data.photos : [];
+    console.log("Pexels photos count:", photos.length);
+
     const chosen = pickRandom(photos as Array<Record<string, unknown>>);
     const src = chosen?.src as Record<string, unknown> | undefined;
     const imageUrl =
@@ -211,29 +280,19 @@ async function searchPexels(
       (typeof src?.landscape === "string" ? src.landscape : null) ??
       (typeof src?.medium === "string" ? src.medium : null);
 
+    console.log("Pexels chosen image_url:", imageUrl ?? "(none)");
+
     return {
       imageUrl,
       photographer:
         typeof chosen?.photographer === "string" ? chosen.photographer : null,
+      status: pexelsResponse.status,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("fetch-activity-image: Pexels exception", message);
+    console.error("catch: Pexels exception", message);
     return { imageUrl: null, photographer: null, error: message };
   }
-}
-
-function fallbackPayload(
-  activityName: string,
-  extras: Record<string, unknown> = {},
-): Record<string, unknown> {
-  return {
-    image_url: FALLBACK_EMBLEM_URL,
-    fallback: true,
-    fallback_emblem_url: FALLBACK_EMBLEM_URL,
-    activityName,
-    ...extras,
-  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -241,15 +300,26 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Immer 200 mit image_url – die App soll bei API-Fehlern nicht abstürzen.
+  console.log("=== fetch-activity-image START ===");
+  console.log("Env check:", keyStatus("GROQ_API_KEY", GROQ_API_KEY));
+  console.log("Env check:", keyStatus("PEXELS_API_KEY", PEXELS_API_KEY));
+
+  // Immer 200 + image_url – nie einen Fehler werfen, der die App crashen lässt.
   try {
     let body: Record<string, unknown> = {};
     try {
       body = (await req.json()) as Record<string, unknown>;
-    } catch {
-      console.warn("fetch-activity-image: Body kein JSON");
+      console.log("Request body:", JSON.stringify(body));
+    } catch (parseErr) {
+      console.error("catch: Request body is not JSON", parseErr);
       return jsonResponse(
-        fallbackPayload("", { error: "Ungültiger Request-Body" }),
+        fallbackPayload("", {
+          error: "Ungültiger Request-Body",
+          debug: {
+            groq_key_loaded: Boolean(GROQ_API_KEY),
+            pexels_key_loaded: Boolean(PEXELS_API_KEY),
+          },
+        }),
       );
     }
 
@@ -261,12 +331,19 @@ Deno.serve(async (req: Request) => {
           : "";
 
     if (!activityName) {
+      console.warn("activityName missing – returning fallback");
       return jsonResponse(
-        fallbackPayload("", { error: "activityName erforderlich" }),
+        fallbackPayload("", {
+          error: "activityName erforderlich",
+          debug: {
+            groq_key_loaded: Boolean(GROQ_API_KEY),
+            pexels_key_loaded: Boolean(PEXELS_API_KEY),
+          },
+        }),
       );
     }
 
-    console.log("fetch-activity-image: activityName=", activityName);
+    console.log("activityName:", activityName);
 
     const { keyword, source: keywordSource } =
       await extractKeywordWithGroq(activityName);
@@ -274,7 +351,8 @@ Deno.serve(async (req: Request) => {
     const pexels = await searchPexels(keyword);
 
     if (pexels.imageUrl) {
-      console.log("fetch-activity-image: success", pexels.imageUrl);
+      console.log("SUCCESS image_url:", pexels.imageUrl);
+      console.log("=== fetch-activity-image END (pexels) ===");
       return jsonResponse({
         image_url: pexels.imageUrl,
         fallback: false,
@@ -282,25 +360,43 @@ Deno.serve(async (req: Request) => {
         keyword_source: keywordSource,
         photographer: pexels.photographer,
         activityName,
+        debug: {
+          groq_key_loaded: Boolean(GROQ_API_KEY),
+          pexels_key_loaded: Boolean(PEXELS_API_KEY),
+          pexels_status: pexels.status ?? null,
+        },
       });
     }
 
     console.warn(
-      "fetch-activity-image: kein Pexels-Treffer – Emblem-Fallback",
-      pexels.error ?? "",
+      "No Pexels image – returning emblem fallback. reason:",
+      pexels.error ?? "empty photos",
     );
+    console.log("=== fetch-activity-image END (fallback) ===");
     return jsonResponse(
       fallbackPayload(activityName, {
         query: keyword,
         keyword_source: keywordSource,
         error: pexels.error ?? "Kein passendes Bild gefunden",
+        debug: {
+          groq_key_loaded: Boolean(GROQ_API_KEY),
+          pexels_key_loaded: Boolean(PEXELS_API_KEY),
+          pexels_status: pexels.status ?? null,
+        },
       }),
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("fetch-activity-image: unhandled", message);
+    console.error("catch: unhandled top-level exception", message);
+    console.log("=== fetch-activity-image END (unhandled fallback) ===");
     return jsonResponse(
-      fallbackPayload("", { error: message }),
+      fallbackPayload("", {
+        error: message,
+        debug: {
+          groq_key_loaded: Boolean(GROQ_API_KEY),
+          pexels_key_loaded: Boolean(PEXELS_API_KEY),
+        },
+      }),
     );
   }
 });
