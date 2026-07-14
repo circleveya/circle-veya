@@ -7,6 +7,7 @@ import '../../data/datasources/profile_remote_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/repositories/unconfigured_profile_repository.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/user_review.dart';
 import '../../domain/repositories/profile_repository.dart';
 
 final profileRemoteDatasourceProvider = Provider<ProfileRemoteDatasource>((ref) {
@@ -33,6 +34,50 @@ final profileRatingProvider = FutureProvider.autoDispose
     .family<({double avgRating, int reviewCount}), String>((ref, profileId) {
   return ref.watch(profileRemoteDatasourceProvider).getUserRating(profileId);
 });
+
+final profileReviewsProvider = FutureProvider.autoDispose
+    .family<List<UserReview>, String>((ref, profileId) {
+  return ref.watch(profileRemoteDatasourceProvider).getReviewsForProfile(
+        profileId,
+      );
+});
+
+final myReviewForProfileProvider = FutureProvider.autoDispose
+    .family<UserReview?, String>((ref, targetUserId) {
+  return ref
+      .watch(profileRemoteDatasourceProvider)
+      .getMyReviewForProfile(targetUserId);
+});
+
+class ReviewController extends AutoDisposeAsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> submit({
+    required String targetUserId,
+    required int rating,
+    String? comment,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(profileRemoteDatasourceProvider).upsertReview(
+            targetUserId: targetUserId,
+            rating: rating,
+            comment: comment,
+          );
+    });
+    if (!state.hasError) {
+      ref.invalidate(profileRatingProvider(targetUserId));
+      ref.invalidate(profileReviewsProvider(targetUserId));
+      ref.invalidate(myReviewForProfileProvider(targetUserId));
+    }
+  }
+}
+
+final reviewControllerProvider =
+    AutoDisposeAsyncNotifierProvider<ReviewController, void>(
+  ReviewController.new,
+);
 
 class PremiumSimulationController extends AutoDisposeAsyncNotifier<void> {
   @override

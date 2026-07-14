@@ -9,4 +9,6 @@ abstract final class RouteNames {
   static const profileEdit = 'profileEdit';
   static const gallery = 'gallery';
   static const activityGallery = 'activityGallery';
+  static const groupCreate = 'groupCreate';
+  static const groupDetail = 'groupDetail';
 }

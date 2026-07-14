@@ -68,6 +68,47 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     }
   }
 
+  Future<void> _leaveChat() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chat löschen?'),
+        content: const Text(
+          'Der Chat verschwindet aus deiner Liste. '
+          'Bei Gruppenchats bleibt er für andere Teilnehmer erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(chatActionsProvider.notifier).leaveChat(widget.chatId);
+    if (!mounted) return;
+
+    final error = ref.read(chatActionsProvider).error;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(messagesProvider(widget.chatId));
@@ -93,6 +134,19 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') _leaveChat();
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'delete',
+                child: Text('Chat löschen'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [

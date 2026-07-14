@@ -19,4 +19,6 @@ abstract class ChatRepository {
   Future<String> startFriendChat(String friendId);
 
   Future<String?> getActivityGroupChatId(String activityId);
+
+  Future<void> leaveChat(String chatId);
 }

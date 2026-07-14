@@ -29,6 +29,9 @@ abstract class ActivityRepository {
 
   Future<List<DiscoverableActivity>> getHostedActivities();
 
+  /// Sichtbare gehostete Aktivitäten eines Profils (RLS / can_view_activity).
+  Future<List<DiscoverableActivity>> getActivitiesByHost(String hostId);
+
   Future<void> createActivity(
     CreateActivityInput input, {
     Uint8List? coverImageBytes,

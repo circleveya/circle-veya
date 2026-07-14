@@ -71,5 +71,9 @@ class UnconfiguredActivityRepository implements ActivityRepository {
   Future<List<DiscoverableActivity>> getHostedActivities() async => [];
 
   @override
+  Future<List<DiscoverableActivity>> getActivitiesByHost(String hostId) async =>
+      [];
+
+  @override
   Future<void> joinDirect(String activityId) async => _throw();
 }

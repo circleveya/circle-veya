@@ -54,19 +54,106 @@ class ChatListScreen extends ConsumerWidget {
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final chat = chats[index];
-              return _ChatListTile(chat: chat);
+              return Dismissible(
+                key: ValueKey('chat-${chat.id}'),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) async {
+                  final ok = await _confirmLeave(context);
+                  if (ok != true || !context.mounted) return false;
+                  await ref
+                      .read(chatActionsProvider.notifier)
+                      .leaveChat(chat.id);
+                  if (!context.mounted) return false;
+                  final error = ref.read(chatActionsProvider).error;
+                  if (error != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Fehler: $error')),
+                    );
+                    return false;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chat gelöscht')),
+                  );
+                  return true;
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                child: _ChatListTile(
+                  chat: chat,
+                  onDelete: () async {
+                    final ok = await _confirmLeave(context);
+                    if (ok == true && context.mounted) {
+                      await _leaveChat(context, ref, chat);
+                    }
+                  },
+                ),
+              );
             },
           ),
         );
       },
     );
   }
+
+  Future<bool?> _confirmLeave(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chat löschen?'),
+        content: const Text(
+          'Der Chat verschwindet aus deiner Liste. '
+          'Bei Gruppenchats bleibt er für andere Teilnehmer erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _leaveChat(
+    BuildContext context,
+    WidgetRef ref,
+    ChatSummary chat,
+  ) async {
+    await ref.read(chatActionsProvider.notifier).leaveChat(chat.id);
+    if (!context.mounted) return;
+    final error = ref.read(chatActionsProvider).error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null ? 'Chat gelöscht' : 'Fehler: $error',
+        ),
+      ),
+    );
+  }
 }
 
 class _ChatListTile extends StatelessWidget {
-  const _ChatListTile({required this.chat});
+  const _ChatListTile({
+    required this.chat,
+    required this.onDelete,
+  });
 
   final ChatSummary chat;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -86,25 +173,41 @@ class _ChatListTile extends StatelessWidget {
       ),
       title: Text(chat.title),
       subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (time.isNotEmpty)
-            Text(time, style: theme.textTheme.labelSmall),
-          if (chat.unreadCount > 0) ...[
-            const SizedBox(height: 4),
-            CircleAvatar(
-              radius: 10,
-              backgroundColor: theme.colorScheme.primary,
-              child: Text(
-                '${chat.unreadCount}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onPrimary,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (time.isNotEmpty)
+                Text(time, style: theme.textTheme.labelSmall),
+              if (chat.unreadCount > 0) ...[
+                const SizedBox(height: 4),
+                CircleAvatar(
+                  radius: 10,
+                  backgroundColor: theme.colorScheme.primary,
+                  child: Text(
+                    '${chat.unreadCount}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
+              ],
+            ],
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') onDelete();
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'delete',
+                child: Text('Chat löschen'),
               ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
       onTap: () => context.pushNamed(

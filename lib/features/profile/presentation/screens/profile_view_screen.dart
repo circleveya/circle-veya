@@ -5,12 +5,19 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../activities/domain/entities/activity.dart';
+import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
+import '../../../activities/presentation/widgets/activity_card.dart';
 import '../../../challenges/presentation/providers/challenge_provider.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
+import '../../../gallery/presentation/screens/activity_gallery_screen.dart';
+import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/user_review.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/star_rating.dart';
 
 class ProfileViewScreen extends ConsumerStatefulWidget {
   const ProfileViewScreen({
@@ -82,12 +89,16 @@ class _ProfileBody extends ConsumerWidget {
     final connections = ref.watch(myConnectionsProvider).valueOrNull ?? [];
     final friendCount =
         connections.where((c) => c.type == ConnectionType.friend).length;
-    final activityCount = isOwnProfile
-        ? ref.watch(hostedActivitiesProvider).valueOrNull?.length ?? 0
+    final activityArgs = (profileId: profile.id, isOwn: isOwnProfile);
+    final activitiesAsync = ref.watch(profileActivitiesProvider(activityArgs));
+    final activityCount = activitiesAsync.valueOrNull?.length ?? 0;
+    final groupCount = isOwnProfile
+        ? ref.watch(myGroupsProvider).valueOrNull?.length ?? 0
         : 0;
 
     final level = statsAsync.valueOrNull?.level ?? 1;
     final rating = ratingAsync.valueOrNull?.avgRating ?? 0.0;
+    final reviewCount = ratingAsync.valueOrNull?.reviewCount ?? 0;
 
     final content = CustomScrollView(
       slivers: [
@@ -103,8 +114,9 @@ class _ProfileBody extends ConsumerWidget {
           child: _ProfileStatsRow(
             activities: activityCount,
             friends: friendCount,
-            groups: 0,
+            groups: groupCount,
             rating: rating,
+            reviewCount: reviewCount,
           ),
         ),
         SliverPersistentHeader(
@@ -128,17 +140,15 @@ class _ProfileBody extends ConsumerWidget {
             controller: tabController,
             children: [
               _AboutTab(profile: profile),
-              _PlaceholderTab(
-                icon: Icons.event_outlined,
-                text: 'Aktivitäten des Users – bald verfügbar.',
+              _ProfileActivitiesTab(
+                profileId: profile.id,
+                isOwnProfile: isOwnProfile,
               ),
-              _PlaceholderTab(
-                icon: Icons.photo_library_outlined,
-                text: 'Erinnerungen – unter Erinnerungen in der Navigation.',
-              ),
-              _PlaceholderTab(
-                icon: Icons.star_outline,
-                text: 'Bewertungen – Phase 2.',
+              _ProfileGalleryTab(isOwnProfile: isOwnProfile),
+              _ProfileReviewsTab(
+                profileId: profile.id,
+                isOwnProfile: isOwnProfile,
+                username: profile.username,
               ),
             ],
           ),
@@ -317,27 +327,27 @@ class _QuietBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.28),
+      color: Colors.white,
       shape: const CircleBorder(),
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.18),
+      elevation: 1,
+      shadowColor: Colors.black26,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: () {
           final navigator = Navigator.of(context);
           if (navigator.canPop()) {
             navigator.pop();
-          } else {
+          } else if (context.canPop()) {
             context.pop();
           }
         },
         child: const SizedBox(
-          width: 36,
-          height: 36,
+          width: 40,
+          height: 40,
           child: Icon(
-            Icons.arrow_back_ios_new,
-            size: 16,
-            color: Colors.white,
+            Icons.arrow_back,
+            size: 22,
+            color: AppColors.brandNavy,
           ),
         ),
       ),
@@ -351,12 +361,14 @@ class _ProfileStatsRow extends StatelessWidget {
     required this.friends,
     required this.groups,
     required this.rating,
+    required this.reviewCount,
   });
 
   final int activities;
   final int friends;
   final int groups;
   final double rating;
+  final int reviewCount;
 
   @override
   Widget build(BuildContext context) {
@@ -367,7 +379,36 @@ class _ProfileStatsRow extends StatelessWidget {
           _StatItem(label: 'Aktivitäten', value: '$activities'),
           _StatItem(label: 'Freunde', value: '$friends'),
           _StatItem(label: 'Gruppen', value: '$groups'),
-          _StatItem(label: 'Bewertung', value: rating > 0 ? rating.toStringAsFixed(1) : '–'),
+          Expanded(
+            child: Column(
+              children: [
+                if (rating > 0) ...[
+                  Text(
+                    rating.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.seed,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  StarRating(value: rating, size: 14, interactive: false),
+                ] else
+                  Text(
+                    '–',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.seed,
+                        ),
+                  ),
+                const SizedBox(height: 4),
+                Text(
+                  reviewCount > 0 ? 'Bewertung ($reviewCount)' : 'Bewertung',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -442,6 +483,352 @@ class _AboutTab extends StatelessWidget {
                 .toList(),
           ),
       ],
+    );
+  }
+}
+
+class _ProfileActivitiesTab extends ConsumerWidget {
+  const _ProfileActivitiesTab({
+    required this.profileId,
+    required this.isOwnProfile,
+  });
+
+  final String profileId;
+  final bool isOwnProfile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final args = (profileId: profileId, isOwn: isOwnProfile);
+    final activitiesAsync = ref.watch(profileActivitiesProvider(args));
+
+    return activitiesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('$e', textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () =>
+                    ref.invalidate(profileActivitiesProvider(args)),
+                child: const Text('Erneut versuchen'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (activities) {
+        if (activities.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                isOwnProfile
+                    ? 'Noch keine Aktivitäten.\n'
+                        'Erstelle eine oder sage bei Freunden zu.'
+                    : 'Keine sichtbaren Aktivitäten.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        final created = activities
+            .where((a) => a.viewerAction == ViewerAction.host)
+            .toList();
+        final other = activities
+            .where((a) => a.viewerAction != ViewerAction.host)
+            .toList();
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(profileActivitiesProvider(args));
+            if (isOwnProfile) {
+              ref.invalidate(myActivitiesProvider);
+            }
+            await ref.read(profileActivitiesProvider(args).future);
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            children: [
+              if (isOwnProfile && created.isNotEmpty) ...[
+                Text(
+                  'Erstellt',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                ...created.map((activity) => _activityTile(context, activity)),
+              ],
+              if (isOwnProfile && other.isNotEmpty) ...[
+                if (created.isNotEmpty) const SizedBox(height: 8),
+                Text(
+                  'Zugesagt',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                ...other.map((activity) => _activityTile(context, activity)),
+              ],
+              if (!isOwnProfile)
+                ...activities.map(
+                  (activity) => _activityTile(context, activity),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _activityTile(BuildContext context, DiscoverableActivity activity) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ActivityCard(
+        activity: activity,
+        onTap: () => context.pushNamed(
+          RouteNames.activityDetail,
+          pathParameters: {'id': activity.id},
+          extra: activity,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileGalleryTab extends StatelessWidget {
+  const _ProfileGalleryTab({required this.isOwnProfile});
+
+  final bool isOwnProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isOwnProfile) {
+      return const _PlaceholderTab(
+        icon: Icons.lock_outline,
+        text: 'Erinnerungen sind privat und nur für den Account-Inhaber sichtbar.',
+      );
+    }
+    return const PastActivitiesGalleryScreen(embedded: true);
+  }
+}
+
+class _ProfileReviewsTab extends ConsumerStatefulWidget {
+  const _ProfileReviewsTab({
+    required this.profileId,
+    required this.isOwnProfile,
+    required this.username,
+  });
+
+  final String profileId;
+  final bool isOwnProfile;
+  final String username;
+
+  @override
+  ConsumerState<_ProfileReviewsTab> createState() => _ProfileReviewsTabState();
+}
+
+class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
+  int _selectedRating = 0;
+  final _commentController = TextEditingController();
+  var _hydratedMyReview = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _hydrateFromMyReview(UserReview? myReview) {
+    if (_hydratedMyReview || myReview == null) return;
+    _hydratedMyReview = true;
+    _selectedRating = myReview.rating;
+    _commentController.text = myReview.comment ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final reviewsAsync = ref.watch(profileReviewsProvider(widget.profileId));
+    final myReviewAsync = widget.isOwnProfile
+        ? const AsyncValue<UserReview?>.data(null)
+        : ref.watch(myReviewForProfileProvider(widget.profileId));
+    final isSaving = ref.watch(reviewControllerProvider).isLoading;
+
+    final myReview = myReviewAsync.valueOrNull;
+    _hydrateFromMyReview(myReview);
+    final displayRating =
+        _selectedRating > 0 ? _selectedRating : (myReview?.rating ?? 0);
+
+    return reviewsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('$e')),
+      data: (reviews) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          children: [
+            if (!widget.isOwnProfile) ...[
+              Text(
+                myReview == null
+                    ? '${widget.username} bewerten'
+                    : 'Deine Bewertung aktualisieren',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: StarRating(
+                  value: displayRating.toDouble(),
+                  size: 40,
+                  interactive: true,
+                  onChanged: (value) {
+                    setState(() => _selectedRating = value);
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _commentController,
+                maxLines: 3,
+                maxLength: 280,
+                decoration: const InputDecoration(
+                  hintText: 'Optionaler Kommentar',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: isSaving || displayRating < 1
+                    ? null
+                    : () => _submit(displayRating),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.brandNavy,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        myReview == null
+                            ? 'Bewertung absenden'
+                            : 'Bewertung speichern',
+                      ),
+              ),
+              const SizedBox(height: 28),
+              Divider(
+                color:
+                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              'Alle Bewertungen',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (reviews.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  widget.isOwnProfile
+                      ? 'Noch keine Bewertungen erhalten.'
+                      : 'Noch keine Bewertungen – sei die erste Person.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...reviews.map((review) => _ReviewTile(review: review)),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _submit(int rating) async {
+    if (rating < 1) return;
+
+    await ref.read(reviewControllerProvider.notifier).submit(
+          targetUserId: widget.profileId,
+          rating: rating,
+          comment: _commentController.text,
+        );
+
+    if (!mounted) return;
+    final error = ref.read(reviewControllerProvider).error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null ? 'Bewertung gespeichert' : 'Fehler: $error',
+        ),
+      ),
+    );
+  }
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile({required this.review});
+
+  final UserReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    backgroundImage: review.reviewerAvatarUrl != null
+                        ? CachedNetworkImageProvider(review.reviewerAvatarUrl!)
+                        : null,
+                    child: review.reviewerAvatarUrl == null
+                        ? Text(review.reviewerUsername[0].toUpperCase())
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      review.reviewerUsername,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  StarRating(
+                    value: review.rating.toDouble(),
+                    size: 16,
+                    interactive: false,
+                  ),
+                ],
+              ),
+              if (review.comment != null && review.comment!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(review.comment!, style: theme.textTheme.bodyMedium),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

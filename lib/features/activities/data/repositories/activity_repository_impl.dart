@@ -106,6 +106,21 @@ class ActivityRepositoryImpl implements ActivityRepository {
   }
 
   @override
+  Future<List<DiscoverableActivity>> getActivitiesByHost(String hostId) async {
+    try {
+      return await _datasource.getActivitiesByHost(hostId);
+    } on PostgrestException catch (error) {
+      throw ActivityFailure(error.message);
+    } on AppAuthException catch (error) {
+      throw ActivityFailure(error.message);
+    } catch (error) {
+      throw ActivityFailure(
+        'Profil-Aktivitäten konnten nicht geladen werden: $error',
+      );
+    }
+  }
+
+  @override
   Future<void> createActivity(
     CreateActivityInput input, {
     Uint8List? coverImageBytes,

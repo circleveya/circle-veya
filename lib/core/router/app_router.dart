@@ -13,6 +13,8 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/gallery/presentation/screens/activity_gallery_screen.dart';
+import '../../features/groups/presentation/screens/create_group_screen.dart';
+import '../../features/groups/presentation/screens/group_detail_screen.dart';
 import '../../features/home/presentation/screens/home_shell.dart';
 import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 import '../../features/profile/presentation/screens/profile_view_screen.dart';
@@ -119,6 +121,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ActivityGalleryScreen(
             activityId: state.pathParameters['id']!,
             activityTitle: title,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/groups/create',
+        name: RouteNames.groupCreate,
+        builder: (context, state) => const CreateGroupScreen(),
+      ),
+      GoRoute(
+        path: '/groups/:id',
+        name: RouteNames.groupDetail,
+        builder: (context, state) {
+          final name = state.extra as String?;
+          return GroupDetailScreen(
+            groupId: state.pathParameters['id']!,
+            groupName: name,
           );
         },
       ),

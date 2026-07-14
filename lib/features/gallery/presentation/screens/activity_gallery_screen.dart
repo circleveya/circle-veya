@@ -10,7 +10,13 @@ import '../providers/gallery_provider.dart';
 
 /// Persönliche Erinnerungen: nur abgeschlossene eigene Aktivitäten + eigene Fotos.
 class PastActivitiesGalleryScreen extends ConsumerWidget {
-  const PastActivitiesGalleryScreen({super.key});
+  const PastActivitiesGalleryScreen({
+    super.key,
+    this.embedded = false,
+  });
+
+  /// Wenn true: ohne großen Seiten-Header (z. B. Profil-Tab Galerie).
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,29 +50,42 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
           },
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Erinnerungen',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+              if (!embedded)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Erinnerungen',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Deine abgeschlossenen Aktivitäten – private Fotos nur für dich',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Deine abgeschlossenen Aktivitäten – private Fotos nur für dich',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
+                    child: Text(
+                      'Deine Erinnerungen aus abgeschlossenen Aktivitäten',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
               if (activities.isEmpty)
                 const SliverFillRemaining(
                   hasScrollBody: false,

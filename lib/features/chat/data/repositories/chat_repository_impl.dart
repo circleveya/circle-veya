@@ -83,4 +83,13 @@ class ChatRepositoryImpl implements ChatRepository {
       throw ChatFailure(error.message);
     }
   }
+
+  @override
+  Future<void> leaveChat(String chatId) async {
+    try {
+      await _datasource.leaveChat(chatId);
+    } on PostgrestException catch (error) {
+      throw ChatFailure(error.message);
+    }
+  }
 }

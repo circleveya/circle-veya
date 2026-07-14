@@ -19,10 +19,10 @@ import '../../../chat/presentation/screens/chat_list_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
 import '../../../friends/presentation/screens/friends_screen.dart';
 import '../../../gallery/presentation/screens/activity_gallery_screen.dart';
+import '../../../groups/presentation/screens/groups_screen.dart';
 import '../../../profile/presentation/screens/profile_view_screen.dart';
 import '../../../challenges/presentation/screens/challenges_screen.dart';
 import '../../../settings/presentation/screens/settings_screen.dart';
-import 'placeholder_screens.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -54,7 +54,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       WebShellDestination.discover => const DiscoverFeedScreen(),
       WebShellDestination.feed => const FeedScreen(),
       WebShellDestination.myActivities => const MyActivitiesScreen(),
-      WebShellDestination.groups => const GroupsPlaceholderScreen(),
+      WebShellDestination.groups => const GroupsScreen(),
       WebShellDestination.messages => const ChatListScreen(),
       WebShellDestination.friends => const FriendsScreen(),
       WebShellDestination.memories => const PastActivitiesGalleryScreen(),

@@ -10,6 +10,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
+import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 import '../providers/activity_provider.dart';
@@ -313,6 +314,25 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                           ),
                         ],
                         if (isHost) ...[
+                          const SizedBox(height: 20),
+                          OutlinedButton.icon(
+                            onPressed: () => _createGroupFromActivity(
+                              context,
+                              ref,
+                              activity,
+                            ),
+                            icon: const Icon(Icons.group_add_outlined),
+                            label: const Text(
+                              'Gruppe mit Teilnehmern erstellen',
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.brandNavy,
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 40),
                           Text(
                             'Interessierte',
@@ -512,6 +532,66 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       );
       context.pop();
     }
+  }
+
+  Future<void> _createGroupFromActivity(
+    BuildContext context,
+    WidgetRef ref,
+    DiscoverableActivity activity,
+  ) async {
+    final includePending = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gruppe erstellen'),
+        content: const Text(
+          'Es wird eine Gruppe mit dir als Owner und allen '
+          'Teilnehmern sowie akzeptierten Interessenten erstellt.\n\n'
+          'Auch noch ausstehende Interessenten einladen?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Nur Teilnehmer'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Mit ausstehenden'),
+          ),
+        ],
+      ),
+    );
+
+    if (includePending == null || !context.mounted) return;
+
+    final groupId =
+        await ref.read(groupsControllerProvider.notifier).createGroupFromActivity(
+              activityId: activity.id,
+              name: 'Gruppe: ${activity.title}',
+              includePendingInterests: includePending,
+            );
+
+    if (!context.mounted) return;
+
+    final error = ref.read(groupsControllerProvider).error;
+    if (error != null || groupId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error?.toString() ?? 'Gruppe konnte nicht erstellt werden')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Gruppe erstellt')),
+    );
+    context.pushNamed(
+      RouteNames.groupDetail,
+      pathParameters: {'id': groupId},
+      extra: 'Gruppe: ${activity.title}',
+    );
   }
 
   Future<void> _startDm(BuildContext context, String interestId) async {

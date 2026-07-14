@@ -35,4 +35,7 @@ class UnconfiguredChatRepository implements ChatRepository {
 
   @override
   Stream<List<ChatSummary>> watchChatList() => Stream.value([]);
+
+  @override
+  Future<void> leaveChat(String chatId) async => _throw();
 }

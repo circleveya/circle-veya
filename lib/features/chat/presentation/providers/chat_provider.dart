@@ -70,6 +70,14 @@ class ChatActionsController extends AutoDisposeAsyncNotifier<void> {
       () => _repo.sendMessage(chatId: chatId, content: content),
     );
   }
+
+  Future<void> leaveChat(String chatId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _repo.leaveChat(chatId));
+    if (!state.hasError) {
+      ref.invalidate(chatListProvider);
+    }
+  }
 }
 
 final chatActionsProvider = AutoDisposeAsyncNotifierProvider<

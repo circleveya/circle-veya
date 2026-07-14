@@ -183,6 +183,15 @@ class ActivityRemoteDatasource {
     if (userId == null) {
       throw const AppAuthException('Nicht angemeldet');
     }
+    return getActivitiesByHost(userId);
+  }
+
+  /// Gehostete Aktivitäten eines Users; RLS filtert unsichtbare Einträge.
+  Future<List<DiscoverableActivity>> getActivitiesByHost(String hostId) async {
+    final viewerId = _client.auth.currentUser?.id;
+    if (viewerId == null) {
+      throw const AppAuthException('Nicht angemeldet');
+    }
 
     final response = await _client
         .from('activities')
@@ -193,8 +202,9 @@ class ActivityRemoteDatasource {
           'source_event_title, created_at, '
           'profiles!activities_host_id_fkey(username, user_type, avatar_url)',
         )
-        .eq('host_id', userId)
-        .order('date_time', ascending: true, nullsFirst: false);
+        .eq('host_id', hostId)
+        .neq('status', 'cancelled')
+        .order('date_time', ascending: false, nullsFirst: false);
 
     final activities = <DiscoverableActivity>[];
     for (final row in response as List) {
@@ -202,12 +212,13 @@ class ActivityRemoteDatasource {
       try {
         final map = row;
         final profile = map['profiles'] as Map<String, dynamic>?;
+        final isOwnHost = hostId == viewerId;
         activities.add(
           DiscoverableActivity(
             id: _requireString(map['id'], fallback: ''),
-            hostId: _requireString(map['host_id'], fallback: userId),
-            hostUsername:
-                _optionalString(profile?['username']) ?? 'Du',
+            hostId: _requireString(map['host_id'], fallback: hostId),
+            hostUsername: _optionalString(profile?['username']) ??
+                (isOwnHost ? 'Du' : 'User'),
             hostIsCompany: profile?['user_type'] == 'company',
             hostAvatarUrl: _optionalString(profile?['avatar_url']),
             title: _requireString(map['title'], fallback: 'Aktivität'),
@@ -221,7 +232,8 @@ class ActivityRemoteDatasource {
             locationName: _optionalString(map['location_name']),
             distanceKm: null,
             visibleAs: VisibleAs.friend,
-            viewerAction: ViewerAction.host,
+            viewerAction:
+                isOwnHost ? ViewerAction.host : ViewerAction.none,
             isSponsored: map['is_sponsored'] as bool? ?? false,
             isFeatured: (map['is_sponsored'] as bool? ?? false) &&
                 profile?['user_type'] == 'company',
@@ -234,7 +246,9 @@ class ActivityRemoteDatasource {
         );
       } catch (error, stackTrace) {
         if (kDebugMode) {
-          debugPrint('CircleVeya: Gehostete Aktivität übersprungen: $error\n$stackTrace');
+          debugPrint(
+            'CircleVeya: Profil-Aktivität übersprungen: $error\n$stackTrace',
+          );
         }
       }
     }

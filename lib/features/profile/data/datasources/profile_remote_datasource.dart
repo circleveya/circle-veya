@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/user_review.dart';
 
 class ProfileRemoteDatasource {
   ProfileRemoteDatasource(this._client);
@@ -64,6 +65,98 @@ class ProfileRemoteDatasource {
     return (
       avgRating: (map['avg_rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: map['review_count'] as int? ?? 0,
+    );
+  }
+
+  Future<List<UserReview>> getReviewsForProfile(String profileId) async {
+    final response = await _client
+        .from('reviews')
+        .select(
+          'id, target_user_id, reviewer_id, rating, comment, created_at, '
+          'profiles!reviews_reviewer_id_fkey(username, avatar_url)',
+        )
+        .eq('target_user_id', profileId)
+        .order('created_at', ascending: false);
+
+    final reviews = <UserReview>[];
+    for (final row in response as List) {
+      if (row is! Map) continue;
+      final map = Map<String, dynamic>.from(row);
+      final profile = map['profiles'];
+      final profileMap = profile is Map
+          ? Map<String, dynamic>.from(profile)
+          : null;
+      reviews.add(
+        UserReview(
+          id: map['id'] as String,
+          targetUserId: map['target_user_id'] as String,
+          reviewerId: map['reviewer_id'] as String,
+          reviewerUsername: profileMap?['username'] as String? ?? 'User',
+          reviewerAvatarUrl: profileMap?['avatar_url'] as String?,
+          rating: (map['rating'] as num?)?.toInt() ?? 0,
+          comment: map['comment'] as String?,
+          createdAt: DateTime.parse(map['created_at'] as String),
+        ),
+      );
+    }
+    return reviews;
+  }
+
+  Future<UserReview?> getMyReviewForProfile(String targetUserId) async {
+    final userId = _userId;
+    if (userId == null) return null;
+
+    final row = await _client
+        .from('reviews')
+        .select(
+          'id, target_user_id, reviewer_id, rating, comment, created_at, '
+          'profiles!reviews_reviewer_id_fkey(username, avatar_url)',
+        )
+        .eq('target_user_id', targetUserId)
+        .eq('reviewer_id', userId)
+        .maybeSingle();
+
+    if (row == null) return null;
+    final map = Map<String, dynamic>.from(row);
+    final profile = map['profiles'];
+    final profileMap =
+        profile is Map ? Map<String, dynamic>.from(profile) : null;
+    return UserReview(
+      id: map['id'] as String,
+      targetUserId: map['target_user_id'] as String,
+      reviewerId: map['reviewer_id'] as String,
+      reviewerUsername: profileMap?['username'] as String? ?? 'Du',
+      reviewerAvatarUrl: profileMap?['avatar_url'] as String?,
+      rating: (map['rating'] as num?)?.toInt() ?? 0,
+      comment: map['comment'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+    );
+  }
+
+  Future<void> upsertReview({
+    required String targetUserId,
+    required int rating,
+    String? comment,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw const AuthException('Nicht angemeldet');
+    }
+    if (targetUserId == userId) {
+      throw StateError('Du kannst dich nicht selbst bewerten');
+    }
+    if (rating < 1 || rating > 5) {
+      throw StateError('Bewertung muss zwischen 1 und 5 liegen');
+    }
+
+    await _client.from('reviews').upsert(
+      {
+        'target_user_id': targetUserId,
+        'reviewer_id': userId,
+        'rating': rating,
+        'comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
+      },
+      onConflict: 'target_user_id,reviewer_id',
     );
   }
 

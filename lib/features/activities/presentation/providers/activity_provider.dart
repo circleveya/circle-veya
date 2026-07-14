@@ -195,6 +195,18 @@ final myActivitiesProvider =
   return ref.watch(activityRepositoryProvider).getMyActivities();
 });
 
+/// Profil-Tab: eigenes Profil → my_activities; fremdes → sichtbare Host-Aktivitäten.
+final profileActivitiesProvider = FutureProvider.autoDispose
+    .family<List<DiscoverableActivity>, ({String profileId, bool isOwn})>(
+  (ref, args) async {
+    final repo = ref.watch(activityRepositoryProvider);
+    if (args.isOwn) {
+      return repo.getMyActivities();
+    }
+    return repo.getActivitiesByHost(args.profileId);
+  },
+);
+
 /// Social Feed: nur User-Aktivitäten von Freunden & Bekannten (keine Eventfrog-Events).
 final socialFeedProvider =
     FutureProvider.autoDispose<List<DiscoverableActivity>>((ref) async {

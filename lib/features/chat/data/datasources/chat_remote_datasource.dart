@@ -102,6 +102,10 @@ class ChatRemoteDatasource {
     return response as String?;
   }
 
+  Future<void> leaveChat(String chatId) async {
+    await _client.rpc('leave_chat', params: {'p_chat_id': chatId});
+  }
+
   ChatSummary _mapChatSummary(Map<String, dynamic> map) {
     return ChatSummary(
       id: map['id'] as String,
