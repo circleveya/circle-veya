@@ -15,6 +15,7 @@ import '../../../sidebar/presentation/providers/sidebar_provider.dart';
 import '../../../discovery/presentation/screens/discover_feed_screen.dart';
 import '../../../activities/presentation/screens/create_activity_screen.dart';
 import '../../../activities/presentation/screens/my_activities_screen.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../chat/presentation/screens/chat_list_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
 import '../../../friends/presentation/screens/friends_screen.dart';
@@ -80,6 +81,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     ref.watch(presenceHeartbeatProvider);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final unreadChatCount = ref.watch(unreadChatCountProvider);
     final useWebLayout = kIsWeb && WebLayoutScaffold.isDesktop(context);
     final destination = ref.watch(shellDestinationProvider);
 
@@ -106,6 +108,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         onDestinationChanged: _onDestinationChanged,
         showRightPanel: _showRightPanel(destination),
         notificationCount: unreadCount,
+        unreadChatCount: unreadChatCount,
         body: _bodyFor(destination, embedded: true),
       );
     }

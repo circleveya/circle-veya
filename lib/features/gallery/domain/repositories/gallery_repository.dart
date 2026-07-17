@@ -5,6 +5,8 @@ import '../entities/gallery.dart';
 abstract class GalleryRepository {
   Future<List<PastActivityGallery>> getPastActivities();
 
+  Future<List<PastActivityGallery>> getPublicGalleryForProfile(String profileId);
+
   Future<List<ActivityPhoto>> getActivityPhotos(String activityId);
 
   Future<bool> canUploadPhoto(String activityId);

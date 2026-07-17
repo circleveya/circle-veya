@@ -27,7 +27,7 @@ class StarRating extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = emptyColor ??
-        Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.7);
+        AppColors.brandNavy.withValues(alpha: 0.35);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -100,7 +100,7 @@ class _StarButtonState extends State<_StarButton>
   IconData get _icon {
     if (widget.value >= widget.index) return Icons.star_rounded;
     if (widget.value >= widget.index - 0.5) return Icons.star_half_rounded;
-    return Icons.star_outline_rounded;
+    return Icons.star_border_rounded;
   }
 
   Color get _iconColor {
@@ -133,10 +133,17 @@ class _StarButtonState extends State<_StarButton>
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: InkWell(
-        onTap: _handleTap,
-        customBorder: const CircleBorder(),
-        child: star,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: widget.size + 16,
+            height: widget.size + 16,
+            child: Center(child: star),
+          ),
+        ),
       ),
     );
   }

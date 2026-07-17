@@ -18,4 +18,28 @@ abstract class GroupsRepository {
   });
 
   Future<List<ActivityParticipant>> getActivityParticipants(String activityId);
+
+  Future<CircleGroup> getGroupDetail(String groupId);
+
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    String? description,
+  });
+
+  Future<int> addMembers({
+    required String groupId,
+    required List<String> memberIds,
+  });
+
+  Future<void> setMemberRole({
+    required String groupId,
+    required String profileId,
+    required String role,
+  });
+
+  Future<void> removeMember({
+    required String groupId,
+    required String profileId,
+  });
 }

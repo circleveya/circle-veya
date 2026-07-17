@@ -99,6 +99,26 @@ class PremiumSimulationController extends AutoDisposeAsyncNotifier<void> {
 final premiumSimulationControllerProvider = AutoDisposeAsyncNotifierProvider<
     PremiumSimulationController, void>(PremiumSimulationController.new);
 
+class GalleryPrivacyController extends AutoDisposeAsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> setGalleryPublic(bool isPublic) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(profileRemoteDatasourceProvider).updateGalleryPublic(
+            isPublic: isPublic,
+          );
+    });
+    if (!state.hasError) {
+      ref.invalidate(myProfileProvider);
+    }
+  }
+}
+
+final galleryPrivacyControllerProvider = AutoDisposeAsyncNotifierProvider<
+    GalleryPrivacyController, void>(GalleryPrivacyController.new);
+
 class ProfileEditController extends AutoDisposeAsyncNotifier<void> {
   @override
   Future<void> build() async {}

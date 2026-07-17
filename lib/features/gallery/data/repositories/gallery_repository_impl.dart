@@ -43,6 +43,17 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
+  Future<List<PastActivityGallery>> getPublicGalleryForProfile(
+    String profileId,
+  ) async {
+    try {
+      return await _datasource.getPublicGalleryForProfile(profileId);
+    } on PostgrestException catch (error) {
+      throw GalleryFailure(error.message);
+    }
+  }
+
+  @override
   Future<void> uploadActivityPhoto({
     required String activityId,
     required XFile file,

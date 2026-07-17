@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -265,56 +266,72 @@ class ActivityRemoteDatasource {
       throw const AppAuthException('Nicht angemeldet');
     }
 
-    final payload = <String, dynamic>{
-      'host_id': userId,
-      'title': input.title,
-      'description': input.description,
-      'max_participants': input.maxParticipants,
-      'location_geo': 'POINT(${input.longitude} ${input.latitude})',
-      'location_name': input.locationName,
-      'location_type': input.locationType.dbValue,
-      'weather_condition': input.weatherCondition.dbValue,
-      'visible_to_friends': input.visibleToFriends,
-      'visible_to_acquaintances': input.visibleToAcquaintances,
-      'visible_to_strangers': input.visibleToStrangers,
-      'discovery_radius_km': input.discoveryRadiusKm,
-      'is_sponsored': input.isSponsored,
-    };
-
-    if (input.dateTime != null) {
-      payload['date_time'] = input.dateTime!.toUtc().toIso8601String();
-    }
+    final occurrences = input.resolvedDateTimes;
+    final seriesId =
+        occurrences.length > 1 ? _generateUuidV4() : null;
 
     final eventImageUrl = input.imageUrl?.trim();
     final hasImageUrl = eventImageUrl != null && eventImageUrl.isNotEmpty;
     final hasSourceEvent =
         input.sourceEventId?.trim().isNotEmpty == true;
-
-    // Cover-URL setzen (Eventfrog oder Pexels).
-    if (hasImageUrl) {
-      payload['image_url'] = eventImageUrl;
-      payload['image_source'] = hasSourceEvent ? 'external' : 'pexels';
-    }
-
     final sourceEventId = input.sourceEventId?.trim();
-    if (sourceEventId != null && sourceEventId.isNotEmpty) {
-      payload['source_event_id'] = sourceEventId;
-      payload['source_event_title'] = input.sourceEventTitle?.trim();
+
+    final payloads = <Map<String, dynamic>>[];
+    for (final occurrence in occurrences) {
+      final payload = <String, dynamic>{
+        'host_id': userId,
+        'title': input.title,
+        'description': input.description,
+        'max_participants': input.maxParticipants,
+        'location_geo': 'POINT(${input.longitude} ${input.latitude})',
+        'location_name': input.locationName,
+        'location_type': input.locationType.dbValue,
+        'weather_condition': input.weatherCondition.dbValue,
+        'visible_to_friends': input.visibleToFriends,
+        'visible_to_acquaintances': input.visibleToAcquaintances,
+        'visible_to_strangers': input.visibleToStrangers,
+        'discovery_radius_km': input.discoveryRadiusKm,
+        'is_sponsored': input.isSponsored,
+      };
+
+      if (seriesId != null) {
+        payload['series_id'] = seriesId;
+      }
+
+      if (occurrence != null) {
+        payload['date_time'] = occurrence.toUtc().toIso8601String();
+      }
+
+      if (hasImageUrl) {
+        payload['image_url'] = eventImageUrl;
+        payload['image_source'] = hasSourceEvent ? 'external' : 'pexels';
+      }
+
+      if (sourceEventId != null && sourceEventId.isNotEmpty) {
+        payload['source_event_id'] = sourceEventId;
+        payload['source_event_title'] = input.sourceEventTitle?.trim();
+      }
+
+      payloads.add(payload);
     }
 
     final response = await _client
         .from('activities')
-        .insert(payload)
-        .select('id')
-        .single();
+        .insert(payloads)
+        .select('id');
 
-    final activityId = response['id'] as String;
+    final rows = response as List;
+    final activityIds = rows
+        .map((row) => (row as Map<String, dynamic>)['id'] as String)
+        .toList();
 
     if (!hasImageUrl &&
         coverImageBytes != null &&
-        coverImageBytes.isNotEmpty) {
+        coverImageBytes.isNotEmpty &&
+        activityIds.isNotEmpty) {
       final extension = _extensionFromFileName(coverImageFileName);
-      final path = '$userId/$activityId.$extension';
+      final firstId = activityIds.first;
+      final path = '$userId/$firstId.$extension';
 
       await _client.storage.from('activity-images').uploadBinary(
             path,
@@ -331,8 +348,18 @@ class ActivityRemoteDatasource {
       await _client.from('activities').update({
         'image_url': publicUrl,
         'image_source': 'user',
-      }).eq('id', activityId);
+      }).inFilter('id', activityIds);
     }
+  }
+
+  String _generateUuidV4() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 
   Future<void> updateActivity(UpdateActivityInput input) async {
@@ -412,6 +439,16 @@ class ActivityRemoteDatasource {
         createdAt: DateTime.parse(map['created_at'] as String),
       );
     }).toList();
+  }
+
+  Future<DiscoverableActivity?> getActivityDetail(String activityId) async {
+    final response = await _client.rpc(
+      'get_activity_detail',
+      params: {'p_activity_id': activityId},
+    );
+    if (response is! List || response.isEmpty) return null;
+    final map = Map<String, dynamic>.from(response.first as Map);
+    return _mapDiscoverableActivity(map);
   }
 
   DiscoverableActivity _mapDiscoverableActivity(Map<String, dynamic> map) {

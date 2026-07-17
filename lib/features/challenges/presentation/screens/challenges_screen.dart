@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/challenge.dart';
 import '../providers/challenge_provider.dart';
@@ -113,40 +115,52 @@ class ChallengeProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    challenge.title,
-                    style: Theme.of(context).textTheme.titleSmall,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.pushNamed(
+          RouteNames.challengeDetail,
+          pathParameters: {'id': challenge.id},
+          extra: challenge,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      challenge.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                   ),
-                ),
-                Text(
-                  '${challenge.progress} / ${challenge.target}',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppColors.seed,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: challenge.progressRatio,
-                minHeight: 8,
-                backgroundColor: AppColors.surfaceTint,
-                color: AppColors.tertiary,
+                  Text(
+                    '${challenge.progress} / ${challenge.target}',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.seed,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: challenge.progressRatio,
+                  minHeight: 8,
+                  backgroundColor: AppColors.surfaceTint,
+                  color: AppColors.tertiary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

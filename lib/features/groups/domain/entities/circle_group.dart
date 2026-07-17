@@ -20,6 +20,8 @@ class CircleGroup {
   final DateTime createdAt;
 
   bool get isOwner => myRole == 'owner';
+
+  bool get isAdmin => myRole == 'admin' || myRole == 'owner';
 }
 
 class CircleGroupMember {

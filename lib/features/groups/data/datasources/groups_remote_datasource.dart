@@ -89,10 +89,82 @@ class GroupsRemoteDatasource {
     }).toList();
   }
 
+  Future<CircleGroup> getGroupDetail(String groupId) async {
+    final response = await _client.rpc(
+      'get_circle_group_detail',
+      params: {'p_group_id': groupId},
+    );
+    if (response is! List || response.isEmpty) {
+      throw StateError('Kreis nicht gefunden');
+    }
+    final row = response.first;
+    if (row is! Map) {
+      throw StateError('Kreis nicht gefunden');
+    }
+    return _mapGroup(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    String? description,
+  }) async {
+    await _client.rpc(
+      'update_circle_group',
+      params: {
+        'p_group_id': groupId,
+        'p_name': name,
+        'p_description': description,
+      },
+    );
+  }
+
+  Future<int> addMembers({
+    required String groupId,
+    required List<String> memberIds,
+  }) async {
+    final response = await _client.rpc(
+      'add_circle_group_members',
+      params: {
+        'p_group_id': groupId,
+        'p_member_ids': memberIds,
+      },
+    );
+    return (response as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> setMemberRole({
+    required String groupId,
+    required String profileId,
+    required String role,
+  }) async {
+    await _client.rpc(
+      'set_circle_group_member_role',
+      params: {
+        'p_group_id': groupId,
+        'p_profile_id': profileId,
+        'p_role': role,
+      },
+    );
+  }
+
+  Future<void> removeMember({
+    required String groupId,
+    required String profileId,
+  }) async {
+    await _client.rpc(
+      'remove_circle_group_member',
+      params: {
+        'p_group_id': groupId,
+        'p_profile_id': profileId,
+      },
+    );
+  }
+
   CircleGroup _mapGroup(Map<String, dynamic> map) {
     return CircleGroup(
       id: map['id'] as String,
-      name: map['name'] as String? ?? 'Gruppe',
+      name: map['name'] as String? ?? 'Kreis',
       description: map['description'] as String?,
       createdBy: map['created_by'] as String,
       sourceActivityId: map['source_activity_id'] as String?,

@@ -21,7 +21,7 @@ extension WebShellDestinationX on WebShellDestination {
         WebShellDestination.discover => 'Entdecken',
         WebShellDestination.feed => 'Feed',
         WebShellDestination.myActivities => 'Meine Aktivitäten',
-        WebShellDestination.groups => 'Gruppen',
+        WebShellDestination.groups => 'Kreise',
         WebShellDestination.messages => 'Nachrichten',
         WebShellDestination.friends => 'Freunde',
         WebShellDestination.memories => 'Erinnerungen',

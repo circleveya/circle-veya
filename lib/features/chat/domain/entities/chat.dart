@@ -10,7 +10,7 @@ enum ChatType {
       };
 
   String get label => switch (this) {
-        activityGroup => 'Gruppe',
+        activityGroup => 'Kreis',
         direct => 'Direkt',
       };
 }

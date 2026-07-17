@@ -29,6 +29,28 @@ class GalleryRemoteDatasource {
     }).toList();
   }
 
+  Future<List<PastActivityGallery>> getPublicGalleryForProfile(
+    String profileId,
+  ) async {
+    final response = await _client.rpc(
+      'get_public_gallery_for_profile',
+      params: {'p_profile_id': profileId},
+    );
+
+    return (response as List).map((row) {
+      final map = row as Map<String, dynamic>;
+      return PastActivityGallery(
+        id: map['id'] as String,
+        title: map['title'] as String,
+        dateTime: DateTime.parse(map['date_time'] as String),
+        locationName: map['location_name'] as String?,
+        isHost: map['is_host'] as bool? ?? false,
+        photoCount: (map['photo_count'] as num?)?.toInt() ?? 0,
+        canUpload: false,
+      );
+    }).toList();
+  }
+
   Future<List<ActivityPhoto>> getActivityPhotos(String activityId) async {
     final response = await _client.rpc(
       'get_activity_photos',

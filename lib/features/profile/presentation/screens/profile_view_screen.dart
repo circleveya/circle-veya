@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/supabase_client.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../activities/domain/entities/activity.dart';
@@ -12,6 +13,7 @@ import '../../../activities/presentation/widgets/activity_card.dart';
 import '../../../challenges/presentation/providers/challenge_provider.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
+import '../../../gallery/presentation/providers/gallery_provider.dart';
 import '../../../gallery/presentation/screens/activity_gallery_screen.dart';
 import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/user_profile.dart';
@@ -54,13 +56,17 @@ class _ProfileViewScreenState extends ConsumerState<ProfileViewScreen>
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider(widget.profileId));
+    final sessionUserId =
+        ref.watch(supabaseClientProvider).auth.currentUser?.id;
+    final isOwnProfile = widget.isOwnProfile ||
+        (sessionUserId != null && sessionUserId == widget.profileId);
 
     return profileAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('$e')),
       data: (profile) => _ProfileBody(
         profile: profile,
-        isOwnProfile: widget.isOwnProfile,
+        isOwnProfile: isOwnProfile,
         embedded: widget.embedded,
         tabController: _tabController,
       ),
@@ -144,7 +150,11 @@ class _ProfileBody extends ConsumerWidget {
                 profileId: profile.id,
                 isOwnProfile: isOwnProfile,
               ),
-              _ProfileGalleryTab(isOwnProfile: isOwnProfile),
+              _ProfileGalleryTab(
+                profileId: profile.id,
+                isOwnProfile: isOwnProfile,
+                galleryPublic: profile.galleryPublic,
+              ),
               _ProfileReviewsTab(
                 profileId: profile.id,
                 isOwnProfile: isOwnProfile,
@@ -378,7 +388,7 @@ class _ProfileStatsRow extends StatelessWidget {
         children: [
           _StatItem(label: 'Aktivitäten', value: '$activities'),
           _StatItem(label: 'Freunde', value: '$friends'),
-          _StatItem(label: 'Gruppen', value: '$groups'),
+          _StatItem(label: 'Kreise', value: '$groups'),
           Expanded(
             child: Column(
               children: [
@@ -597,20 +607,93 @@ class _ProfileActivitiesTab extends ConsumerWidget {
   }
 }
 
-class _ProfileGalleryTab extends StatelessWidget {
-  const _ProfileGalleryTab({required this.isOwnProfile});
+class _ProfileGalleryTab extends ConsumerWidget {
+  const _ProfileGalleryTab({
+    required this.profileId,
+    required this.isOwnProfile,
+    required this.galleryPublic,
+  });
 
+  final String profileId;
   final bool isOwnProfile;
+  final bool galleryPublic;
 
   @override
-  Widget build(BuildContext context) {
-    if (!isOwnProfile) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (isOwnProfile) {
+      final isSaving = ref.watch(galleryPrivacyControllerProvider).isLoading;
+      return Column(
+        children: [
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            value: galleryPublic,
+            onChanged: isSaving
+                ? null
+                : (value) => ref
+                    .read(galleryPrivacyControllerProvider.notifier)
+                    .setGalleryPublic(value),
+            title: const Text('Erinnerungen öffentlich'),
+            subtitle: const Text(
+              'Wenn aktiv, können andere deine Galerie im Profil sehen.',
+            ),
+            secondary: Icon(
+              galleryPublic ? Icons.public : Icons.lock_outline,
+              color: AppColors.seed,
+            ),
+          ),
+          const Divider(height: 1),
+          const Expanded(child: PastActivitiesGalleryScreen(embedded: true)),
+        ],
+      );
+    }
+
+    if (!galleryPublic) {
       return const _PlaceholderTab(
         icon: Icons.lock_outline,
         text: 'Erinnerungen sind privat und nur für den Account-Inhaber sichtbar.',
       );
     }
-    return const PastActivitiesGalleryScreen(embedded: true);
+
+    final galleryAsync = ref.watch(publicGalleryForProfileProvider(profileId));
+    return galleryAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('$e')),
+      data: (items) {
+        if (items.isEmpty) {
+          return const _PlaceholderTab(
+            icon: Icons.photo_library_outlined,
+            text: 'Noch keine öffentlichen Erinnerungen.',
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: items.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outlineVariant
+                      .withValues(alpha: 0.5),
+                ),
+              ),
+              title: Text(item.title),
+              subtitle: Text('${item.photoCount} Fotos'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.pushNamed(
+                RouteNames.activityGallery,
+                pathParameters: {'id': item.id},
+                extra: item.title,
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -678,6 +761,14 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
                 ),
               ),
               const SizedBox(height: 12),
+              Text(
+                'Sterne tippen zum Bewerten',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
               Center(
                 child: StarRating(
                   value: displayRating.toDouble(),

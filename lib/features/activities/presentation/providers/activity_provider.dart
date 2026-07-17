@@ -228,6 +228,11 @@ final activityInterestsProvider = FutureProvider.autoDispose
   return ref.watch(activityRepositoryProvider).getActivityInterests(activityId);
 });
 
+final activityDetailProvider = FutureProvider.autoDispose
+    .family<DiscoverableActivity?, String>((ref, activityId) async {
+  return ref.watch(activityRepositoryProvider).getActivityDetail(activityId);
+});
+
 class ActivityActionsController extends AutoDisposeAsyncNotifier<void> {
   @override
   Future<void> build() async {}

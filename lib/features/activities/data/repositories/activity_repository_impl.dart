@@ -207,6 +207,15 @@ class ActivityRepositoryImpl implements ActivityRepository {
       throw ActivityFailure(error.message);
     }
   }
+
+  @override
+  Future<DiscoverableActivity?> getActivityDetail(String activityId) async {
+    try {
+      return await _datasource.getActivityDetail(activityId);
+    } on PostgrestException catch (error) {
+      throw ActivityFailure(error.message);
+    }
+  }
 }
 
 class ActivityFailure extends Failure {

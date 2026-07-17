@@ -11,6 +11,7 @@ class UserProfile extends Equatable {
     this.interests = const [],
     this.userType = 'standard',
     this.isPremium = false,
+    this.galleryPublic = false,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class UserProfile extends Equatable {
   final List<String> interests;
   final String userType;
   final bool isPremium;
+  final bool galleryPublic;
 
   bool get isCompany => userType == 'company';
 
@@ -34,6 +36,7 @@ class UserProfile extends Equatable {
     String? bio,
     int? age,
     List<String>? interests,
+    bool? galleryPublic,
     bool clearBio = false,
     bool clearAge = false,
     bool clearAvatar = false,
@@ -48,6 +51,7 @@ class UserProfile extends Equatable {
       interests: interests ?? this.interests,
       userType: userType,
       isPremium: isPremium,
+      galleryPublic: galleryPublic ?? this.galleryPublic,
     );
   }
 
@@ -62,6 +66,7 @@ class UserProfile extends Equatable {
         interests,
         userType,
         isPremium,
+        galleryPublic,
       ];
 }
 

@@ -29,6 +29,11 @@ final groupMembersProvider = FutureProvider.autoDispose
   return ref.watch(groupsRepositoryProvider).getGroupMembers(groupId);
 });
 
+final groupDetailProvider =
+    FutureProvider.autoDispose.family<CircleGroup, String>((ref, groupId) {
+  return ref.watch(groupsRepositoryProvider).getGroupDetail(groupId);
+});
+
 final activityParticipantsProvider = FutureProvider.autoDispose
     .family<List<ActivityParticipant>, String>((ref, activityId) {
   return ref.watch(groupsRepositoryProvider).getActivityParticipants(activityId);
@@ -39,6 +44,12 @@ class GroupsController extends AutoDisposeAsyncNotifier<void> {
   Future<void> build() async {}
 
   GroupsRepository get _repo => ref.read(groupsRepositoryProvider);
+
+  void _invalidateGroup(String groupId) {
+    ref.invalidate(groupDetailProvider(groupId));
+    ref.invalidate(groupMembersProvider(groupId));
+    ref.invalidate(myGroupsProvider);
+  }
 
   Future<String?> createGroup({
     required String name,
@@ -78,6 +89,76 @@ class GroupsController extends AutoDisposeAsyncNotifier<void> {
       ref.invalidate(myGroupsProvider);
     }
     return id;
+  }
+
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    String? description,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _repo.updateGroup(
+        groupId: groupId,
+        name: name,
+        description: description,
+      );
+    });
+    if (!state.hasError) {
+      _invalidateGroup(groupId);
+    }
+  }
+
+  Future<int?> addMembers({
+    required String groupId,
+    required List<String> memberIds,
+  }) async {
+    state = const AsyncLoading();
+    int? added;
+    state = await AsyncValue.guard(() async {
+      added = await _repo.addMembers(
+        groupId: groupId,
+        memberIds: memberIds,
+      );
+    });
+    if (!state.hasError) {
+      _invalidateGroup(groupId);
+    }
+    return added;
+  }
+
+  Future<void> setMemberRole({
+    required String groupId,
+    required String profileId,
+    required String role,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _repo.setMemberRole(
+        groupId: groupId,
+        profileId: profileId,
+        role: role,
+      );
+    });
+    if (!state.hasError) {
+      _invalidateGroup(groupId);
+    }
+  }
+
+  Future<void> removeMember({
+    required String groupId,
+    required String profileId,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _repo.removeMember(
+        groupId: groupId,
+        profileId: profileId,
+      );
+    });
+    if (!state.hasError) {
+      _invalidateGroup(groupId);
+    }
   }
 }
 

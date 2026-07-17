@@ -36,4 +36,37 @@ class UnconfiguredGroupsRepository implements GroupsRepository {
     String activityId,
   ) async =>
       [];
+
+  @override
+  Future<CircleGroup> getGroupDetail(String groupId) async => _throw();
+
+  @override
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    String? description,
+  }) async =>
+      _throw();
+
+  @override
+  Future<int> addMembers({
+    required String groupId,
+    required List<String> memberIds,
+  }) async =>
+      _throw();
+
+  @override
+  Future<void> setMemberRole({
+    required String groupId,
+    required String profileId,
+    required String role,
+  }) async =>
+      _throw();
+
+  @override
+  Future<void> removeMember({
+    required String groupId,
+    required String profileId,
+  }) async =>
+      _throw();
 }

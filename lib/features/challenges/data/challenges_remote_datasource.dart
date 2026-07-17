@@ -20,7 +20,6 @@ class ChallengesRemoteDatasource {
     final xpNeeded = first['xp_for_next_level'] as int? ?? 1000;
 
     final challenges = <UserChallenge>[];
-    final interestScores = <String, double>{};
 
     for (final row in rows) {
       final map = row as Map<String, dynamic>;
@@ -32,13 +31,23 @@ class ChallengesRemoteDatasource {
             title: map['challenge_title'] as String? ?? 'Challenge',
             progress: map['challenge_progress'] as int? ?? 0,
             target: map['challenge_target'] as int? ?? 1,
+            xpReward: map['challenge_xp_reward'] as int? ?? 100,
+            challengeType: map['challenge_type'] as String? ?? 'weekly',
+            description: map['challenge_description'] as String?,
+            howTo: map['challenge_how_to'] as String?,
           ),
         );
       }
     }
 
     if (challenges.isEmpty) {
-      return kMockLevelStats;
+      return UserLevelStats(
+        level: level,
+        currentXp: currentXp,
+        xpForNextLevel: xpNeeded,
+        challenges: const [],
+        interestScores: const {},
+      );
     }
 
     return UserLevelStats(
@@ -46,7 +55,14 @@ class ChallengesRemoteDatasource {
       currentXp: currentXp,
       xpForNextLevel: xpNeeded,
       challenges: challenges,
-      interestScores: interestScores,
+      interestScores: const {},
+    );
+  }
+
+  Future<void> completeChallenge(String challengeId) async {
+    await _client.rpc(
+      'complete_user_challenge',
+      params: {'p_challenge_id': challengeId},
     );
   }
 }

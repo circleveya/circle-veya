@@ -41,8 +41,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
+      // reverse: true → Offset 0 = neueste Nachrichten am unteren Rand
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
@@ -163,10 +164,12 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
                 return ListView.builder(
                   controller: _scrollController,
+                  reverse: true,
                   padding: const EdgeInsets.all(12),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    return MessageBubble(message: messages[index]);
+                    final message = messages[messages.length - 1 - index];
+                    return MessageBubble(message: message);
                   },
                 );
               },

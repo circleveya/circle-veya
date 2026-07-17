@@ -11,4 +11,5 @@ abstract final class RouteNames {
   static const activityGallery = 'activityGallery';
   static const groupCreate = 'groupCreate';
   static const groupDetail = 'groupDetail';
+  static const challengeDetail = 'challengeDetail';
 }

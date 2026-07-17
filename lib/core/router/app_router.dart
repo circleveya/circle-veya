@@ -12,6 +12,8 @@ import '../../features/chat/presentation/screens/chat_room_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/challenges/domain/entities/challenge.dart';
+import '../../features/challenges/presentation/screens/challenge_detail_screen.dart';
 import '../../features/gallery/presentation/screens/activity_gallery_screen.dart';
 import '../../features/groups/presentation/screens/create_group_screen.dart';
 import '../../features/groups/presentation/screens/group_detail_screen.dart';
@@ -137,6 +139,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           return GroupDetailScreen(
             groupId: state.pathParameters['id']!,
             groupName: name,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/challenges/:id',
+        name: RouteNames.challengeDetail,
+        builder: (context, state) {
+          final challenge = state.extra as UserChallenge?;
+          return ChallengeDetailScreen(
+            challengeId: state.pathParameters['id']!,
+            challenge: challenge,
           );
         },
       ),

@@ -174,6 +174,7 @@ class CreateActivityInput extends Equatable {
     this.description,
     required this.maxParticipants,
     this.dateTime,
+    this.dateTimes = const [],
     required this.latitude,
     required this.longitude,
     this.locationName,
@@ -193,6 +194,8 @@ class CreateActivityInput extends Equatable {
   final String? description;
   final int maxParticipants;
   final DateTime? dateTime;
+  /// Alle Termine einer Serie. Wenn leer und [dateTime] gesetzt → ein Termin.
+  final List<DateTime> dateTimes;
   final double latitude;
   final double longitude;
   final String? locationName;
@@ -208,12 +211,20 @@ class CreateActivityInput extends Equatable {
   final String? sourceEventId;
   final String? sourceEventTitle;
 
+  /// Effektive Termine für Insert (Serie oder einzelner Termin).
+  List<DateTime?> get resolvedDateTimes {
+    if (dateTimes.isNotEmpty) return List<DateTime?>.from(dateTimes);
+    if (dateTime != null) return [dateTime];
+    return [null];
+  }
+
   @override
   List<Object?> get props => [
         title,
         description,
         maxParticipants,
         dateTime,
+        dateTimes,
         latitude,
         longitude,
         locationName,

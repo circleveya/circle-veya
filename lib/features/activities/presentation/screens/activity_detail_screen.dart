@@ -32,17 +32,34 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
-  late DiscoverableActivity? _activity;
-
-  @override
-  void initState() {
-    super.initState();
-    _activity = widget.activity;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final activity = _activity;
+    final passed = widget.activity;
+    final fetchedAsync = passed == null
+        ? ref.watch(activityDetailProvider(widget.activityId))
+        : null;
+    final activity = passed ?? fetchedAsync?.valueOrNull;
+
+    if (passed == null && fetchedAsync != null) {
+      if (fetchedAsync.isLoading) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (fetchedAsync.hasError) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: Center(child: Text('${fetchedAsync.error}')),
+        );
+      }
+      if (activity == null) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text('Aktivität nicht gefunden.')),
+        );
+      }
+    }
+
     final interestsAsync = ref.watch(activityInterestsProvider(widget.activityId));
     final actionsState = ref.watch(activityActionsProvider);
     final isHost = activity?.viewerAction == ViewerAction.host;
@@ -323,7 +340,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                             ),
                             icon: const Icon(Icons.group_add_outlined),
                             label: const Text(
-                              'Gruppe mit Teilnehmern erstellen',
+                              'Kreis mit Teilnehmern erstellen',
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.brandNavy,
@@ -429,7 +446,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       extra: activity,
     );
     if (updated != null && mounted) {
-      setState(() => _activity = updated);
+      ref.invalidate(activityDetailProvider(widget.activityId));
+      // Wenn per extra navigiert wurde, Screen neu aufbauen mit aktualisierten Daten.
+      if (context.mounted) {
+        context.pushReplacementNamed(
+          RouteNames.activityDetail,
+          pathParameters: {'id': updated.id},
+          extra: updated,
+        );
+      }
     }
   }
 
@@ -542,9 +567,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final includePending = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Gruppe erstellen'),
+        title: const Text('Kreis erstellen'),
         content: const Text(
-          'Es wird eine Gruppe mit dir als Owner und allen '
+          'Es wird ein Kreis mit dir als Owner und allen '
           'Teilnehmern sowie akzeptierten Interessenten erstellt.\n\n'
           'Auch noch ausstehende Interessenten einladen?',
         ),
@@ -570,7 +595,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final groupId =
         await ref.read(groupsControllerProvider.notifier).createGroupFromActivity(
               activityId: activity.id,
-              name: 'Gruppe: ${activity.title}',
+              name: 'Kreis: ${activity.title}',
               includePendingInterests: includePending,
             );
 
@@ -579,18 +604,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final error = ref.read(groupsControllerProvider).error;
     if (error != null || groupId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error?.toString() ?? 'Gruppe konnte nicht erstellt werden')),
+        SnackBar(content: Text(error?.toString() ?? 'Kreis konnte nicht erstellt werden')),
       );
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gruppe erstellt')),
+      const SnackBar(content: Text('Kreis erstellt')),
     );
     context.pushNamed(
       RouteNames.groupDetail,
       pathParameters: {'id': groupId},
-      extra: 'Gruppe: ${activity.title}',
+      extra: 'Kreis: ${activity.title}',
     );
   }
 

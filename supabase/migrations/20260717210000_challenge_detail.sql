@@ -1,0 +1,2 @@
+-- Challenge detail columns + complete_user_challenge
+-- See also remote migration challenge_detail_v2 / get_profile_gallery_public

@@ -17,3 +17,23 @@ final userLevelStatsProvider =
     return kMockLevelStats;
   }
 });
+
+class ChallengeActionsController extends AutoDisposeAsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> complete(String challengeId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref
+          .read(challengesRemoteDatasourceProvider)
+          .completeChallenge(challengeId),
+    );
+    if (!state.hasError) {
+      ref.invalidate(userLevelStatsProvider);
+    }
+  }
+}
+
+final challengeActionsProvider = AutoDisposeAsyncNotifierProvider<
+    ChallengeActionsController, void>(ChallengeActionsController.new);

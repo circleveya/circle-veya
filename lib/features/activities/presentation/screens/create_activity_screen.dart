@@ -34,8 +34,14 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   final _locationNameController = TextEditingController();
 
   bool _hasDate = true;
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
+  final List<_ActivitySlot> _slots = [
+    _ActivitySlot(
+      date: DateTime.now().add(const Duration(days: 1)),
+      time: const TimeOfDay(hour: 18, minute: 0),
+    ),
+  ];
+  _RecurrenceInterval _recurrenceInterval = _RecurrenceInterval.weekly;
+  int _recurrenceCount = 4;
   XFile? _coverImage;
   String? _prefilledImageUrl;
   String? _sourceEventId;
@@ -71,8 +77,14 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       _coverImage = null;
       if (dateTime != null) {
         _hasDate = true;
-        _selectedDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-        _selectedTime = TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+        _slots
+          ..clear()
+          ..add(
+            _ActivitySlot(
+              date: DateTime(dateTime.year, dateTime.month, dateTime.day),
+              time: TimeOfDay(hour: dateTime.hour, minute: dateTime.minute),
+            ),
+          );
       }
       _visibleToFriends = true;
       _appliedSelection = true;
@@ -88,26 +100,67 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     });
   }
 
-  Future<void> _pickDate() async {
+  Future<void> _pickDateForSlot(int index) async {
+    final slot = _slots[index];
     final date = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: slot.date,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date != null) {
-      setState(() => _selectedDate = date);
+      setState(() => _slots[index] = slot.copyWith(date: date));
     }
   }
 
-  Future<void> _pickTime() async {
+  Future<void> _pickTimeForSlot(int index) async {
+    final slot = _slots[index];
     final time = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: slot.time,
     );
     if (time != null) {
-      setState(() => _selectedTime = time);
+      setState(() => _slots[index] = slot.copyWith(time: time));
     }
+  }
+
+  void _addSlot() {
+    final last = _slots.last;
+    final nextDate = last.date.add(const Duration(days: 7));
+    setState(() {
+      _slots.add(_ActivitySlot(date: nextDate, time: last.time));
+    });
+  }
+
+  void _removeSlot(int index) {
+    if (_slots.length <= 1) return;
+    setState(() => _slots.removeAt(index));
+  }
+
+  void _applyRecurrence() {
+    final first = _slots.first;
+    final count = _recurrenceCount.clamp(1, 52);
+    final generated = <_ActivitySlot>[
+      for (var i = 0; i < count; i++)
+        _ActivitySlot(
+          date: switch (_recurrenceInterval) {
+            _RecurrenceInterval.daily => first.date.add(Duration(days: i)),
+            _RecurrenceInterval.weekly =>
+              first.date.add(Duration(days: 7 * i)),
+            _RecurrenceInterval.monthly => DateTime(
+                first.date.year,
+                first.date.month + i,
+                first.date.day,
+              ),
+          },
+          time: first.time,
+        ),
+    ];
+    setState(() {
+      _slots
+        ..clear()
+        ..addAll(generated);
+    });
   }
 
   Future<void> _pickCoverImage() async {
@@ -157,14 +210,20 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     }
 
     DateTime? dateTime;
+    final dateTimes = <DateTime>[];
     if (_hasDate == true) {
-      dateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
+      for (final slot in _slots) {
+        dateTimes.add(
+          DateTime(
+            slot.date.year,
+            slot.date.month,
+            slot.date.day,
+            slot.time.hour,
+            slot.time.minute,
+          ),
+        );
+      }
+      dateTime = dateTimes.isNotEmpty ? dateTimes.first : null;
     }
 
     // Pexels-Cover, wenn weder Upload noch Event-Bild vorhanden.
@@ -188,6 +247,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 : _descriptionController.text.trim(),
             maxParticipants: int.parse(_maxParticipantsController.text),
             dateTime: dateTime,
+            dateTimes: dateTimes,
             latitude: location.latitude,
             longitude: location.longitude,
             locationName: _locationNameController.text.trim().isEmpty
@@ -227,6 +287,16 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     _locationNameController.clear();
     setState(() {
       _hasDate = true;
+      _slots
+        ..clear()
+        ..add(
+          _ActivitySlot(
+            date: DateTime.now().add(const Duration(days: 1)),
+            time: const TimeOfDay(hour: 18, minute: 0),
+          ),
+        );
+      _recurrenceInterval = _RecurrenceInterval.weekly;
+      _recurrenceCount = 4;
       _coverImage = null;
       _prefilledImageUrl = null;
       _sourceEventId = null;
@@ -416,26 +486,102 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             ),
             if (_hasDate == true) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickDate,
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(
-                        '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
+              for (var i = 0; i < _slots.length; i++) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: isLoading ? null : () => _pickDateForSlot(i),
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(
+                          '${_slots[i].date.day}.${_slots[i].date.month}.${_slots[i].date.year}',
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: isLoading ? null : () => _pickTimeForSlot(i),
+                        icon: const Icon(Icons.access_time),
+                        label: Text(_slots[i].time.format(context)),
+                      ),
+                    ),
+                    if (_slots.length > 1)
+                      IconButton(
+                        tooltip: 'Termin entfernen',
+                        onPressed: isLoading ? null : () => _removeSlot(i),
+                        icon: const Icon(Icons.close),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                _slots.length == 1
+                    ? '1 Termin'
+                    : '${_slots.length} Termine',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : _addSlot,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Termin hinzufügen'),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickTime,
-                      icon: const Icon(Icons.access_time),
-                      label: Text(_selectedTime.format(context)),
+                  DropdownButton<_RecurrenceInterval>(
+                    value: _recurrenceInterval,
+                    items: _RecurrenceInterval.values
+                        .map(
+                          (interval) => DropdownMenuItem(
+                            value: interval,
+                            child: Text(interval.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: isLoading
+                        ? null
+                        : (v) {
+                            if (v != null) {
+                              setState(() => _recurrenceInterval = v);
+                            }
+                          },
+                  ),
+                  SizedBox(
+                    width: 72,
+                    child: TextFormField(
+                      initialValue: '$_recurrenceCount',
+                      decoration: const InputDecoration(
+                        labelText: '×',
+                        isDense: true,
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) {
+                        final n = int.tryParse(v);
+                        if (n != null && n >= 1 && n <= 52) {
+                          _recurrenceCount = n;
+                        }
+                      },
                     ),
                   ),
+                  FilledButton.tonal(
+                    onPressed: isLoading ? null : _applyRecurrence,
+                    child: const Text('Wiederholen'),
+                  ),
                 ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Wiederholen erzeugt $_recurrenceCount× ${_recurrenceInterval.label.toLowerCase()} ab dem ersten Termin.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
             const SizedBox(height: 16),
@@ -616,6 +762,32 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+enum _RecurrenceInterval {
+  daily,
+  weekly,
+  monthly;
+
+  String get label => switch (this) {
+        daily => 'Täglich',
+        weekly => 'Wöchentlich',
+        monthly => 'Monatlich',
+      };
+}
+
+class _ActivitySlot {
+  const _ActivitySlot({required this.date, required this.time});
+
+  final DateTime date;
+  final TimeOfDay time;
+
+  _ActivitySlot copyWith({DateTime? date, TimeOfDay? time}) {
+    return _ActivitySlot(
+      date: date ?? this.date,
+      time: time ?? this.time,
     );
   }
 }

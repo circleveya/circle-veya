@@ -51,4 +51,7 @@ abstract class ActivityRepository {
   Future<void> declineInterest(String interestId);
 
   Future<List<ActivityInterest>> getActivityInterests(String activityId);
+
+  /// Einzelne Aktivität per ID (z.B. Navigation ohne extra).
+  Future<DiscoverableActivity?> getActivityDetail(String activityId);
 }

@@ -16,6 +16,12 @@ class UnconfiguredGalleryRepository implements GalleryRepository {
   Future<List<PastActivityGallery>> getPastActivities() async => [];
 
   @override
+  Future<List<PastActivityGallery>> getPublicGalleryForProfile(
+    String profileId,
+  ) async =>
+      [];
+
+  @override
   Future<void> uploadActivityPhoto({
     required String activityId,
     required XFile file,

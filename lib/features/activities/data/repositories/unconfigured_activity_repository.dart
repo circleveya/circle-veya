@@ -61,6 +61,10 @@ class UnconfiguredActivityRepository implements ActivityRepository {
       [];
 
   @override
+  Future<DiscoverableActivity?> getActivityDetail(String activityId) async =>
+      null;
+
+  @override
   Future<List<DiscoverableActivity>> getMyActivities({
     int offset = 0,
     int limit = 100,

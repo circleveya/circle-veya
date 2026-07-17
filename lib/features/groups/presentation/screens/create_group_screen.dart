@@ -35,14 +35,14 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     final isLoading = ref.watch(groupsControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gruppe erstellen')),
+      appBar: AppBar(title: const Text('Kreis erstellen')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(
-              labelText: 'Gruppenname',
+              labelText: 'Name des Kreises',
               border: OutlineInputBorder(),
             ),
             textCapitalization: TextCapitalization.sentences,
@@ -125,7 +125,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                     height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Gruppe erstellen'),
+                : const Text('Kreis erstellen'),
           ),
         ],
       ),
@@ -136,7 +136,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte einen Gruppennamen eingeben')),
+        const SnackBar(content: Text('Bitte einen Namen für den Kreis eingeben')),
       );
       return;
     }

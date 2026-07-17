@@ -23,6 +23,12 @@ final chatListProvider = StreamProvider.autoDispose<List<ChatSummary>>((ref) {
   return ref.watch(chatRepositoryProvider).watchChatList();
 });
 
+final unreadChatCountProvider = Provider<int>((ref) {
+  final chats = ref.watch(chatListProvider).valueOrNull;
+  if (chats == null) return 0;
+  return chats.fold<int>(0, (sum, chat) => sum + chat.unreadCount);
+});
+
 final messagesProvider = StreamProvider.autoDispose
     .family<List<ChatMessage>, String>((ref, chatId) {
   return ref.watch(chatRepositoryProvider).watchMessages(chatId);

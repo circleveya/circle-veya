@@ -19,7 +19,7 @@ class GroupsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.pushNamed(RouteNames.groupCreate),
         icon: const Icon(Icons.group_add_outlined),
-        label: const Text('Gruppe erstellen'),
+        label: const Text('Kreis erstellen'),
         backgroundColor: AppColors.seed,
         foregroundColor: Colors.white,
       ),
@@ -56,14 +56,14 @@ class GroupsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Gruppen',
+                          'Kreise',
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Dauerhafte Kreise – manuell oder aus deiner Aktivität',
+                          'Dauerhafte Communities – austauschen und neue Treffen planen',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -79,9 +79,9 @@ class GroupsScreen extends ConsumerWidget {
                       child: Padding(
                         padding: EdgeInsets.all(32),
                         child: Text(
-                          'Noch keine Gruppen.\n'
-                          'Erstelle eine oder mach aus einer gehosteten '
-                          'Aktivität eine Gruppe.',
+                          'Noch keine Kreise.\n'
+                          'Erstelle einen oder mach aus einer gehosteten '
+                          'Aktivität einen Kreis.',
                           textAlign: TextAlign.center,
                         ),
                       ),

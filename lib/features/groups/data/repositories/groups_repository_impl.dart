@@ -43,4 +43,46 @@ class GroupsRepositoryImpl implements GroupsRepository {
     String activityId,
   ) =>
       _datasource.getActivityParticipants(activityId);
+
+  @override
+  Future<CircleGroup> getGroupDetail(String groupId) =>
+      _datasource.getGroupDetail(groupId);
+
+  @override
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    String? description,
+  }) =>
+      _datasource.updateGroup(
+        groupId: groupId,
+        name: name,
+        description: description,
+      );
+
+  @override
+  Future<int> addMembers({
+    required String groupId,
+    required List<String> memberIds,
+  }) =>
+      _datasource.addMembers(groupId: groupId, memberIds: memberIds);
+
+  @override
+  Future<void> setMemberRole({
+    required String groupId,
+    required String profileId,
+    required String role,
+  }) =>
+      _datasource.setMemberRole(
+        groupId: groupId,
+        profileId: profileId,
+        role: role,
+      );
+
+  @override
+  Future<void> removeMember({
+    required String groupId,
+    required String profileId,
+  }) =>
+      _datasource.removeMember(groupId: groupId, profileId: profileId);
 }

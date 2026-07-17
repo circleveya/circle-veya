@@ -168,6 +168,13 @@ class ProfileRemoteDatasource {
     return response as bool? ?? enabled;
   }
 
+  Future<void> updateGalleryPublic({required bool isPublic}) async {
+    await _client.rpc(
+      'update_my_gallery_public',
+      params: {'p_public': isPublic},
+    );
+  }
+
   Future<String> uploadAvatar({
     required Uint8List bytes,
     required String fileName,
@@ -221,6 +228,7 @@ class ProfileRemoteDatasource {
           : const [],
       userType: map['user_type'] as String? ?? 'standard',
       isPremium: map['is_premium'] as bool? ?? false,
+      galleryPublic: map['gallery_public'] as bool? ?? false,
     );
   }
 }

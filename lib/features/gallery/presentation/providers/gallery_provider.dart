@@ -25,6 +25,11 @@ final pastActivitiesGalleryProvider =
   return ref.watch(galleryRepositoryProvider).getPastActivities();
 });
 
+final publicGalleryForProfileProvider = FutureProvider.autoDispose
+    .family<List<PastActivityGallery>, String>((ref, profileId) {
+  return ref.watch(galleryRepositoryProvider).getPublicGalleryForProfile(profileId);
+});
+
 final activityPhotosProvider = FutureProvider.autoDispose
     .family<List<ActivityPhoto>, String>((ref, activityId) {
   return ref.watch(galleryRepositoryProvider).getActivityPhotos(activityId);
