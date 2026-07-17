@@ -127,7 +127,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.chat?.title ?? 'Chat'),
+            Text(widget.chat?.displayTitle ?? 'Chat'),
             if (widget.chat != null)
               Text(
                 widget.chat!.type.label,
@@ -162,6 +162,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   );
                 }
 
+                // reverse: true → Index 0 unten am Input.
+                // Nachrichten sind chronologisch (älteste zuerst),
+                // daher neueste = letztes Element → Index 0.
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,

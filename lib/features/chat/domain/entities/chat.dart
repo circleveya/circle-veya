@@ -36,6 +36,15 @@ class ChatSummary extends Equatable {
   final int unreadCount;
   final String? otherUsername;
 
+  /// Anzeigename: bei Direktchats der andere User, sonst Chat-Titel.
+  String get displayTitle {
+    final other = otherUsername?.trim();
+    if (type == ChatType.direct && other != null && other.isNotEmpty) {
+      return other;
+    }
+    return title;
+  }
+
   @override
   List<Object?> get props => [
         id,

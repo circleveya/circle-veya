@@ -32,7 +32,8 @@ class ChatRemoteDatasource {
           return rows
               .where((row) => row['deleted_at'] == null)
               .map((row) => _mapMessage(row, userId, profiles))
-              .toList();
+              .toList()
+            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
         });
   }
 
