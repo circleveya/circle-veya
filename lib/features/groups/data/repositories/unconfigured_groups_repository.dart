@@ -69,4 +69,12 @@ class UnconfiguredGroupsRepository implements GroupsRepository {
     required String profileId,
   }) async =>
       _throw();
+
+  @override
+  Future<String> uploadGroupImage({
+    required String groupId,
+    required List<int> bytes,
+    required String fileName,
+  }) async =>
+      _throw();
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/circle_group.dart';
@@ -161,6 +163,48 @@ class GroupsRemoteDatasource {
     );
   }
 
+  Future<String> uploadGroupImage({
+    required String groupId,
+    required List<int> bytes,
+    required String fileName,
+  }) async {
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : 'jpg';
+    final path = '$groupId/avatar.$extension';
+    final payload = Uint8List.fromList(bytes);
+
+    await _client.storage.from('circle-group-images').uploadBinary(
+          path,
+          payload,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: switch (extension) {
+              'png' => 'image/png',
+              'webp' => 'image/webp',
+              'gif' => 'image/gif',
+              _ => 'image/jpeg',
+            },
+          ),
+        );
+
+    final publicUrl =
+        _client.storage.from('circle-group-images').getPublicUrl(path);
+    // Cache-Bust, damit das neue Bild sofort sichtbar wird.
+    final withCacheBust =
+        '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+
+    await _client.rpc(
+      'set_circle_group_image',
+      params: {
+        'p_group_id': groupId,
+        'p_image_url': withCacheBust,
+      },
+    );
+
+    return withCacheBust;
+  }
+
   CircleGroup _mapGroup(Map<String, dynamic> map) {
     return CircleGroup(
       id: map['id'] as String,
@@ -171,6 +215,7 @@ class GroupsRemoteDatasource {
       memberCount: (map['member_count'] as num?)?.toInt() ?? 0,
       myRole: map['my_role'] as String? ?? 'member',
       createdAt: DateTime.parse(map['created_at'] as String),
+      imageUrl: map['image_url'] as String?,
     );
   }
 }

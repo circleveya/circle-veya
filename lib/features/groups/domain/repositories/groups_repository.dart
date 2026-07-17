@@ -42,4 +42,10 @@ abstract class GroupsRepository {
     required String groupId,
     required String profileId,
   });
+
+  Future<String> uploadGroupImage({
+    required String groupId,
+    required List<int> bytes,
+    required String fileName,
+  });
 }

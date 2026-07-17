@@ -160,6 +160,24 @@ class GroupsController extends AutoDisposeAsyncNotifier<void> {
       _invalidateGroup(groupId);
     }
   }
+
+  Future<void> uploadGroupImage({
+    required String groupId,
+    required List<int> bytes,
+    required String fileName,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _repo.uploadGroupImage(
+        groupId: groupId,
+        bytes: bytes,
+        fileName: fileName,
+      );
+    });
+    if (!state.hasError) {
+      _invalidateGroup(groupId);
+    }
+  }
 }
 
 final groupsControllerProvider =

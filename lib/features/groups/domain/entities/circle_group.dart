@@ -8,6 +8,7 @@ class CircleGroup {
     required this.memberCount,
     required this.myRole,
     required this.createdAt,
+    this.imageUrl,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class CircleGroup {
   final int memberCount;
   final String myRole;
   final DateTime createdAt;
+  final String? imageUrl;
 
   bool get isOwner => myRole == 'owner';
 

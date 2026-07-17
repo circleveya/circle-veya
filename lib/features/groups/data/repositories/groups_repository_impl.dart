@@ -85,4 +85,16 @@ class GroupsRepositoryImpl implements GroupsRepository {
     required String profileId,
   }) =>
       _datasource.removeMember(groupId: groupId, profileId: profileId);
+
+  @override
+  Future<String> uploadGroupImage({
+    required String groupId,
+    required List<int> bytes,
+    required String fileName,
+  }) =>
+      _datasource.uploadGroupImage(
+        groupId: groupId,
+        bytes: bytes,
+        fileName: fileName,
+      );
 }

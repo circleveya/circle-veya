@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -114,10 +115,24 @@ class GroupsScreen extends ConsumerWidget {
                                     radius: 24,
                                     backgroundColor:
                                         AppColors.seed.withValues(alpha: 0.15),
-                                    child: const Icon(
-                                      Icons.groups,
-                                      color: AppColors.seed,
-                                    ),
+                                    backgroundImage: group.imageUrl != null &&
+                                            group.imageUrl!.trim().isNotEmpty
+                                        ? CachedNetworkImageProvider(
+                                            group.imageUrl!,
+                                          )
+                                        : null,
+                                    child: group.imageUrl == null ||
+                                            group.imageUrl!.trim().isEmpty
+                                        ? Text(
+                                            group.name.isNotEmpty
+                                                ? group.name[0].toUpperCase()
+                                                : 'K',
+                                            style: const TextStyle(
+                                              color: AppColors.seed,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(

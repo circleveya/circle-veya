@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
@@ -104,8 +105,17 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
               children: [
+                Center(
+                  child: _GroupAvatarEditor(
+                    group: group,
+                    isBusy: isBusy,
+                    onPick: group.isAdmin ? () => _pickGroupImage() : null,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   group.name,
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -115,6 +125,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   const SizedBox(height: 8),
                   Text(
                     group.description!,
+                    textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -171,6 +182,26 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _pickGroupImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (image == null || !mounted) return;
+
+    final bytes = await image.readAsBytes();
+    await ref.read(groupsControllerProvider.notifier).uploadGroupImage(
+          groupId: _groupId,
+          bytes: bytes,
+          fileName: image.name,
+        );
+
+    if (!mounted) return;
+    _showControllerErrorOrSnack('Profilbild aktualisiert');
   }
 
   Future<void> _showEditDialog(CircleGroup group) async {
@@ -253,116 +284,144 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   }) async {
     final selectedIds = <String>{};
 
+    // Verbindungen vorab laden, damit das Sheet nicht ewig auf Loading hängt.
+    try {
+      await ref.read(myConnectionsProvider.future);
+    } catch (_) {
+      // Fehler wird im Sheet angezeigt.
+    }
+    if (!mounted) return;
+
     final invited = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final connectionsAsync = ref.watch(myConnectionsProvider);
-            final theme = Theme.of(context);
+      builder: (sheetContext) {
+        return Consumer(
+          builder: (context, sheetRef, _) {
+            return StatefulBuilder(
+              builder: (context, setModalState) {
+                final connectionsAsync = sheetRef.watch(myConnectionsProvider);
+                final theme = Theme.of(context);
 
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Freunde einladen',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                return SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
                     ),
-                    const SizedBox(height: 12),
-                    connectionsAsync.when(
-                      loading: () => const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                      error: (e, _) => Text('$e'),
-                      data: (connections) {
-                        final friends = connections
-                            .where(
-                              (c) =>
-                                  c.type == ConnectionType.friend &&
-                                  !existingMemberIds.contains(c.profileId),
-                            )
-                            .toList();
-                        if (friends.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 24),
-                            child: Text(
-                              'Keine Freunde zum Einladen.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          );
-                        }
-                        return ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Freunde einladen',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: friends.length,
-                            itemBuilder: (context, index) {
-                              final friend = friends[index];
-                              return CheckboxListTile(
-                                value: selectedIds.contains(friend.profileId),
-                                onChanged: (checked) {
-                                  setModalState(() {
-                                    if (checked == true) {
-                                      selectedIds.add(friend.profileId);
-                                    } else {
-                                      selectedIds.remove(friend.profileId);
-                                    }
-                                  });
-                                },
-                                secondary: CircleAvatar(
-                                  backgroundImage: friend.avatarUrl != null
-                                      ? CachedNetworkImageProvider(
-                                          friend.avatarUrl!,
-                                        )
-                                      : null,
-                                  child: friend.avatarUrl == null
-                                      ? Text(
-                                          friend.username[0].toUpperCase(),
-                                        )
-                                      : null,
+                        ),
+                        const SizedBox(height: 12),
+                        connectionsAsync.when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (e, _) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Column(
+                              children: [
+                                Text('$e', textAlign: TextAlign.center),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () => sheetRef
+                                      .invalidate(myConnectionsProvider),
+                                  child: const Text('Erneut laden'),
                                 ),
-                                title: Text(friend.username),
-                              );
-                            },
+                              ],
+                            ),
                           ),
-                        );
-                      },
+                          data: (connections) {
+                            final friends = connections
+                                .where(
+                                  (c) =>
+                                      c.type == ConnectionType.friend &&
+                                      !existingMemberIds.contains(c.profileId),
+                                )
+                                .toList();
+                            if (friends.isEmpty) {
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 24),
+                                child: Text(
+                                  'Keine Freunde zum Einladen.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            }
+                            return ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight:
+                                    MediaQuery.sizeOf(context).height * 0.5,
+                              ),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: friends.length,
+                                itemBuilder: (context, index) {
+                                  final friend = friends[index];
+                                  return CheckboxListTile(
+                                    value:
+                                        selectedIds.contains(friend.profileId),
+                                    onChanged: (checked) {
+                                      setModalState(() {
+                                        if (checked == true) {
+                                          selectedIds.add(friend.profileId);
+                                        } else {
+                                          selectedIds.remove(friend.profileId);
+                                        }
+                                      });
+                                    },
+                                    secondary: CircleAvatar(
+                                      backgroundImage: friend.avatarUrl != null
+                                          ? CachedNetworkImageProvider(
+                                              friend.avatarUrl!,
+                                            )
+                                          : null,
+                                      child: friend.avatarUrl == null
+                                          ? Text(
+                                              friend.username[0].toUpperCase(),
+                                            )
+                                          : null,
+                                    ),
+                                    title: Text(friend.username),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: selectedIds.isEmpty
+                              ? null
+                              : () => Navigator.pop(sheetContext, true),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.brandNavy,
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                          child: Text(
+                            selectedIds.isEmpty
+                                ? 'Einladen'
+                                : '${selectedIds.length} einladen',
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: selectedIds.isEmpty
-                          ? null
-                          : () => Navigator.pop(context, true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.brandNavy,
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                      child: Text(
-                        selectedIds.isEmpty
-                            ? 'Einladen'
-                            : '${selectedIds.length} einladen',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -595,6 +654,60 @@ class _MemberTile extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _GroupAvatarEditor extends StatelessWidget {
+  const _GroupAvatarEditor({
+    required this.group,
+    required this.isBusy,
+    this.onPick,
+  });
+
+  final CircleGroup group;
+  final bool isBusy;
+  final VoidCallback? onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = group.imageUrl?.trim();
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
+    return Stack(
+      alignment: Alignment.bottomRight,
+      children: [
+        CircleAvatar(
+          radius: 52,
+          backgroundColor: AppColors.seed.withValues(alpha: 0.15),
+          backgroundImage:
+              hasImage ? CachedNetworkImageProvider(imageUrl) : null,
+          child: hasImage
+              ? null
+              : Text(
+                  group.name.isNotEmpty ? group.name[0].toUpperCase() : 'K',
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.seed,
+                  ),
+                ),
+        ),
+        if (onPick != null)
+          Material(
+            color: AppColors.brandNavy,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: isBusy ? null : onPick,
+              child: const SizedBox(
+                width: 36,
+                height: 36,
+                child: Icon(Icons.camera_alt, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
