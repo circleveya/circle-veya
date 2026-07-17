@@ -136,13 +136,20 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       return;
     }
 
-    final location = await ref.read(userLocationProvider.future);
+    // Standort darf das Erstellen nicht blockieren: bei verweigertem/fehlendem
+    // GPS auf einen Standard-Standort zurückfallen statt still abzubrechen.
+    UserLocation location;
+    try {
+      location = await ref.read(userLocationProvider.future);
+    } catch (_) {
+      location = UserLocation.mockFrauenfeld;
+    }
     if (location.isMock == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Test-Standort (${location.displayLabel}) wird verwendet – '
-            'GPS ist deaktiviert oder nicht verfügbar.',
+            'Standard-Standort (${location.displayLabel}) wird verwendet – '
+            'GPS ist deaktiviert, blockiert oder nicht verfügbar.',
           ),
           duration: const Duration(seconds: 3),
         ),
@@ -164,15 +171,13 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     var imageUrl = _prefilledImageUrl?.trim();
     if ((_coverImage == null) &&
         (imageUrl == null || imageUrl.isEmpty)) {
-      // ignore: avoid_print
-      print(
-        'CircleVeya Create: hole Pexels-Bild für "${_titleController.text.trim()}"',
-      );
-      imageUrl = await ref
-          .read(imageServiceProvider)
-          .fetchActivityImage(_titleController.text.trim());
-      // ignore: avoid_print
-      print('CircleVeya Create: Pexels-Ergebnis = $imageUrl');
+      try {
+        imageUrl = await ref
+            .read(imageServiceProvider)
+            .fetchActivityImage(_titleController.text.trim());
+      } catch (_) {
+        imageUrl = null;
+      }
     }
 
     await ref.read(createActivityProvider.notifier).create(
@@ -207,7 +212,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     final state = ref.read(createActivityProvider);
     if (state.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$state.error')),
+        SnackBar(
+          content: Text('Erstellen fehlgeschlagen: ${state.error}'),
+          duration: const Duration(seconds: 5),
+        ),
       );
       return;
     }

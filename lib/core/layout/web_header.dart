@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_provider.dart';
-import '../../features/notifications/data/notifications_remote_datasource.dart';
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
 import '../router/route_names.dart';
@@ -44,12 +43,10 @@ class WebHeader extends ConsumerWidget {
     final avatarUrl = profileAsync.valueOrNull?.avatarUrl;
 
     void showNotifications() {
-      final notifications =
-          ref.read(notificationsStreamProvider).valueOrNull ?? [];
       showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
-        builder: (context) => _NotificationsSheet(notifications: notifications),
+        builder: (context) => const _NotificationsSheet(),
       );
     }
 
@@ -526,13 +523,17 @@ class _ResultLeading extends StatelessWidget {
   }
 }
 
-class _NotificationsSheet extends StatelessWidget {
-  const _NotificationsSheet({required this.notifications});
-
-  final List<AppNotification> notifications;
+class _NotificationsSheet extends ConsumerWidget {
+  const _NotificationsSheet();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final notificationsAsync = ref.watch(notificationsStreamProvider);
+    final notifications = notificationsAsync.valueOrNull ?? [];
+    final unreadCount = notifications.where((n) => !n.isRead).length;
+    final isBusy = ref.watch(notificationsControllerProvider).isLoading;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -540,11 +541,34 @@ class _NotificationsSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Benachrichtigungen',
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Benachrichtigungen',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+                if (unreadCount > 0)
+                  TextButton(
+                    onPressed: isBusy
+                        ? null
+                        : () => ref
+                            .read(notificationsControllerProvider.notifier)
+                            .markAllAsRead(),
+                    child: const Text('Alle gelesen'),
+                  ),
+                if (notifications.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Alle löschen',
+                    onPressed: isBusy
+                        ? null
+                        : () => _confirmDeleteAll(context, ref),
+                    icon: const Icon(Icons.delete_outline),
+                  ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             if (notifications.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
@@ -558,12 +582,68 @@ class _NotificationsSheet extends StatelessWidget {
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final n = notifications[index];
-                    return ListTile(
-                      title: Text(n.title),
-                      subtitle: Text(n.message),
-                      trailing: n.isRead
-                          ? null
-                          : const Icon(Icons.circle, size: 8, color: AppColors.seed),
+                    return Dismissible(
+                      key: ValueKey('notification-${n.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: theme.colorScheme.errorContainer,
+                        child: Icon(
+                          Icons.delete_outline,
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                      confirmDismiss: (_) async {
+                        await ref
+                            .read(notificationsControllerProvider.notifier)
+                            .deleteNotification(n.id);
+                        return ref
+                                .read(notificationsControllerProvider)
+                                .error ==
+                            null;
+                      },
+                      child: ListTile(
+                        onTap: n.isRead || isBusy
+                            ? null
+                            : () => ref
+                                .read(notificationsControllerProvider.notifier)
+                                .markAsRead(n.id),
+                        title: Text(
+                          n.title,
+                          style: TextStyle(
+                            fontWeight:
+                                n.isRead ? FontWeight.w500 : FontWeight.w700,
+                          ),
+                        ),
+                        subtitle: Text(n.message),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!n.isRead)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: Icon(
+                                  Icons.circle,
+                                  size: 8,
+                                  color: AppColors.seed,
+                                ),
+                              ),
+                            IconButton(
+                              tooltip: 'Löschen',
+                              onPressed: isBusy
+                                  ? null
+                                  : () => ref
+                                      .read(
+                                        notificationsControllerProvider
+                                            .notifier,
+                                      )
+                                      .deleteNotification(n.id),
+                              icon: const Icon(Icons.close, size: 18),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -572,6 +652,34 @@ class _NotificationsSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAll(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Alle löschen?'),
+        content: const Text(
+          'Alle Benachrichtigungen werden unwiderruflich entfernt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(notificationsControllerProvider.notifier).deleteAll();
+    }
   }
 }
 
