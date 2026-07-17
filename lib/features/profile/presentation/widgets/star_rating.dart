@@ -27,7 +27,7 @@ class StarRating extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = emptyColor ??
-        AppColors.brandNavy.withValues(alpha: 0.35);
+        const Color(0xFFCBD2E0);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -100,7 +100,9 @@ class _StarButtonState extends State<_StarButton>
   IconData get _icon {
     if (widget.value >= widget.index) return Icons.star_rounded;
     if (widget.value >= widget.index - 0.5) return Icons.star_half_rounded;
-    return Icons.star_border_rounded;
+    // Leere Sterne als voll gefüllte (graue) Sterne rendern, damit sie
+    // auf hellem Hintergrund garantiert sichtbar sind.
+    return Icons.star_rounded;
   }
 
   Color get _iconColor {
