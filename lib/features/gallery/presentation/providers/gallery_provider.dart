@@ -30,10 +30,20 @@ final publicGalleryForProfileProvider = FutureProvider.autoDispose
   return ref.watch(galleryRepositoryProvider).getPublicGalleryForProfile(profileId);
 });
 
+/// activityId|ownerId – ownerId leer = aktuelle Session
 final activityPhotosProvider = FutureProvider.autoDispose
-    .family<List<ActivityPhoto>, String>((ref, activityId) {
-  return ref.watch(galleryRepositoryProvider).getActivityPhotos(activityId);
+    .family<List<ActivityPhoto>, String>((ref, key) {
+  final parts = key.split('|');
+  final activityId = parts.first;
+  final ownerId = parts.length > 1 && parts[1].isNotEmpty ? parts[1] : null;
+  return ref.watch(galleryRepositoryProvider).getActivityPhotos(
+        activityId,
+        ownerId: ownerId,
+      );
 });
+
+String activityPhotosKey(String activityId, {String? ownerId}) =>
+    '$activityId|${ownerId ?? ''}';
 
 final canUploadPhotoProvider = FutureProvider.autoDispose
     .family<bool, String>((ref, activityId) {
@@ -58,7 +68,7 @@ class GalleryUploadController extends AutoDisposeAsyncNotifier<void> {
           ),
     );
     if (!state.hasError) {
-      ref.invalidate(activityPhotosProvider(activityId));
+      ref.invalidate(activityPhotosProvider(activityPhotosKey(activityId)));
       ref.invalidate(pastActivitiesGalleryProvider);
       ref.invalidate(canUploadPhotoProvider(activityId));
     }
@@ -67,3 +77,27 @@ class GalleryUploadController extends AutoDisposeAsyncNotifier<void> {
 
 final galleryUploadControllerProvider = AutoDisposeAsyncNotifierProvider<
     GalleryUploadController, void>(GalleryUploadController.new);
+
+class MemoryPrivacyController extends AutoDisposeAsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> setMemoryPublic({
+    required String activityId,
+    required bool isPublic,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(galleryRepositoryProvider).setMemoryPublic(
+            activityId: activityId,
+            isPublic: isPublic,
+          ),
+    );
+    if (!state.hasError) {
+      ref.invalidate(pastActivitiesGalleryProvider);
+    }
+  }
+}
+
+final memoryPrivacyControllerProvider = AutoDisposeAsyncNotifierProvider<
+    MemoryPrivacyController, void>(MemoryPrivacyController.new);

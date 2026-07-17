@@ -25,9 +25,15 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
-  Future<List<ActivityPhoto>> getActivityPhotos(String activityId) async {
+  Future<List<ActivityPhoto>> getActivityPhotos(
+    String activityId, {
+    String? ownerId,
+  }) async {
     try {
-      return await _datasource.getActivityPhotos(activityId);
+      return await _datasource.getActivityPhotos(
+        activityId,
+        ownerId: ownerId,
+      );
     } on PostgrestException catch (error) {
       throw GalleryFailure(error.message);
     }
@@ -48,6 +54,21 @@ class GalleryRepositoryImpl implements GalleryRepository {
   ) async {
     try {
       return await _datasource.getPublicGalleryForProfile(profileId);
+    } on PostgrestException catch (error) {
+      throw GalleryFailure(error.message);
+    }
+  }
+
+  @override
+  Future<void> setMemoryPublic({
+    required String activityId,
+    required bool isPublic,
+  }) async {
+    try {
+      await _datasource.setMemoryPublic(
+        activityId: activityId,
+        isPublic: isPublic,
+      );
     } on PostgrestException catch (error) {
       throw GalleryFailure(error.message);
     }

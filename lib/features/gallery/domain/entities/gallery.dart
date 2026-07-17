@@ -9,6 +9,7 @@ class PastActivityGallery extends Equatable {
     required this.isHost,
     required this.photoCount,
     required this.canUpload,
+    this.isPublic = false,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class PastActivityGallery extends Equatable {
   final bool isHost;
   final int photoCount;
   final bool canUpload;
+  final bool isPublic;
 
   @override
   List<Object?> get props => [
@@ -28,6 +30,7 @@ class PastActivityGallery extends Equatable {
         isHost,
         photoCount,
         canUpload,
+        isPublic,
       ];
 }
 

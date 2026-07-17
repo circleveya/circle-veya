@@ -7,9 +7,17 @@ abstract class GalleryRepository {
 
   Future<List<PastActivityGallery>> getPublicGalleryForProfile(String profileId);
 
-  Future<List<ActivityPhoto>> getActivityPhotos(String activityId);
+  Future<List<ActivityPhoto>> getActivityPhotos(
+    String activityId, {
+    String? ownerId,
+  });
 
   Future<bool> canUploadPhoto(String activityId);
+
+  Future<void> setMemoryPublic({
+    required String activityId,
+    required bool isPublic,
+  });
 
   Future<void> uploadActivityPhoto({
     required String activityId,

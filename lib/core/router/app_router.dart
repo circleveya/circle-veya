@@ -120,9 +120,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.activityGallery,
         builder: (context, state) {
           final title = state.extra as String?;
+          final ownerId = state.uri.queryParameters['owner'];
           return ActivityGalleryScreen(
             activityId: state.pathParameters['id']!,
             activityTitle: title,
+            ownerId: ownerId,
           );
         },
       ),

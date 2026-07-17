@@ -111,7 +111,11 @@ class GalleryPrivacyController extends AutoDisposeAsyncNotifier<void> {
           );
     });
     if (!state.hasError) {
+      final userId = ref.read(supabaseClientProvider).auth.currentUser?.id;
       ref.invalidate(myProfileProvider);
+      if (userId != null) {
+        ref.invalidate(profileProvider(userId));
+      }
     }
   }
 }

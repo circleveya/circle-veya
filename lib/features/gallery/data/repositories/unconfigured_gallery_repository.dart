@@ -10,7 +10,11 @@ class UnconfiguredGalleryRepository implements GalleryRepository {
   Future<bool> canUploadPhoto(String activityId) async => false;
 
   @override
-  Future<List<ActivityPhoto>> getActivityPhotos(String activityId) async => [];
+  Future<List<ActivityPhoto>> getActivityPhotos(
+    String activityId, {
+    String? ownerId,
+  }) async =>
+      [];
 
   @override
   Future<List<PastActivityGallery>> getPastActivities() async => [];
@@ -20,6 +24,14 @@ class UnconfiguredGalleryRepository implements GalleryRepository {
     String profileId,
   ) async =>
       [];
+
+  @override
+  Future<void> setMemoryPublic({
+    required String activityId,
+    required bool isPublic,
+  }) async {
+    throw UnsupportedError('Supabase ist nicht konfiguriert.');
+  }
 
   @override
   Future<void> uploadActivityPhoto({

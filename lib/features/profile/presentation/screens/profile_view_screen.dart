@@ -621,7 +621,8 @@ class _ProfileGalleryTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (isOwnProfile) {
-      final isSaving = ref.watch(galleryPrivacyControllerProvider).isLoading;
+      final privacyState = ref.watch(galleryPrivacyControllerProvider);
+      final isSaving = privacyState.isLoading;
       return Column(
         children: [
           SwitchListTile(
@@ -629,12 +630,30 @@ class _ProfileGalleryTab extends ConsumerWidget {
             value: galleryPublic,
             onChanged: isSaving
                 ? null
-                : (value) => ref
-                    .read(galleryPrivacyControllerProvider.notifier)
-                    .setGalleryPublic(value),
+                : (value) async {
+                    await ref
+                        .read(galleryPrivacyControllerProvider.notifier)
+                        .setGalleryPublic(value);
+                    if (!context.mounted) return;
+                    final error =
+                        ref.read(galleryPrivacyControllerProvider).error;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          error == null
+                              ? (value
+                                  ? 'Erinnerungen sind öffentlich'
+                                  : 'Erinnerungen sind privat')
+                              : 'Fehler: $error',
+                        ),
+                      ),
+                    );
+                  },
             title: const Text('Erinnerungen öffentlich'),
-            subtitle: const Text(
-              'Wenn aktiv, können andere deine Galerie im Profil sehen.',
+            subtitle: Text(
+              galleryPublic
+                  ? 'Andere sehen nur Erinnerungen, die du einzeln freigibst.'
+                  : 'Wenn aktiv, können andere freigegebene Erinnerungen sehen.',
             ),
             secondary: Icon(
               galleryPublic ? Icons.public : Icons.lock_outline,
@@ -681,12 +700,14 @@ class _ProfileGalleryTab extends ConsumerWidget {
                       .withValues(alpha: 0.5),
                 ),
               ),
+              leading: const Icon(Icons.public, color: AppColors.seed),
               title: Text(item.title),
               subtitle: Text('${item.photoCount} Fotos'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.pushNamed(
                 RouteNames.activityGallery,
                 pathParameters: {'id': item.id},
+                queryParameters: {'owner': profileId},
                 extra: item.title,
               ),
             );

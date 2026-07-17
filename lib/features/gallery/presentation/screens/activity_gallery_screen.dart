@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../providers/gallery_provider.dart';
 
 /// Persönliche Erinnerungen: nur abgeschlossene eigene Aktivitäten + eigene Fotos.
@@ -21,6 +22,8 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pastAsync = ref.watch(pastActivitiesGalleryProvider);
+    final isPrivacySaving =
+        ref.watch(memoryPrivacyControllerProvider).isLoading;
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
@@ -65,7 +68,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Deine abgeschlossenen Aktivitäten – private Fotos nur für dich',
+                          'Jede Erinnerung einzeln öffentlich oder privat stellen',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -129,67 +132,120 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                         color: theme.colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => context.pushNamed(
-                            RouteNames.activityGallery,
-                            pathParameters: {'id': activity.id},
-                            extra: activity.title,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () => context.pushNamed(
+                                    RouteNames.activityGallery,
+                                    pathParameters: {'id': activity.id},
+                                    extra: activity.title,
                                   ),
-                                  child: Icon(
-                                    Icons.photo_library_outlined,
-                                    color: theme.colorScheme.onPrimaryContainer,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            color: theme
+                                                .colorScheme.primaryContainer,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Icon(
+                                            activity.isPublic
+                                                ? Icons.public
+                                                : Icons.lock_outline,
+                                            color: theme.colorScheme
+                                                .onPrimaryContainer,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                activity.title,
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                subtitle.toString(),
+                                                style: theme
+                                                    .textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        activity.title,
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        subtitle.toString(),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
+                              ),
+                              Column(
+                                children: [
+                                  Switch(
+                                    value: activity.isPublic,
+                                    activeThumbColor: Colors.white,
+                                    activeTrackColor: AppColors.seed,
+                                    onChanged: isPrivacySaving
+                                        ? null
+                                        : (value) async {
+                                            await ref
+                                                .read(
+                                                  memoryPrivacyControllerProvider
+                                                      .notifier,
+                                                )
+                                                .setMemoryPublic(
+                                                  activityId: activity.id,
+                                                  isPublic: value,
+                                                );
+                                            if (!context.mounted) return;
+                                            final error = ref
+                                                .read(
+                                                  memoryPrivacyControllerProvider,
+                                                )
+                                                .error;
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  error == null
+                                                      ? (value
+                                                          ? 'Erinnerung ist öffentlich'
+                                                          : 'Erinnerung ist privat')
+                                                      : 'Fehler: $error',
+                                                ),
+                                              ),
+                                            );
+                                          },
                                   ),
-                                ),
-                                if (activity.canUpload)
-                                  Icon(
-                                    Icons.add_a_photo_outlined,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  )
-                                else
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                  Text(
+                                    activity.isPublic ? 'Öffentlich' : 'Privat',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: activity.isPublic
+                                          ? AppColors.seed
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -209,15 +265,20 @@ class ActivityGalleryScreen extends ConsumerWidget {
     super.key,
     required this.activityId,
     this.activityTitle,
+    this.ownerId,
   });
 
   final String activityId;
   final String? activityTitle;
+  final String? ownerId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photosAsync = ref.watch(activityPhotosProvider(activityId));
-    final canUploadAsync = ref.watch(canUploadPhotoProvider(activityId));
+    final photosKey = activityPhotosKey(activityId, ownerId: ownerId);
+    final photosAsync = ref.watch(activityPhotosProvider(photosKey));
+    final canUploadAsync = ownerId == null
+        ? ref.watch(canUploadPhotoProvider(activityId))
+        : const AsyncValue<bool>.data(false);
     final isUploading = ref.watch(galleryUploadControllerProvider).isLoading;
     final theme = Theme.of(context);
 

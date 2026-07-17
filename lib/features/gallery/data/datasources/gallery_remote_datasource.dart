@@ -12,21 +12,25 @@ class GalleryRemoteDatasource {
 
   String? get _userId => _client.auth.currentUser?.id;
 
+  PastActivityGallery _mapGallery(Map<String, dynamic> map) {
+    return PastActivityGallery(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      dateTime: DateTime.parse(map['date_time'] as String),
+      locationName: map['location_name'] as String?,
+      isHost: map['is_host'] as bool? ?? false,
+      photoCount: (map['photo_count'] as num?)?.toInt() ?? 0,
+      canUpload: map['can_upload'] as bool? ?? false,
+      isPublic: map['is_public'] as bool? ?? false,
+    );
+  }
+
   Future<List<PastActivityGallery>> getPastActivities() async {
     final response = await _client.rpc('get_past_activities_for_gallery');
 
-    return (response as List).map((row) {
-      final map = row as Map<String, dynamic>;
-      return PastActivityGallery(
-        id: map['id'] as String,
-        title: map['title'] as String,
-        dateTime: DateTime.parse(map['date_time'] as String),
-        locationName: map['location_name'] as String?,
-        isHost: map['is_host'] as bool? ?? false,
-        photoCount: (map['photo_count'] as num?)?.toInt() ?? 0,
-        canUpload: map['can_upload'] as bool? ?? false,
-      );
-    }).toList();
+    return (response as List)
+        .map((row) => _mapGallery(row as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<PastActivityGallery>> getPublicGalleryForProfile(
@@ -37,24 +41,25 @@ class GalleryRemoteDatasource {
       params: {'p_profile_id': profileId},
     );
 
-    return (response as List).map((row) {
-      final map = row as Map<String, dynamic>;
-      return PastActivityGallery(
-        id: map['id'] as String,
-        title: map['title'] as String,
-        dateTime: DateTime.parse(map['date_time'] as String),
-        locationName: map['location_name'] as String?,
-        isHost: map['is_host'] as bool? ?? false,
-        photoCount: (map['photo_count'] as num?)?.toInt() ?? 0,
-        canUpload: false,
-      );
-    }).toList();
+    return (response as List)
+        .map((row) => _mapGallery(row as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<List<ActivityPhoto>> getActivityPhotos(String activityId) async {
+  Future<List<ActivityPhoto>> getActivityPhotos(
+    String activityId, {
+    String? ownerId,
+  }) async {
+    final params = <String, dynamic>{
+      'p_activity_id': activityId,
+    };
+    if (ownerId != null) {
+      params['p_owner_id'] = ownerId;
+    }
+
     final response = await _client.rpc(
       'get_activity_photos',
-      params: {'p_activity_id': activityId},
+      params: params,
     );
 
     return (response as List).map((row) {
@@ -76,6 +81,19 @@ class GalleryRemoteDatasource {
       params: {'p_activity_id': activityId},
     );
     return response as bool? ?? false;
+  }
+
+  Future<void> setMemoryPublic({
+    required String activityId,
+    required bool isPublic,
+  }) async {
+    await _client.rpc(
+      'set_my_memory_public',
+      params: {
+        'p_activity_id': activityId,
+        'p_public': isPublic,
+      },
+    );
   }
 
   Future<void> uploadActivityPhoto({
