@@ -12,7 +12,8 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final time = DateFormat('HH:mm').format(message.createdAt.toLocal());
+    final timestamp =
+        DateFormat('dd.MM.yyyy · HH:mm').format(message.createdAt.toLocal());
     final isMine = message.isMine;
     final alignment = isMine ? Alignment.centerRight : Alignment.centerLeft;
     final color = isMine
@@ -63,7 +64,7 @@ class MessageBubble extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                time,
+                timestamp,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../domain/entities/chat.dart';
 import '../providers/chat_provider.dart';
@@ -171,8 +172,20 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   padding: const EdgeInsets.all(12),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final message = messages[messages.length - 1 - index];
-                    return MessageBubble(message: message);
+                    final messageIndex = messages.length - 1 - index;
+                    final message = messages[messageIndex];
+                    final showDate = messageIndex == 0 ||
+                        !_isSameDay(
+                          messages[messageIndex - 1].createdAt,
+                          message.createdAt,
+                        );
+
+                    return Column(
+                      children: [
+                        if (showDate) _DateSeparator(date: message.createdAt),
+                        MessageBubble(message: message),
+                      ],
+                    );
                   },
                 );
               },
@@ -211,6 +224,50 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+bool _isSameDay(DateTime first, DateTime second) {
+  final a = first.toLocal();
+  final b = second.toLocal();
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final localDate = date.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay =
+        DateTime(localDate.year, localDate.month, localDate.day);
+    final difference = today.difference(messageDay).inDays;
+    final label = switch (difference) {
+      0 => 'Heute',
+      1 => 'Gestern',
+      _ => DateFormat('dd.MM.yyyy').format(localDate),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        ),
       ),
     );
   }
