@@ -68,11 +68,13 @@ class ChatRemoteDatasource {
       throw StateError('Nicht angemeldet');
     }
 
-    await _client.from('messages').insert({
-      'chat_id': chatId,
-      'sender_id': userId,
-      'content': content.trim(),
-    });
+    await _client.rpc(
+      'send_chat_message',
+      params: {
+        'p_chat_id': chatId,
+        'p_content': content.trim(),
+      },
+    );
   }
 
   Future<void> markChatRead(String chatId) async {
