@@ -789,12 +789,14 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Center(
                 child: StarRating(
                   value: displayRating.toDouble(),
-                  size: 40,
+                  size: 44,
                   interactive: true,
+                  color: const Color(0xFFFFC107),
+                  emptyColor: const Color(0xFFB0B8C4),
                   onChanged: (value) {
                     setState(() => _selectedRating = value);
                   },

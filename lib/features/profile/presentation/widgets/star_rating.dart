@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
-
 /// Interaktive oder nur-Anzeige Sterne mit Pop-Animation beim Tippen.
+///
+/// Nutzt selbst gezeichnete Sterne (kein Material-Icon), damit sie auf
+/// Flutter Web trotz Icon-Tree-Shaking immer sichtbar sind.
 class StarRating extends StatelessWidget {
   const StarRating({
     super.key,
@@ -11,8 +14,8 @@ class StarRating extends StatelessWidget {
     this.size = 28,
     this.interactive = false,
     this.onChanged,
-    this.color = AppColors.seed,
-    this.emptyColor,
+    this.color = const Color(0xFFFFC107), // Gold
+    this.emptyColor = const Color(0xFFB0B8C4), // Grau
   });
 
   /// Aktueller Wert (0–[max]). Bei Anzeige darf auch z. B. 4.3 sein.
@@ -22,15 +25,13 @@ class StarRating extends StatelessWidget {
   final bool interactive;
   final ValueChanged<int>? onChanged;
   final Color color;
-  final Color? emptyColor;
+  final Color emptyColor;
 
   @override
   Widget build(BuildContext context) {
-    final muted = emptyColor ??
-        const Color(0xFFCBD2E0);
-
     return Row(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var i = 1; i <= max; i++)
           _StarButton(
@@ -38,7 +39,7 @@ class StarRating extends StatelessWidget {
             value: value,
             size: size,
             color: color,
-            emptyColor: muted,
+            emptyColor: emptyColor,
             interactive: interactive,
             onTap: interactive && onChanged != null
                 ? () => onChanged!(i)
@@ -97,16 +98,11 @@ class _StarButtonState extends State<_StarButton>
     super.dispose();
   }
 
-  IconData get _icon {
-    if (widget.value >= widget.index) return Icons.star_rounded;
-    if (widget.value >= widget.index - 0.5) return Icons.star_half_rounded;
-    // Leere Sterne als voll gefüllte (graue) Sterne rendern, damit sie
-    // auf hellem Hintergrund garantiert sichtbar sind.
-    return Icons.star_rounded;
-  }
+  bool get _isFilled => widget.value >= widget.index - 0.001;
+  bool get _isHalf => !_isFilled && widget.value >= widget.index - 0.5;
 
-  Color get _iconColor {
-    if (widget.value >= widget.index - 0.5) return widget.color;
+  Color get _fillColor {
+    if (_isFilled || _isHalf) return widget.color;
     return widget.emptyColor;
   }
 
@@ -119,27 +115,31 @@ class _StarButtonState extends State<_StarButton>
   Widget build(BuildContext context) {
     final star = ScaleTransition(
       scale: _scale,
-      child: Icon(
-        _icon,
-        size: widget.size,
-        color: _iconColor,
+      child: CustomPaint(
+        size: Size.square(widget.size),
+        painter: _StarPainter(
+          color: _fillColor,
+          filled: _isFilled || _isHalf,
+          half: _isHalf,
+          outlineColor: const Color(0xFF8A93A3),
+        ),
       ),
     );
 
     if (!widget.interactive || widget.onTap == null) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 3),
         child: star,
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
           onTap: _handleTap,
-          customBorder: const CircleBorder(),
+          behavior: HitTestBehavior.opaque,
           child: SizedBox(
             width: widget.size + 16,
             height: widget.size + 16,
@@ -148,5 +148,95 @@ class _StarButtonState extends State<_StarButton>
         ),
       ),
     );
+  }
+}
+
+class _StarPainter extends CustomPainter {
+  _StarPainter({
+    required this.color,
+    required this.filled,
+    required this.half,
+    required this.outlineColor,
+  });
+
+  final Color color;
+  final bool filled;
+  final bool half;
+  final Color outlineColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _starPath(size);
+
+    if (filled && !half) {
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      );
+    } else if (half) {
+      canvas.save();
+      canvas.clipRect(Rect.fromLTWH(0, 0, size.width / 2, size.height));
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      );
+      canvas.restore();
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = outlineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size.width * 0.08,
+      );
+    } else {
+      // Leerer Stern: grau gefüllt + dunklerer Rand → klar sichtbar
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = outlineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size.width * 0.06,
+      );
+    }
+  }
+
+  Path _starPath(Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final outer = size.width * 0.48;
+    final inner = outer * 0.42;
+    final path = Path();
+
+    for (var i = 0; i < 10; i++) {
+      final radius = i.isEven ? outer : inner;
+      final angle = (-math.pi / 2) + (i * math.pi / 5);
+      final x = cx + radius * math.cos(angle);
+      final y = cy + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _StarPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.filled != filled ||
+        oldDelegate.half != half ||
+        oldDelegate.outlineColor != outlineColor;
   }
 }
