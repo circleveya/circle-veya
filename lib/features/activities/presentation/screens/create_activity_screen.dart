@@ -12,6 +12,8 @@ import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../profile/domain/premium_limits.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_filters.dart';
 import '../providers/activity_provider.dart';
@@ -124,7 +126,28 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     }
   }
 
+  bool get _isPremium =>
+      ref.read(myProfileProvider).valueOrNull?.isPremium ?? false;
+
+  int get _maxSlots => PremiumLimits.maxSlots(isPremium: _isPremium);
+
+  void _showPremiumHint(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   void _addSlot() {
+    if (_slots.length >= _maxSlots) {
+      _showPremiumHint(
+        _isPremium
+            ? 'Maximal $_maxSlots Termine möglich.'
+            : 'Free: max. ${PremiumLimits.freeMaxSlots} Termine. '
+                'Premium erlaubt bis ${PremiumLimits.premiumMaxSlots}.',
+      );
+      return;
+    }
     final last = _slots.last;
     final nextDate = last.date.add(const Duration(days: 7));
     setState(() {
@@ -139,7 +162,14 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
 
   void _applyRecurrence() {
     final first = _slots.first;
-    final count = _recurrenceCount.clamp(1, 52);
+    final maxCount = _maxSlots;
+    final count = _recurrenceCount.clamp(1, maxCount);
+    if (_recurrenceCount > maxCount && !_isPremium) {
+      _showPremiumHint(
+        'Free: max. ${PremiumLimits.freeMaxSlots} Termine. '
+        'Premium erlaubt bis ${PremiumLimits.premiumMaxSlots}.',
+      );
+    }
     final generated = <_ActivitySlot>[
       for (var i = 0; i < count; i++)
         _ActivitySlot(
@@ -177,6 +207,39 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final isPremium =
+        ref.read(myProfileProvider).valueOrNull?.isPremium ?? false;
+    final maxSlots = PremiumLimits.maxSlots(isPremium: isPremium);
+    final maxRadius = PremiumLimits.maxRadiusKm(isPremium: isPremium);
+
+    if (_hasDate == true && _slots.length > maxSlots) {
+      _showPremiumHint(
+        isPremium
+            ? 'Maximal $maxSlots Termine möglich.'
+            : 'Free: max. ${PremiumLimits.freeMaxSlots} Termine. '
+                'Premium erlaubt bis ${PremiumLimits.premiumMaxSlots}.',
+      );
+      return;
+    }
+
+    if (_radiusKm > maxRadius) {
+      setState(() => _radiusKm = maxRadius);
+      _showPremiumHint(
+        'Radius auf ${maxRadius.round()} km begrenzt'
+        '${isPremium ? '' : ' (Premium: bis ${PremiumLimits.premiumRadiusKm.round()} km)'}'
+        '.',
+      );
+      return;
+    }
+
+    if (_isSponsored && !isPremium) {
+      setState(() => _isSponsored = false);
+      _showPremiumHint(
+        'Hervorgehobene Aktivitäten sind ein Premium-Feature.',
+      );
+      return;
+    }
 
     if (_visibleToFriends != true &&
         _visibleToAcquaintances != true &&
@@ -325,6 +388,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(createActivityProvider).isLoading;
     final isCompany = ref.watch(isCompanyPartnerProvider);
+    final isPremium =
+        ref.watch(myProfileProvider).valueOrNull?.isPremium ?? false;
+    final maxSlots = PremiumLimits.maxSlots(isPremium: isPremium);
+    final maxRadius = PremiumLimits.maxRadiusKm(isPremium: isPremium);
     final theme = Theme.of(context);
     final eventSelection = ref.watch(eventSelectionProvider);
 
@@ -531,9 +598,15 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: isLoading ? null : _addSlot,
+                    onPressed: isLoading || _slots.length >= maxSlots
+                        ? null
+                        : _addSlot,
                     icon: const Icon(Icons.add),
-                    label: const Text('Termin hinzufügen'),
+                    label: Text(
+                      _slots.length >= maxSlots && !isPremium
+                          ? 'Termin (Premium)'
+                          : 'Termin hinzufügen',
+                    ),
                   ),
                   DropdownButton<_RecurrenceInterval>(
                     value: _recurrenceInterval,
@@ -578,7 +651,11 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Wiederholen erzeugt $_recurrenceCount× ${_recurrenceInterval.label.toLowerCase()} ab dem ersten Termin.',
+                isPremium
+                    ? 'Wiederholen erzeugt bis $maxSlots× '
+                        '${_recurrenceInterval.label.toLowerCase()} ab dem ersten Termin.'
+                    : 'Free: max. ${PremiumLimits.freeMaxSlots} Termine · '
+                        'Premium: bis ${PremiumLimits.premiumMaxSlots}.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -616,18 +693,45 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 if (v != null) setState(() => _weatherCondition = v);
               },
             ),
-            if (isCompany) ...[
-              const SizedBox(height: 16),
-              SwitchListTile(
-                value: _isSponsored,
-                onChanged: (v) => setState(() => _isSponsored = v),
-                title: const Text('Als gesponsert markieren'),
-                subtitle: const Text(
-                  'Wird im Entdecken-Feed featured und nach oben gepusht.',
-                ),
-                secondary: const Icon(Icons.star_outline),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: isPremium ? _isSponsored : false,
+              onChanged: isLoading
+                  ? null
+                  : (v) {
+                      if (!isPremium) {
+                        _showPremiumHint(
+                          'Hervorgehobene Aktivitäten sind ein Premium-Feature. '
+                          'Aktiviere Premium in den Einstellungen.',
+                        );
+                        return;
+                      }
+                      setState(() => _isSponsored = v);
+                    },
+              title: Row(
+                children: [
+                  const Flexible(child: Text('Als hervorgehoben markieren')),
+                  if (!isPremium) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ],
               ),
-            ],
+              subtitle: Text(
+                isPremium
+                    ? 'Wird im Entdecken-Feed featured und nach oben gepusht.'
+                    : 'Premium: Aktivität im Feed hervorheben.',
+              ),
+              secondary: Icon(
+                Icons.star_outline,
+                color: isPremium ? AppColors.seed : theme.colorScheme.outline,
+              ),
+            ),
             const SizedBox(height: 24),
             VisibilitySelector(
               friends: _visibleToFriends,
@@ -637,7 +741,12 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               onAcquaintancesChanged: (v) =>
                   setState(() => _visibleToAcquaintances = v),
               onStrangersChanged: (v) => setState(() => _visibleToStrangers = v),
-              radiusKm: _radiusKm,
+              radiusKm: _radiusKm.clamp(
+                PremiumLimits.minRadiusKm,
+                maxRadius,
+              ),
+              maxRadiusKm: maxRadius,
+              isPremium: isPremium,
               onRadiusChanged: (v) => setState(() => _radiusKm = v),
             ),
             const SizedBox(height: 24),

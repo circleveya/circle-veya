@@ -280,13 +280,47 @@ class _ProfileCoverHeader extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            profile.username,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
+                          Flexible(
+                            child: Text(
+                              profile.username,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
+                          if (profile.isPremium) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFC107),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.workspace_premium,
+                                    size: 14,
+                                    color: AppColors.brandNavy,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Premium',
+                                    style: TextStyle(
+                                      color: AppColors.brandNavy,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (profile.isCompany) ...[
                             const SizedBox(width: 6),
                             const Icon(Icons.verified, color: Colors.white),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../profile/domain/premium_limits.dart';
+
 class VisibilitySelector extends StatelessWidget {
   const VisibilitySelector({
     super.key,
@@ -11,6 +13,8 @@ class VisibilitySelector extends StatelessWidget {
     required this.onStrangersChanged,
     required this.radiusKm,
     required this.onRadiusChanged,
+    this.maxRadiusKm = PremiumLimits.freeRadiusKm,
+    this.isPremium = false,
   });
 
   final bool friends;
@@ -21,9 +25,15 @@ class VisibilitySelector extends StatelessWidget {
   final ValueChanged<bool> onStrangersChanged;
   final double radiusKm;
   final ValueChanged<double> onRadiusChanged;
+  final double maxRadiusKm;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
+    final clamped = radiusKm.clamp(PremiumLimits.minRadiusKm, maxRadiusKm);
+    final divisions =
+        ((maxRadiusKm - PremiumLimits.minRadiusKm) / 5).round().clamp(1, 40);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -55,15 +65,23 @@ class VisibilitySelector extends StatelessWidget {
         ),
         if (strangers) ...[
           const SizedBox(height: 8),
-          Text('Entdeckungs-Radius: ${radiusKm.round()} km'),
+          Text('Entdeckungs-Radius: ${clamped.round()} km'),
           Slider(
-            value: radiusKm,
-            min: 5,
-            max: 100,
-            divisions: 19,
-            label: '${radiusKm.round()} km',
+            value: clamped.toDouble(),
+            min: PremiumLimits.minRadiusKm,
+            max: maxRadiusKm,
+            divisions: divisions,
+            label: '${clamped.round()} km',
             onChanged: onRadiusChanged,
           ),
+          if (!isPremium)
+            Text(
+              'Free: max. ${PremiumLimits.freeRadiusKm.round()} km · '
+              'Premium: bis ${PremiumLimits.premiumRadiusKm.round()} km',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
         ],
       ],
     );

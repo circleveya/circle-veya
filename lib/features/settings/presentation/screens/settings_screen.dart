@@ -154,8 +154,8 @@ class _PremiumTestCard extends StatelessWidget {
             const SizedBox(height: 18),
             Text(
               isPremium
-                  ? 'Premium ist aktiv. Das Upsell-Banner in der Sidebar ist ausgeblendet.'
-                  : 'Simuliere Premium, um Features und UI ohne echten Kauf zu testen.',
+                  ? 'Premium ist aktiv: größerer Radius, mehr Termine, Hervorheben und Badge.'
+                  : 'Simuliere Premium für UI-Tests: Radius bis 100 km, bis 12 Termine, Hervorheben und Badge.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: isPremium
                     ? Colors.white.withValues(alpha: 0.92)
@@ -168,9 +168,13 @@ class _PremiumTestCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _BenefitChip(label: 'Mehr Sichtbarkeit', active: isPremium),
-                _BenefitChip(label: 'Unbegrenzte Aktivitäten', active: isPremium),
-                _BenefitChip(label: 'Exklusive Features', active: isPremium),
+                _BenefitChip(label: 'Radius bis 100 km', active: isPremium),
+                _BenefitChip(label: 'Bis 12 Termine', active: isPremium),
+                _BenefitChip(
+                  label: 'Hervorgehobene Aktivitäten',
+                  active: isPremium,
+                ),
+                _BenefitChip(label: 'Premium-Badge', active: isPremium),
               ],
             ),
             const SizedBox(height: 20),
