@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/challenges/domain/entities/challenge.dart';
 import '../../features/challenges/domain/entities/level_milestone.dart';
 import '../../features/challenges/presentation/providers/challenge_provider.dart';
+import '../../features/challenges/presentation/widgets/level_badge_theme.dart';
 import '../../features/challenges/presentation/widgets/level_milestones_ui.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
 import '../../features/sidebar/presentation/providers/sidebar_provider.dart';
@@ -224,6 +225,7 @@ class WebRightPanel extends ConsumerWidget {
       error: (e, _) => [Text('$e')],
       data: (stats) {
         final milestone = LevelMilestone.currentFor(stats.level);
+        final badgeTheme = LevelBadgeTheme.forLevel(stats.level);
         return [
         _PanelCard(
           title: l10n.challenges,
@@ -233,21 +235,11 @@ class WebRightPanel extends ConsumerWidget {
               .goTo(WebShellDestination.challenges),
           child: Row(
             children: [
-              Container(
+              LevelLabelChip(
+                level: stats.level,
+                fontSize: 16,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: AppColors.premiumGradient,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  l10n.levelLabel(stats.level),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
-                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -269,7 +261,7 @@ class WebRightPanel extends ConsumerWidget {
                                     .titleSmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.seed,
+                                      color: badgeTheme.accent,
                                     ),
                               ),
                             ),
@@ -285,7 +277,7 @@ class WebRightPanel extends ConsumerWidget {
                       value: stats.levelProgress,
                       borderRadius: BorderRadius.circular(4),
                       backgroundColor: AppColors.surfaceTint,
-                      color: AppColors.seed,
+                      color: badgeTheme.fill,
                     ),
                   ],
                 ),

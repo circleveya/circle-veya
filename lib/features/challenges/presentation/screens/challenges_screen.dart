@@ -9,6 +9,7 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/challenge.dart';
 import '../../domain/entities/level_milestone.dart';
 import '../providers/challenge_provider.dart';
+import '../widgets/level_badge_theme.dart';
 import '../widgets/level_milestones_ui.dart';
 
 class ChallengesScreen extends ConsumerWidget {
@@ -220,6 +221,7 @@ class ChallengeLevelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final milestone = LevelMilestone.currentFor(stats.level);
     final l10n = AppLocalizations.of(context);
+    final badgeTheme = LevelBadgeTheme.forLevel(stats.level);
     return Card(
       elevation: 0,
       color: AppColors.surfaceTint,
@@ -227,20 +229,10 @@ class ChallengeLevelCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Container(
+            LevelLabelChip(
+              level: stats.level,
+              fontSize: 18,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: AppColors.premiumGradient,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                l10n.levelLabel(stats.level),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                ),
-              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -262,7 +254,7 @@ class ChallengeLevelCard extends StatelessWidget {
                                   .titleMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.seed,
+                                    color: badgeTheme.accent,
                                   ),
                             ),
                           ),
@@ -280,7 +272,7 @@ class ChallengeLevelCard extends StatelessWidget {
                       value: stats.levelProgress,
                       minHeight: 8,
                       backgroundColor: Colors.white,
-                      color: AppColors.seed,
+                      color: badgeTheme.fill,
                     ),
                   ),
                   const SizedBox(height: 4),

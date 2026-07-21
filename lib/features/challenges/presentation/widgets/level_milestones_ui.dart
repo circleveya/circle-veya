@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/level_milestone.dart';
+import 'level_badge_theme.dart';
 
 /// Zeigt Erklärung eines Level-Badges (Level, Name, Beschreibung).
 void showLevelMilestoneDetails(
@@ -32,7 +33,7 @@ void showLevelMilestoneDetails(
               Text(
                 l10n.levelLabel(milestone.level),
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.seed,
+                  color: LevelBadgeTheme.forLevel(milestone.level).accent,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -127,6 +128,60 @@ class LevelBadgeImage extends StatelessWidget {
   }
 }
 
+/// Kompakter Level-Chip in Badge-Farben (Profil-Header, Challenges, …).
+class LevelLabelChip extends StatelessWidget {
+  const LevelLabelChip({
+    super.key,
+    required this.level,
+    this.onTap,
+    this.fontSize = 13,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+  });
+
+  final int level;
+  final VoidCallback? onTap;
+  final double fontSize;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = LevelBadgeTheme.forLevel(level);
+    final child = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: theme.fill,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.accent, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: theme.fill.withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        AppLocalizations.of(context).levelLabel(level),
+        style: TextStyle(
+          color: theme.onFill,
+          fontWeight: FontWeight.w800,
+          fontSize: fontSize,
+        ),
+      ),
+    );
+
+    if (onTap == null) return child;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Kompaktes Badge neben Level im Profil-Header.
 class LevelMilestoneChip extends StatelessWidget {
   const LevelMilestoneChip({
@@ -142,7 +197,9 @@ class LevelMilestoneChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = light ? Colors.white : AppColors.brandNavy;
+    final fg = light
+        ? Colors.white
+        : LevelBadgeTheme.forLevel(milestone.level).fill;
 
     return InkWell(
       onTap: onTap,
@@ -157,7 +214,9 @@ class LevelMilestoneChip extends StatelessWidget {
             Text(
               milestone.name,
               style: TextStyle(
-                color: fg,
+                color: light
+                    ? LevelBadgeTheme.forLevel(milestone.level).accent
+                    : fg,
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
               ),
@@ -187,51 +246,53 @@ class LevelMilestonesGallery extends StatelessWidget {
     final unlocked = LevelMilestone.unlocked(userLevel);
     final locked = LevelMilestone.locked(userLevel);
     final current = LevelMilestone.currentFor(userLevel);
+    final badgeTheme = LevelBadgeTheme.forLevel(userLevel);
 
     return ListView(
       padding: padding,
       children: [
-        Text(
-          l10n.levelLabel(userLevel),
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        LevelLabelChip(level: userLevel, fontSize: 18, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
         if (current != null) ...[
-          const SizedBox(height: 12),
-          Center(
-            child: InkWell(
-              onTap: () => showLevelMilestoneDetails(
-                context,
-                current,
-                unlocked: true,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    LevelBadgeImage(milestone: current, size: 120),
-                    const SizedBox(height: 10),
-                    Text(
-                      current.name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: AppColors.seed,
-                        fontWeight: FontWeight.w800,
-                      ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () => showLevelMilestoneDetails(
+              context,
+              current,
+              unlocked: true,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  LevelBadgeImage(milestone: current, size: 112),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          current.name,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: badgeTheme.accent,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          current.descriptionFor(
+                            Localizations.localeOf(context).languageCode,
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      current.descriptionFor(
-                        Localizations.localeOf(context).languageCode,
-                      ),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -336,9 +397,15 @@ class _MilestoneTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final badgeTheme = LevelBadgeTheme.forLevel(milestone.level);
     final fg = unlocked
         ? AppColors.brandNavy
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
+    final borderColor = highlighted
+        ? badgeTheme.accent
+        : (unlocked
+            ? badgeTheme.fill.withValues(alpha: 0.45)
+            : theme.colorScheme.outlineVariant.withValues(alpha: 0.35));
 
     return Material(
       color: Colors.transparent,
@@ -352,11 +419,12 @@ class _MilestoneTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: highlighted
-                  ? AppColors.seed
-                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              color: borderColor,
               width: highlighted ? 2 : 1,
             ),
+            color: highlighted
+                ? badgeTheme.fill.withValues(alpha: 0.08)
+                : null,
           ),
           child: Column(
             children: [
@@ -387,7 +455,7 @@ class _MilestoneTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: fg,
+                  color: unlocked ? badgeTheme.fill : fg,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -395,7 +463,7 @@ class _MilestoneTile extends StatelessWidget {
               Text(
                 l10nLevel(context, milestone.level),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: fg,
+                  color: unlocked ? badgeTheme.accent : fg,
                   fontWeight: FontWeight.w700,
                 ),
               ),

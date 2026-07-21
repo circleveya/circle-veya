@@ -14,6 +14,7 @@ import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/activity_card.dart';
 import '../../../challenges/domain/entities/level_milestone.dart';
 import '../../../challenges/presentation/providers/challenge_provider.dart';
+import '../../../challenges/presentation/widgets/level_badge_theme.dart';
 import '../../../challenges/presentation/widgets/level_milestones_ui.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
@@ -476,27 +477,9 @@ class _ProfileCoverHeader extends ConsumerWidget {
                           runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Material(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              child: InkWell(
-                                onTap: onLevelTap,
-                                borderRadius: BorderRadius.circular(20),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  child: Text(
-                                    AppLocalizations.of(context)
-                                        .levelLabel(level!),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            LevelLabelChip(
+                              level: level!,
+                              onTap: onLevelTap,
                             ),
                             if (LevelMilestone.currentFor(level!) != null)
                               _ProfileBadgeButton(
@@ -546,6 +529,7 @@ class _ProfileBadgeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = LevelBadgeTheme.forLevel(milestone.level);
     return InkWell(
       onTap: () => showLevelMilestoneDetails(
         context,
@@ -562,10 +546,17 @@ class _ProfileBadgeButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               milestone.name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.accent,
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
+                shadows: const [
+                  Shadow(
+                    color: Colors.black54,
+                    blurRadius: 4,
+                    offset: Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ],
