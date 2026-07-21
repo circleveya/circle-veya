@@ -28,7 +28,7 @@ enum ProfileAccountType {
         standard => 'Privatperson',
         event => 'Event-Profil',
         company => 'Event-Profil',
-        marketing => 'Marke',
+        marketing => 'Marketing',
         dev => 'Developer',
       };
 
@@ -36,7 +36,7 @@ enum ProfileAccountType {
         standard => 'Mitglied',
         event => 'Event',
         company => 'Event',
-        marketing => 'Marke',
+        marketing => 'Marketing',
         dev => 'Dev',
       };
 

@@ -32,12 +32,16 @@ class MessageBubble extends StatelessWidget {
         content != 'GIF' &&
         content != ' ';
 
+    final isGif = message.messageType == ChatMessageType.gif;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final bubbleMaxWidth = isGif
+        ? (screenWidth * 0.42).clamp(140.0, 200.0)
+        : screenWidth * 0.75;
+
     return Align(
       alignment: alignment,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
         child: Container(
           margin: EdgeInsets.only(
             top: 4,
@@ -46,7 +50,7 @@ class MessageBubble extends StatelessWidget {
             right: isMine ? 0 : 48,
           ),
           padding: message.hasMedia
-              ? const EdgeInsets.fromLTRB(6, 6, 6, 8)
+              ? const EdgeInsets.fromLTRB(4, 4, 4, 6)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: color,
@@ -59,7 +63,7 @@ class MessageBubble extends StatelessWidget {
               if (!isMine)
                 Padding(
                   padding: message.hasMedia
-                      ? const EdgeInsets.fromLTRB(8, 4, 8, 4)
+                      ? const EdgeInsets.fromLTRB(6, 2, 6, 4)
                       : EdgeInsets.zero,
                   child: Text(
                     message.senderUsername,
@@ -71,26 +75,37 @@ class MessageBubble extends StatelessWidget {
                 ),
               if (message.hasMedia)
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: message.messageType == ChatMessageType.gif
-                      ? Image.network(
-                          message.mediaUrl!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          gaplessPlayback: true,
-                          errorBuilder: (_, _, _) => const SizedBox(
-                            height: 120,
-                            child: Center(
-                              child: Icon(Icons.broken_image_outlined),
-                            ),
+                  borderRadius: BorderRadius.circular(10),
+                  child: isGif
+                      ? ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 180,
+                            maxHeight: 140,
                           ),
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return const SizedBox(
-                              height: 160,
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          },
+                          child: Image.network(
+                            message.mediaUrl!,
+                            fit: BoxFit.contain,
+                            gaplessPlayback: true,
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              width: 120,
+                              height: 80,
+                              child: Center(
+                                child: Icon(Icons.broken_image_outlined),
+                              ),
+                            ),
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return const SizedBox(
+                                width: 120,
+                                height: 80,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         )
                       : CachedNetworkImage(
                           imageUrl: message.mediaUrl!,
@@ -102,8 +117,9 @@ class MessageBubble extends StatelessWidget {
                           ),
                           errorWidget: (_, _, _) => const SizedBox(
                             height: 120,
-                            child:
-                                Center(child: Icon(Icons.broken_image_outlined)),
+                            child: Center(
+                              child: Icon(Icons.broken_image_outlined),
+                            ),
                           ),
                         ),
                 ),

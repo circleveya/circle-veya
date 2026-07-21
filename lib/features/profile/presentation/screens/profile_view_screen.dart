@@ -365,143 +365,43 @@ class _ProfileCoverHeader extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
-                          Flexible(
-                            child: Text(
-                              profile.username,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
+                          Text(
+                            profile.username,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          if (profile.isPremium) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFC107),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.workspace_premium,
-                                    size: 14,
-                                    color: AppColors.brandNavy,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Premium',
-                                    style: TextStyle(
-                                      color: AppColors.brandNavy,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          if (profile.isPremium)
+                            const _ProfileStatusBadge(
+                              label: 'Premium',
+                              icon: Icons.workspace_premium,
+                              background: Color(0xFFFFC107),
                             ),
-                          ],
-                          if (profile.isDev) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFD54F),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.code,
-                                    size: 14,
-                                    color: AppColors.brandNavy,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Dev',
-                                    style: TextStyle(
-                                      color: AppColors.brandNavy,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          if (profile.isDev)
+                            const _ProfileStatusBadge(
+                              label: 'Dev',
+                              icon: Icons.code,
+                              background: Color(0xFFFFD54F),
+                            )
+                          else if (profile.isMarketing)
+                            const _ProfileStatusBadge(
+                              label: 'Marketing',
+                              icon: Icons.campaign,
+                              background: Color(0xFFFFB74D),
+                            )
+                          else if (profile.isEventOrganizer)
+                            const _ProfileStatusBadge(
+                              label: 'Event',
+                              icon: Icons.verified,
+                              background: Color(0xFFE3F2FD),
+                              iconColor: Color(0xFF1DA1F2),
                             ),
-                          ] else if (profile.isMarketing) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8A87C),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.campaign_outlined,
-                                    size: 14,
-                                    color: AppColors.brandNavy,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Marke',
-                                    style: TextStyle(
-                                      color: AppColors.brandNavy,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ] else if (profile.isEventOrganizer) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.92),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.verified,
-                                    size: 14,
-                                    color: Color(0xFF1DA1F2),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Event',
-                                    style: TextStyle(
-                                      color: AppColors.brandNavy,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -533,6 +433,54 @@ class _ProfileCoverHeader extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileStatusBadge extends StatelessWidget {
+  const _ProfileStatusBadge({
+    required this.label,
+    required this.icon,
+    required this.background,
+    this.iconColor,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color background;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = iconColor ?? AppColors.brandNavy;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: fg),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
             ),
           ),
         ],

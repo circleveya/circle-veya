@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/gif_catalog.dart';
 import '../../data/gif_search_service.dart';
+import 'whatsapp_chat_icons.dart';
 
 enum ChatPickerTab { emoji, gif }
 
@@ -34,9 +35,10 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
   List<CatalogGif> _gifs = List<CatalogGif>.from(kCatalogGifs);
   bool _gifLoading = false;
 
-  static const _categories = <({IconData icon, String label, List<String> emojis})>[
+  static const _categories =
+      <({IconData icon, String label, List<String> emojis})>[
     (
-      icon: Icons.emoji_emotions_outlined,
+      icon: Icons.sentiment_satisfied_alt_outlined,
       label: 'Smileys',
       emojis: [
         '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
@@ -117,51 +119,53 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
     });
   }
 
+  void _selectTab(ChatPickerTab tab) {
+    setState(() => _tab = tab);
+    if (tab == ChatPickerTab.gif) {
+      _loadGifs(_gifQuery.text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final surface = theme.colorScheme.surfaceContainerHighest;
 
     return Material(
-      color: surface,
+      color: theme.colorScheme.surface,
+      elevation: 2,
       child: SizedBox(
-        height: 280,
+        height: 300,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 4, 0),
-              child: Row(
-                children: [
-                  _TabChip(
-                    label: 'Emoji',
-                    selected: _tab == ChatPickerTab.emoji,
-                    onTap: () => setState(() => _tab = ChatPickerTab.emoji),
-                  ),
-                  const SizedBox(width: 6),
-                  _TabChip(
-                    label: 'GIF',
-                    selected: _tab == ChatPickerTab.gif,
-                    onTap: () {
-                      setState(() => _tab = ChatPickerTab.gif);
-                      if (_gifs.isEmpty || _gifQuery.text.isEmpty) {
-                        _loadGifs(_gifQuery.text);
-                      }
-                    },
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    tooltip: 'Schließen',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: widget.onClose,
-                    icon: const Icon(Icons.keyboard_outlined, size: 22),
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: _tab == ChatPickerTab.emoji
                   ? _buildEmojiPane(theme)
                   : _buildGifPane(theme),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _WhatsAppModeSwitch(
+                      tab: _tab,
+                      onChanged: _selectTab,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Schließen',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: widget.onClose,
+                    icon: Icon(
+                      Icons.keyboard_outlined,
+                      size: 22,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -173,52 +177,64 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
     final emojis = _categories[_emojiCategory].emojis;
     return Column(
       children: [
+        SizedBox(
+          height: 42,
+          child: Row(
+            children: [
+              for (var i = 0; i < _categories.length; i++)
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _emojiCategory = i),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _categories[i].icon,
+                          size: 20,
+                          color: _emojiCategory == i
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          height: 2,
+                          width: 22,
+                          decoration: BoxDecoration(
+                            color: _emojiCategory == i
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(6, 2, 6, 4),
+            padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 8,
               mainAxisSpacing: 0,
               crossAxisSpacing: 0,
-              childAspectRatio: 1,
+              childAspectRatio: 1.05,
             ),
             itemCount: emojis.length,
             itemBuilder: (context, index) {
               final emoji = emojis[index];
-              return InkWell(
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => widget.onEmojiSelected(emoji),
-                borderRadius: BorderRadius.circular(8),
                 child: Center(
                   child: Text(emoji, style: const TextStyle(fontSize: 26)),
                 ),
               );
             },
-          ),
-        ),
-        const Divider(height: 1),
-        SizedBox(
-          height: 44,
-          child: Row(
-            children: [
-              for (var i = 0; i < _categories.length; i++)
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _emojiCategory = i),
-                    child: ColoredBox(
-                      color: _emojiCategory == i
-                          ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                      child: Icon(
-                        _categories[i].icon,
-                        size: 22,
-                        color: _emojiCategory == i
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
           ),
         ),
       ],
@@ -229,7 +245,7 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           child: TextField(
             controller: _gifQuery,
             onChanged: _onGifQueryChanged,
@@ -239,7 +255,7 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
               hintText: 'GIF suchen …',
               prefixIcon: const Icon(Icons.search, size: 20),
               filled: true,
-              fillColor: theme.colorScheme.surface,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -273,17 +289,17 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
                       itemBuilder: (context, index) {
                         final gif = _gifs[index];
                         return Material(
-                          color: theme.colorScheme.surface,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(10),
                           clipBehavior: Clip.antiAlias,
-                          child: InkWell(
+                          child: GestureDetector(
                             onTap: () => widget.onGifSelected(gif),
                             child: Image.network(
                               gif.previewUrl,
                               fit: BoxFit.cover,
                               gaplessPlayback: true,
                               errorBuilder: (_, _, _) => const Center(
-                                child: Icon(Icons.gif_box_outlined),
+                                child: WhatsAppGifIcon(compact: true),
                               ),
                               loadingBuilder: (context, child, progress) {
                                 if (progress == null) return child;
@@ -308,39 +324,80 @@ class _ChatEmojiGifPanelState extends ConsumerState<ChatEmojiGifPanel> {
   }
 }
 
-class _TabChip extends StatelessWidget {
-  const _TabChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
+class _WhatsAppModeSwitch extends StatelessWidget {
+  const _WhatsAppModeSwitch({
+    required this.tab,
+    required this.onChanged,
   });
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final ChatPickerTab tab;
+  final ValueChanged<ChatPickerTab> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: selected
-          ? theme.colorScheme.primary.withValues(alpha: 0.16)
-          : theme.colorScheme.surface.withValues(alpha: 0.5),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          child: Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ModeSegment(
+              selected: tab == ChatPickerTab.emoji,
+              onTap: () => onChanged(ChatPickerTab.emoji),
+              child: WhatsAppSmileyIcon(
+                size: 22,
+                color: tab == ChatPickerTab.emoji
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
+          Expanded(
+            child: _ModeSegment(
+              selected: tab == ChatPickerTab.gif,
+              onTap: () => onChanged(ChatPickerTab.gif),
+              child: WhatsAppGifIcon(
+                selected: tab == ChatPickerTab.gif,
+                color: tab == ChatPickerTab.gif
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeSegment extends StatelessWidget {
+  const _ModeSegment({
+    required this.selected,
+    required this.onTap,
+    required this.child,
+  });
+
+  final bool selected;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(3),
+      child: Material(
+        color: selected ? theme.colorScheme.surface : Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        elevation: selected ? 0.5 : 0,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Center(child: child),
         ),
       ),
     );

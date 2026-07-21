@@ -9,6 +9,7 @@ import '../../domain/entities/chat.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/chat_emoji_gif_panel.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/whatsapp_chat_icons.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   const ChatRoomScreen({
@@ -362,9 +363,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                     tooltip: 'Anhang',
                     onPressed: isSending ? null : _pickAndSendImage,
                     icon: Icon(
-                      Icons.add_circle,
-                      size: 30,
-                      color: theme.colorScheme.primary,
+                      Icons.add,
+                      size: 28,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Expanded(
@@ -379,6 +380,30 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          IconButton(
+                            tooltip: 'Emoji',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: isSending
+                                ? null
+                                : () {
+                                    if (_pickerTab == ChatPickerTab.emoji) {
+                                      _closePicker();
+                                    } else {
+                                      _openPicker(ChatPickerTab.emoji);
+                                    }
+                                  },
+                            icon: showPicker &&
+                                    _pickerTab == ChatPickerTab.emoji
+                                ? Icon(
+                                    Icons.keyboard_outlined,
+                                    size: 26,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  )
+                                : WhatsAppSmileyIcon(
+                                    size: 26,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                          ),
                           Expanded(
                             child: TextField(
                               controller: _controller,
@@ -389,7 +414,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                                 hintText: 'Nachricht …',
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.fromLTRB(
-                                  14,
+                                  0,
                                   10,
                                   4,
                                   10,
@@ -403,26 +428,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Emoji & GIF',
-                            onPressed: isSending
-                                ? null
-                                : () {
-                                    if (_pickerTab == ChatPickerTab.emoji) {
-                                      _closePicker();
-                                    } else {
-                                      _openPicker(ChatPickerTab.emoji);
-                                    }
-                                  },
-                            icon: Icon(
-                              showPicker && _pickerTab == ChatPickerTab.emoji
-                                  ? Icons.keyboard_outlined
-                                  : Icons.emoji_emotions,
-                              size: 26,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          IconButton(
                             tooltip: 'GIF suchen',
+                            visualDensity: VisualDensity.compact,
                             onPressed: isSending
                                 ? null
                                 : () {
@@ -432,9 +439,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                                       _openPicker(ChatPickerTab.gif);
                                     }
                                   },
-                            icon: Icon(
-                              Icons.gif_box_rounded,
-                              size: 28,
+                            icon: WhatsAppGifIcon(
+                              selected: _pickerTab == ChatPickerTab.gif,
                               color: _pickerTab == ChatPickerTab.gif
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.onSurfaceVariant,
