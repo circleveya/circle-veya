@@ -322,80 +322,126 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             ),
           ),
           if (_showEmojiPicker)
-            SizedBox(
-              height: 220,
-              child: GridView.builder(
-                padding: const EdgeInsets.all(8),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                ),
-                itemCount: _kEmojis.length,
-                itemBuilder: (context, index) {
-                  final emoji = _kEmojis[index];
-                  return InkWell(
-                    onTap: () => _insertEmoji(emoji),
-                    child: Center(
-                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            Material(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: SizedBox(
+                height: 220,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Emojis',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            tooltip: 'Schließen',
+                            onPressed: () =>
+                                setState(() => _showEmojiPicker = false),
+                            icon: const Icon(Icons.keyboard_outlined),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 8,
+                        ),
+                        itemCount: _kEmojis.length,
+                        itemBuilder: (context, index) {
+                          final emoji = _kEmojis[index];
+                          return InkWell(
+                            onTap: () => _insertEmoji(emoji),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Center(
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 24),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 10),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
-                    tooltip: 'Emoji',
-                    onPressed: isSending
-                        ? null
-                        : () => setState(
-                              () => _showEmojiPicker = !_showEmojiPicker,
-                            ),
+                    tooltip: 'Anhang',
+                    onPressed: isSending ? null : () => _showAttachSheet(context),
                     icon: Icon(
-                      _showEmojiPicker
-                          ? Icons.keyboard_outlined
-                          : Icons.emoji_emotions_outlined,
+                      Icons.add_circle,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    tooltip: 'Anhang',
-                    enabled: !isSending,
-                    onSelected: (value) {
-                      if (value == 'image') {
-                        _pickAndSendMedia(asGif: false);
-                      } else if (value == 'gif') {
-                        _pickAndSendMedia(asGif: true);
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: 'image',
-                        child: Text('Bild senden'),
-                      ),
-                      PopupMenuItem(
-                        value: 'gif',
-                        child: Text('GIF / Animation senden'),
-                      ),
-                    ],
-                    icon: const Icon(Icons.attach_file),
-                  ),
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Nachricht schreiben …',
-                        border: OutlineInputBorder(),
-                        isDense: true,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                      textInputAction: TextInputAction.send,
-                      onTap: () {
-                        if (_showEmojiPicker) {
-                          setState(() => _showEmojiPicker = false);
-                        }
-                      },
-                      onSubmitted: isSending ? null : (_) => _send(),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              minLines: 1,
+                              maxLines: 5,
+                              decoration: const InputDecoration(
+                                hintText: 'Nachricht schreiben …',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.fromLTRB(
+                                  16,
+                                  12,
+                                  4,
+                                  12,
+                                ),
+                              ),
+                              textInputAction: TextInputAction.send,
+                              onTap: () {
+                                if (_showEmojiPicker) {
+                                  setState(() => _showEmojiPicker = false);
+                                }
+                              },
+                              onSubmitted: isSending ? null : (_) => _send(),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Emoji',
+                            onPressed: isSending
+                                ? null
+                                : () => setState(
+                                      () =>
+                                          _showEmojiPicker = !_showEmojiPicker,
+                                    ),
+                            icon: Icon(
+                              _showEmojiPicker
+                                  ? Icons.keyboard_outlined
+                                  : Icons.emoji_emotions_outlined,
+                              size: 26,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -416,6 +462,36 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showAttachSheet(BuildContext context) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_outlined),
+              title: const Text('Bild senden'),
+              onTap: () => Navigator.pop(context, 'image'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.gif_box_outlined),
+              title: const Text('GIF / Animation senden'),
+              onTap: () => Navigator.pop(context, 'gif'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == 'image') {
+      await _pickAndSendMedia(asGif: false);
+    } else if (choice == 'gif') {
+      await _pickAndSendMedia(asGif: true);
+    }
   }
 }
 

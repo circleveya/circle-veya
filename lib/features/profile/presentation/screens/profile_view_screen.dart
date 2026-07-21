@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
@@ -210,7 +211,7 @@ class _ProfileBody extends ConsumerWidget {
   }
 }
 
-class _ProfileCoverHeader extends StatelessWidget {
+class _ProfileCoverHeader extends ConsumerWidget {
   const _ProfileCoverHeader({
     required this.profile,
     required this.isOwnProfile,
@@ -223,10 +224,55 @@ class _ProfileCoverHeader extends StatelessWidget {
   final int level;
   final bool showBackButton;
 
+  Future<void> _pickAvatar(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
+    if (image == null || !context.mounted) return;
+
+    await ref.read(profileEditControllerProvider.notifier).uploadAvatar(image);
+    if (!context.mounted) return;
+
+    final error = ref.read(profileEditControllerProvider).error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null ? 'Profilbild aktualisiert' : 'Fehler: $error',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCover(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      imageQuality: 85,
+    );
+    if (image == null || !context.mounted) return;
+
+    await ref.read(profileEditControllerProvider.notifier).uploadCover(image);
+    if (!context.mounted) return;
+
+    final error = ref.read(profileEditControllerProvider).error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null ? 'Banner aktualisiert' : 'Fehler: $error',
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+    final isUploading = ref.watch(profileEditControllerProvider).isLoading;
 
     return SizedBox(
       height: 280,
@@ -256,36 +302,62 @@ class _ProfileCoverHeader extends StatelessWidget {
               left: 12,
               child: const _QuietBackButton(),
             ),
+          if (isOwnProfile)
+            Positioned(
+              top: topInset + 8,
+              right: 12,
+              child: _EditPhotoButton(
+                tooltip: 'Banner ändern',
+                busy: isUploading,
+                onTap: () => _pickCover(context, ref),
+              ),
+            ),
           Positioned(
             left: 24,
             bottom: 0,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 12,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 52,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    backgroundImage: profile.avatarUrl != null
-                        ? CachedNetworkImageProvider(profile.avatarUrl!)
-                        : null,
-                    child: profile.avatarUrl == null
-                        ? Text(
-                            profile.username[0].toUpperCase(),
-                            style: theme.textTheme.displaySmall,
-                          )
-                        : null,
-                  ),
+                      child: CircleAvatar(
+                        radius: 52,
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        backgroundImage: profile.avatarUrl != null
+                            ? CachedNetworkImageProvider(profile.avatarUrl!)
+                            : null,
+                        child: profile.avatarUrl == null
+                            ? Text(
+                                profile.username[0].toUpperCase(),
+                                style: theme.textTheme.displaySmall,
+                              )
+                            : null,
+                      ),
+                    ),
+                    if (isOwnProfile)
+                      Positioned(
+                        right: 0,
+                        bottom: 4,
+                        child: _EditPhotoButton(
+                          tooltip: 'Profilbild ändern',
+                          busy: isUploading,
+                          compact: true,
+                          onTap: () => _pickAvatar(context, ref),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 Padding(
@@ -374,6 +446,54 @@ class _ProfileCoverHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EditPhotoButton extends StatelessWidget {
+  const _EditPhotoButton({
+    required this.onTap,
+    required this.tooltip,
+    this.busy = false,
+    this.compact = false,
+  });
+
+  final VoidCallback onTap;
+  final String tooltip;
+  final bool busy;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 34.0 : 40.0;
+    final iconSize = compact ? 16.0 : 18.0;
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 2,
+        shadowColor: Colors.black38,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: busy ? null : onTap,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: busy
+                ? const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    Icons.edit_outlined,
+                    size: iconSize,
+                    color: AppColors.brandNavy,
+                  ),
+          ),
+        ),
       ),
     );
   }
