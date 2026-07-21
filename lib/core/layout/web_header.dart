@@ -6,12 +6,14 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../l10n/language_switcher_button.dart';
 import '../router/route_names.dart';
 import '../search/global_search_provider.dart';
 import '../search/search_models.dart';
 import '../theme/app_colors.dart';
 import 'shell_destination_provider.dart';
 import 'web_shell_destination.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Globaler Web-Header mit kontextsensitiver Suche, Benachrichtigungen und Profil.
 class WebHeader extends ConsumerWidget {
@@ -29,6 +31,7 @@ class WebHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final profileAsync = ref.watch(myProfileProvider);
     final isSigningOut = ref.watch(authControllerProvider).isLoading;
     final userId = ref.watch(authStateProvider).valueOrNull?.id;
@@ -72,7 +75,7 @@ class WebHeader extends ConsumerWidget {
                 ? Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Entdecken',
+                      l10n.discover,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.brandNavy,
@@ -82,24 +85,26 @@ class WebHeader extends ConsumerWidget {
                   )
                 : const _ContextualSearchField(),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          const LanguageSwitcherButton(),
+          const SizedBox(width: 4),
           _HeaderIconButton(
             icon: Icons.notifications_outlined,
             badgeCount: effectiveNotificationCount,
-            tooltip: 'Benachrichtigungen',
+            tooltip: l10n.notifications,
             onPressed: showNotifications,
           ),
           const SizedBox(width: 4),
           _HeaderIconButton(
             icon: Icons.chat_bubble_outline,
             badgeCount: unreadChatCount,
-            tooltip: 'Nachrichten',
+            tooltip: l10n.messages,
             onPressed: () => onNavigate?.call(WebShellDestination.messages),
           ),
           const SizedBox(width: 12),
           PopupMenuButton<String>(
             offset: const Offset(0, 48),
-            tooltip: 'Profil-Menü',
+            tooltip: l10n.profile,
             onSelected: (value) async {
               switch (value) {
                 case 'profile':
@@ -119,19 +124,19 @@ class WebHeader extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'profile',
                 child: ListTile(
-                  leading: Icon(Icons.person_outline),
-                  title: Text('Mein Profil'),
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(l10n.myProfile),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
-                  leading: Icon(Icons.edit_outlined),
-                  title: Text('Profil bearbeiten'),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(l10n.editProfile),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -139,9 +144,9 @@ class WebHeader extends ConsumerWidget {
               PopupMenuItem(
                 value: 'logout',
                 enabled: !isSigningOut,
-                child: const ListTile(
-                  leading: Icon(Icons.logout),
-                  title: Text('Abmelden'),
+                child: ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: Text(l10n.signOut),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

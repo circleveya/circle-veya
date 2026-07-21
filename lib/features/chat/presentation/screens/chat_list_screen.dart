@@ -394,13 +394,33 @@ class _ChatListTile extends StatelessWidget {
         ? DateFormat('dd.MM. HH:mm').format(chat.lastMessageAt!.toLocal())
         : '';
 
+    final avatar = chat.avatarUrl?.trim();
+    final hasAvatar = avatar != null && avatar.isNotEmpty;
+    final initial = chat.displayTitle.trim().isNotEmpty
+        ? chat.displayTitle.trim()[0].toUpperCase()
+        : '?';
+
     return ListTile(
       leading: CircleAvatar(
-        child: Icon(
-          chat.type == ChatType.activityGroup
-              ? Icons.groups_outlined
-              : Icons.chat_bubble_outline,
-        ),
+        backgroundColor: AppColors.seed.withValues(alpha: 0.15),
+        foregroundColor: AppColors.seed,
+        backgroundImage:
+            hasAvatar ? CachedNetworkImageProvider(avatar) : null,
+        onBackgroundImageError: hasAvatar ? (_, _) {} : null,
+        child: hasAvatar
+            ? null
+            : (chat.type == ChatType.direct
+                ? Text(
+                    initial,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  )
+                : Icon(
+                    chat.type == ChatType.circleGroup ||
+                            chat.type == ChatType.activityGroup
+                        ? Icons.groups
+                        : Icons.chat_bubble_outline,
+                    color: AppColors.seed,
+                  )),
       ),
       title: Text(chat.displayTitle),
       subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),

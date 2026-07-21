@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Navigationsziele der Web-Sidebar.
 enum WebShellDestination {
   create,
@@ -16,6 +18,21 @@ enum WebShellDestination {
 }
 
 extension WebShellDestinationX on WebShellDestination {
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        WebShellDestination.create => l10n.createActivity,
+        WebShellDestination.discover => l10n.discover,
+        WebShellDestination.feed => l10n.feed,
+        WebShellDestination.myActivities => l10n.myActivities,
+        WebShellDestination.groups => l10n.groups,
+        WebShellDestination.messages => l10n.messages,
+        WebShellDestination.friends => l10n.friends,
+        WebShellDestination.memories => l10n.memories,
+        WebShellDestination.challenges => l10n.challenges,
+        WebShellDestination.profile => l10n.profile,
+        WebShellDestination.settings => l10n.settings,
+      };
+
+  @Deprecated('Use localizedLabel(AppLocalizations)')
   String get label => switch (this) {
         WebShellDestination.create => 'Aktivität erstellen',
         WebShellDestination.discover => 'Entdecken',

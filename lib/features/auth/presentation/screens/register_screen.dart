@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/branding/circleveya_brand.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/domain/entities/user_profile.dart';
 import '../providers/auth_provider.dart';
 
@@ -65,6 +66,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -83,15 +85,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Konto-Typ',
+                      l10n.accountType,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Wähle, ob du als Privatperson oder als Event-Profil '
-                      '(Manager / Geschäft) starten möchtest.',
+                      l10n.accountTypeHint,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -100,8 +101,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     _AccountTypeCard(
                       selected: _accountType == ProfileAccountType.standard,
                       icon: Icons.person_outline,
-                      title: ProfileAccountType.standard.label,
-                      subtitle: ProfileAccountType.standard.description,
+                      title: l10n.privatePerson,
+                      subtitle: l10n.privatePersonDesc,
                       onTap: isLoading
                           ? null
                           : () => setState(
@@ -111,9 +112,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 10),
                     _AccountTypeCard(
                       selected: _accountType == ProfileAccountType.event,
-                      icon: Icons.storefront_outlined,
-                      title: ProfileAccountType.event.label,
-                      subtitle: ProfileAccountType.event.description,
+                      icon: Icons.business_outlined,
+                      title: l10n.eventProfile,
+                      subtitle: l10n.eventProfileDesc,
                       onTap: isLoading
                           ? null
                           : () => setState(
@@ -125,17 +126,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       controller: _usernameController,
                       decoration: InputDecoration(
                         labelText: _accountType.isEventOrganizer
-                            ? 'Name / Marke'
-                            : 'Benutzername',
+                            ? l10n.nameOrBrand
+                            : l10n.username,
                         prefixIcon: const Icon(Icons.person_outline),
                       ),
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Bitte Namen eingeben';
+                          return l10n.nameRequired;
                         }
                         if (value.trim().length < 3) {
-                          return 'Mindestens 3 Zeichen';
+                          return l10n.nameMinLength;
                         }
                         return null;
                       },
@@ -143,18 +144,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'E-Mail',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: l10n.email,
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Bitte E-Mail eingeben';
+                          return l10n.emailRequired;
                         }
                         if (!value.contains('@')) {
-                          return 'Ungültige E-Mail';
+                          return l10n.emailInvalid;
                         }
                         return null;
                       },
@@ -162,19 +163,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Passwort',
-                        prefixIcon: Icon(Icons.lock_outline),
+                      decoration: InputDecoration(
+                        labelText: l10n.password,
+                        prefixIcon: const Icon(Icons.lock_outline),
                       ),
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Bitte Passwort eingeben';
+                          return l10n.passwordRequired;
                         }
                         if (value.length < 6) {
-                          return 'Mindestens 6 Zeichen';
+                          return l10n.passwordMinLength;
                         }
                         return null;
                       },
@@ -190,15 +191,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             )
                           : Text(
                               _accountType.isEventOrganizer
-                                  ? 'Event-Profil erstellen'
-                                  : 'Konto erstellen',
+                                  ? l10n.eventProfile
+                                  : l10n.registerTitle,
                             ),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed:
                           isLoading ? null : () => context.goNamed('login'),
-                      child: const Text('Bereits ein Konto? Anmelden'),
+                      child: Text(l10n.haveAccount),
                     ),
                   ],
                 ),
@@ -253,6 +254,7 @@ class _AccountTypeCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
+                size: 28,
                 color: selected ? AppColors.seed : theme.colorScheme.onSurface,
               ),
               const SizedBox(width: 12),

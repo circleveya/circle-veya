@@ -123,7 +123,7 @@ class _EditActivityScreenState extends ConsumerState<EditActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('EEE, dd.MM.yyyy · HH:mm');
+    final dateFormat = DateFormat('EEE, dd.MM.yyyy · HH:mm', 'de_CH');
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,

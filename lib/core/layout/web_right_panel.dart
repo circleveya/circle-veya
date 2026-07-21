@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/challenges/domain/entities/challenge.dart';
 import '../../features/challenges/presentation/providers/challenge_provider.dart';
 import '../../features/sidebar/presentation/providers/sidebar_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../location/distance_display.dart';
 import '../router/route_names.dart';
 import '../theme/app_colors.dart';
@@ -54,19 +55,20 @@ class WebRightPanel extends ConsumerWidget {
     WidgetRef ref,
     AsyncValue<UserLevelStats> statsAsync,
   ) {
+    final l10n = AppLocalizations.of(context);
     final trendingAsync = ref.watch(trendingActivitiesProvider);
     final recommendedAsync = ref.watch(recommendedActivitiesProvider);
     final onlineFriendsAsync = ref.watch(onlineFriendsProvider);
 
     return [
       _PanelCard(
-        title: 'Im Trend',
+        title: l10n.trending,
         icon: Icons.trending_up,
         child: trendingAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text(sidebarErrorMessage(e)),
           data: (items) => items.isEmpty
-              ? const Text('Noch keine Trend-Aktivitäten.')
+              ? Text(l10n.noRecommendations)
               : Column(
                   children: items
                       .map(
@@ -85,13 +87,13 @@ class WebRightPanel extends ConsumerWidget {
       ),
       const SizedBox(height: 16),
       _PanelCard(
-        title: 'Für dich empfohlen',
+        title: l10n.recommendedForYou,
         icon: Icons.auto_awesome,
         child: recommendedAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text(sidebarErrorMessage(e)),
           data: (items) => items.isEmpty
-              ? const Text('Keine Empfehlungen – Interessen im Profil ergänzen.')
+              ? Text(l10n.noRecommendations)
               : Column(
                   children: items
                       .map(
@@ -112,7 +114,7 @@ class WebRightPanel extends ConsumerWidget {
       ),
       const SizedBox(height: 16),
       _PanelCard(
-        title: 'Deine Challenges',
+        title: l10n.yourChallenges,
         icon: Icons.emoji_events_outlined,
         onTap: () => ref
             .read(shellDestinationRequestProvider.notifier)
@@ -139,7 +141,7 @@ class WebRightPanel extends ConsumerWidget {
       ),
       const SizedBox(height: 16),
       _PanelCard(
-        title: 'Freunde online',
+        title: l10n.friendsOnline,
         icon: Icons.circle,
         iconColor: Colors.green,
         onTap: () => ref
@@ -149,7 +151,7 @@ class WebRightPanel extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text(sidebarErrorMessage(e)),
           data: (friends) => friends.isEmpty
-              ? const Text('Keine Freunde gerade online.')
+              ? Text(l10n.noFriendsOnline)
               : Wrap(
                   spacing: 8,
                   runSpacing: 8,

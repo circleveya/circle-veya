@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../branding/circleveya_brand.dart';
 import '../theme/app_colors.dart';
 import 'web_shell_destination.dart';
@@ -38,7 +39,7 @@ class SidebarNavigation extends ConsumerWidget {
             child: CircleVeyaBrand(
               fillWidth: true,
               logoHeight: 64,
-              onTap: () => onSelected(WebShellDestination.feed),
+              onTap: () => onSelected(WebShellDestination.discover),
             ),
           ),
           Padding(
@@ -109,7 +110,7 @@ class _CreateActivityButton extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Aktivität erstellen',
+                  AppLocalizations.of(context).createActivity,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -138,6 +139,7 @@ class _SidebarNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final color = isSelected ? AppColors.seed : theme.colorScheme.onSurfaceVariant;
 
     return Padding(
@@ -161,7 +163,7 @@ class _SidebarNavItem extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    destination.label,
+                    destination.localizedLabel(l10n),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isSelected
                           ? AppColors.seed

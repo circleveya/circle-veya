@@ -1,3 +1,5 @@
+import '../../l10n/app_localizations.dart';
+
 /// Standort-Modell und Schweizer Presets für CircleVeya.
 class UserLocation {
   const UserLocation({
@@ -124,4 +126,7 @@ enum DistanceFilterOption {
 
   final String label;
   final double? maxKm;
+
+  String localizedLabel(AppLocalizations l10n) =>
+      this == everywhere ? l10n.everywhere : label;
 }

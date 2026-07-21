@@ -326,7 +326,7 @@ class _MetaRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('EEE, dd.MM. · HH:mm');
+    final dateFormat = DateFormat('EEE, dd.MM. · HH:mm', 'de_CH');
     final items = <_MetaItem>[
       if (activity.dateTime != null)
         _MetaItem(

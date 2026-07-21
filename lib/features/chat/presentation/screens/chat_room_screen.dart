@@ -1,9 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/router/route_names.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/gif_catalog.dart';
 import '../../domain/entities/chat.dart';
 import '../providers/chat_provider.dart';
@@ -231,6 +234,38 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     Navigator.of(context).pop();
   }
 
+  Future<void> _openHeaderTarget(ChatSummary chat) async {
+    if (chat.type == ChatType.direct) {
+      final profileId = chat.otherProfileId;
+      if (profileId == null || profileId.isEmpty) return;
+      if (!mounted) return;
+      await context.pushNamed(
+        RouteNames.profileView,
+        pathParameters: {'id': profileId},
+      );
+      return;
+    }
+    if (chat.type == ChatType.circleGroup) {
+      final groupId = chat.circleGroupId;
+      if (groupId == null || groupId.isEmpty) return;
+      if (!mounted) return;
+      await context.pushNamed(
+        RouteNames.groupDetail,
+        pathParameters: {'id': groupId},
+      );
+      return;
+    }
+    if (chat.type == ChatType.activityGroup) {
+      final activityId = chat.activityId;
+      if (activityId == null || activityId.isEmpty) return;
+      if (!mounted) return;
+      await context.pushNamed(
+        RouteNames.activityDetail,
+        pathParameters: {'id': activityId},
+      );
+    }
+  }
+
   void _insertEmoji(String emoji) {
     final text = _controller.text;
     final selection = _controller.selection;
@@ -247,9 +282,19 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(messagesProvider(widget.chatId));
     final wallpaperAsync = ref.watch(chatWallpaperProvider(widget.chatId));
+    final chatList = ref.watch(chatListProvider).valueOrNull;
+    ChatSummary? resolvedChat = widget.chat;
+    if (resolvedChat == null ||
+        (resolvedChat.avatarUrl == null && resolvedChat.otherProfileId == null)) {
+      final fromList = chatList?.where((c) => c.id == widget.chatId);
+      if (fromList != null && fromList.isNotEmpty) {
+        resolvedChat = fromList.first;
+      }
+    }
     final isSending = ref.watch(chatActionsProvider).isLoading;
     final wallpaperUrl = wallpaperAsync.valueOrNull;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final showPicker = _pickerTab != null;
 
     ref.listen(messagesProvider(widget.chatId), (_, next) {
@@ -261,16 +306,65 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.chat?.displayTitle ?? 'Chat'),
-            if (widget.chat != null)
-              Text(
-                widget.chat!.type.label,
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-          ],
+        titleSpacing: 0,
+        title: InkWell(
+          onTap: resolvedChat == null
+              ? null
+              : () => _openHeaderTarget(resolvedChat!),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
+              children: [
+                Builder(
+                  builder: (context) {
+                    final avatar = resolvedChat?.avatarUrl?.trim();
+                    final hasAvatar = avatar != null && avatar.isNotEmpty;
+                    final title = resolvedChat?.displayTitle ?? 'Chat';
+                    final initial = title.trim().isNotEmpty
+                        ? title.trim()[0].toUpperCase()
+                        : '?';
+                    return CircleAvatar(
+                      radius: 18,
+                      backgroundColor: theme.colorScheme.primary
+                          .withValues(alpha: 0.15),
+                      backgroundImage: hasAvatar
+                          ? CachedNetworkImageProvider(avatar)
+                          : null,
+                      onBackgroundImageError: hasAvatar ? (_, _) {} : null,
+                      child: hasAvatar
+                          ? null
+                          : Text(
+                              initial,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        resolvedChat?.displayTitle ?? 'Chat',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      if (resolvedChat != null)
+                        Text(
+                          resolvedChat.type.localizedLabel(l10n),
+                          style: theme.textTheme.labelSmall,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -313,8 +407,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 error: (error, _) => Center(child: Text(error.toString())),
                 data: (messages) {
                   if (messages.isEmpty) {
-                    return const Center(
-                      child: Text('Schreib die erste Nachricht …'),
+                    return Center(
+                      child: Text(l10n.writeFirstMessage),
                     );
                   }
 
@@ -380,8 +474,31 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              minLines: 1,
+                              maxLines: 5,
+                              decoration: InputDecoration(
+                                hintText: l10n.writeMessage,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.fromLTRB(
+                                  14,
+                                  10,
+                                  4,
+                                  10,
+                                ),
+                              ),
+                              textInputAction: TextInputAction.send,
+                              onTap: () {
+                                if (showPicker) _closePicker();
+                              },
+                              onSubmitted: isSending ? null : (_) => _send(),
+                            ),
+                          ),
                           IconButton(
-                            tooltip: 'Emoji',
+                            tooltip: l10n.emoji,
                             visualDensity: VisualDensity.compact,
                             onPressed: isSending
                                 ? null
@@ -396,39 +513,18 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                                     _pickerTab == ChatPickerTab.emoji
                                 ? Icon(
                                     Icons.keyboard_outlined,
-                                    size: 26,
+                                    size: 24,
                                     color: theme.colorScheme.onSurfaceVariant,
                                   )
                                 : WhatsAppSmileyIcon(
-                                    size: 26,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                    size: 24,
+                                    color: _pickerTab == ChatPickerTab.emoji
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.onSurfaceVariant,
                                   ),
                           ),
-                          Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              focusNode: _focusNode,
-                              minLines: 1,
-                              maxLines: 5,
-                              decoration: const InputDecoration(
-                                hintText: 'Nachricht …',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.fromLTRB(
-                                  0,
-                                  10,
-                                  4,
-                                  10,
-                                ),
-                              ),
-                              textInputAction: TextInputAction.send,
-                              onTap: () {
-                                if (showPicker) _closePicker();
-                              },
-                              onSubmitted: isSending ? null : (_) => _send(),
-                            ),
-                          ),
                           IconButton(
-                            tooltip: 'GIF suchen',
+                            tooltip: l10n.searchGif,
                             visualDensity: VisualDensity.compact,
                             onPressed: isSending
                                 ? null

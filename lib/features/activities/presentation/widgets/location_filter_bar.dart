@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/location/ghost_location_field.dart';
 import '../../../../core/location/location_provider.dart';
 import '../../../../core/location/location_service.dart';
+import '../../../../core/location/swiss_places.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../providers/activity_provider.dart';
 
@@ -39,14 +42,15 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
   Future<void> _handleGps() async {
     if (_gpsLoading) return;
     setState(() => _gpsLoading = true);
+    final l10n = AppLocalizations.of(context);
     try {
       await ref.read(userLocationProvider.notifier).requestGps();
       ref.invalidate(discoverActivitiesProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Standort per GPS übernommen.'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(l10n.gpsTaken),
+          duration: const Duration(seconds: 2),
         ),
       );
     } on LocationPermissionException catch (error) {
@@ -59,25 +63,58 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
     }
   }
 
+  void _applyPlace(PlaceSuggestion place) {
+    ref.read(userLocationProvider.notifier).selectPlace(
+          label: place.name,
+          latitude: place.latitude,
+          longitude: place.longitude,
+        );
+    _searchController.text = place.name;
+    ref.invalidate(discoverActivitiesProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).locationApplied(place.name)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _applySearch() {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
 
     final preset = LocationPreset.tryMatch(query);
-    if (preset == null) {
+    if (preset != null) {
+      ref.read(userLocationProvider.notifier).selectPreset(preset);
+      _searchController.text = preset.label;
+      ref.invalidate(discoverActivitiesProvider);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('„$query“ nicht gefunden. Wähle einen Ort-Chip.')),
+        SnackBar(
+          content: Text(l10n.locationApplied(preset.label)),
+          duration: const Duration(seconds: 2),
+        ),
       );
       return;
     }
 
-    ref.read(userLocationProvider.notifier).selectPreset(preset);
-    ref.invalidate(discoverActivitiesProvider);
+    final place = findPlaceSuggestion(query);
+    if (place != null &&
+        (place.name.toLowerCase() == query.toLowerCase() ||
+            place.name.toLowerCase().startsWith(query.toLowerCase()))) {
+      _applyPlace(place);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.placeNotFound(query))),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final locationAsync = ref.watch(userLocationProvider);
     final activeSource = locationAsync.valueOrNull?.source;
     final embedded = widget.embedded;
@@ -95,7 +132,7 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
             ),
             const SizedBox(width: 6),
             Text(
-              'Standort',
+              l10n.location,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.brandNavy.withValues(alpha: 0.9),
@@ -120,20 +157,10 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
           ],
         ),
         const SizedBox(height: 12),
-        TextField(
+        GhostLocationField(
           controller: _searchController,
-          textInputAction: TextInputAction.search,
-          decoration: InputDecoration(
-            hintText: 'Ort suchen (Zürich, Basel, Bern…)',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _applySearch,
-              tooltip: 'Ort übernehmen',
-            ),
-            isDense: true,
-          ),
-          onSubmitted: (_) => _applySearch(),
+          hintText: l10n.searchPlaceHint,
+          onConfirm: _applySearch,
         ),
         const SizedBox(height: 10),
         SizedBox(
@@ -147,7 +174,7 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.my_location),
-            label: const Text('Aktueller Standort (GPS)'),
+            label: Text(l10n.currentLocationGps),
           ),
         ),
         const SizedBox(height: 10),
@@ -181,7 +208,7 @@ class _LocationFilterBarState extends ConsumerState<LocationFilterBar> {
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Text(
-              'Test-Standort aktiv. GPS oder Ort-Chip überschreibt den Mock.',
+              l10n.mockLocationHint,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

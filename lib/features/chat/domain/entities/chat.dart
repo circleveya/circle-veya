@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 enum ChatType {
   activityGroup,
   circleGroup,
@@ -9,6 +11,12 @@ enum ChatType {
         'activity_group' => activityGroup,
         'circle_group' => circleGroup,
         _ => direct,
+      };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        activityGroup => l10n.activity,
+        circleGroup => l10n.circle,
+        direct => l10n.direct,
       };
 
   String get label => switch (this) {
@@ -47,6 +55,8 @@ class ChatSummary extends Equatable {
     this.lastMessagePreview,
     required this.unreadCount,
     this.otherUsername,
+    this.avatarUrl,
+    this.otherProfileId,
   });
 
   final String id;
@@ -58,6 +68,8 @@ class ChatSummary extends Equatable {
   final String? lastMessagePreview;
   final int unreadCount;
   final String? otherUsername;
+  final String? avatarUrl;
+  final String? otherProfileId;
 
   String get displayTitle {
     final other = otherUsername?.trim();
@@ -78,6 +90,8 @@ class ChatSummary extends Equatable {
         lastMessagePreview,
         unreadCount,
         otherUsername,
+        avatarUrl,
+        otherProfileId,
       ];
 }
 

@@ -33,10 +33,12 @@ class MessageBubble extends StatelessWidget {
         content != ' ';
 
     final isGif = message.messageType == ChatMessageType.gif;
+    final isMedia = message.hasMedia;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final bubbleMaxWidth = isGif
-        ? (screenWidth * 0.42).clamp(140.0, 200.0)
-        : screenWidth * 0.75;
+    // Medien ~ wie eingezeichnet: mittlere Kachel, nicht Vollbreite
+    final mediaMaxWidth = (screenWidth * 0.36).clamp(220.0, 280.0);
+    final mediaMaxHeight = isGif ? 200.0 : 180.0;
+    final bubbleMaxWidth = isMedia ? mediaMaxWidth : screenWidth * 0.75;
 
     return Align(
       alignment: alignment,
@@ -49,7 +51,7 @@ class MessageBubble extends StatelessWidget {
             left: isMine ? 48 : 0,
             right: isMine ? 0 : 48,
           ),
-          padding: message.hasMedia
+          padding: isMedia
               ? const EdgeInsets.fromLTRB(4, 4, 4, 6)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
@@ -62,7 +64,7 @@ class MessageBubble extends StatelessWidget {
             children: [
               if (!isMine)
                 Padding(
-                  padding: message.hasMedia
+                  padding: isMedia
                       ? const EdgeInsets.fromLTRB(6, 2, 6, 4)
                       : EdgeInsets.zero,
                   child: Text(
@@ -73,60 +75,67 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (message.hasMedia)
+              if (isMedia)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: isGif
-                      ? ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 180,
-                            maxHeight: 140,
-                          ),
-                          child: Image.network(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: mediaMaxWidth,
+                      maxHeight: mediaMaxHeight,
+                    ),
+                    child: isGif
+                        ? Image.network(
                             message.mediaUrl!,
                             fit: BoxFit.contain,
+                            width: mediaMaxWidth,
                             gaplessPlayback: true,
-                            errorBuilder: (_, _, _) => const SizedBox(
-                              width: 120,
-                              height: 80,
-                              child: Center(
+                            errorBuilder: (_, _, _) => SizedBox(
+                              width: mediaMaxWidth,
+                              height: 120,
+                              child: const Center(
                                 child: Icon(Icons.broken_image_outlined),
                               ),
                             ),
                             loadingBuilder: (context, child, progress) {
                               if (progress == null) return child;
-                              return const SizedBox(
-                                width: 120,
-                                height: 80,
-                                child: Center(
+                              return SizedBox(
+                                width: mediaMaxWidth,
+                                height: 120,
+                                child: const Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                   ),
                                 ),
                               );
                             },
-                          ),
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: message.mediaUrl!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          placeholder: (_, _) => const SizedBox(
-                            height: 160,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          errorWidget: (_, _, _) => const SizedBox(
-                            height: 120,
-                            child: Center(
-                              child: Icon(Icons.broken_image_outlined),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: message.mediaUrl!,
+                            fit: BoxFit.cover,
+                            width: mediaMaxWidth,
+                            height: mediaMaxHeight,
+                            memCacheWidth: 560,
+                            placeholder: (_, _) => SizedBox(
+                              width: mediaMaxWidth,
+                              height: mediaMaxHeight,
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            errorWidget: (_, _, _) => SizedBox(
+                              width: mediaMaxWidth,
+                              height: 120,
+                              child: const Center(
+                                child: Icon(Icons.broken_image_outlined),
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
               if (showCaption) ...[
-                if (message.hasMedia) const SizedBox(height: 6),
+                if (isMedia) const SizedBox(height: 6),
                 Padding(
-                  padding: message.hasMedia
+                  padding: isMedia
                       ? const EdgeInsets.symmetric(horizontal: 8)
                       : EdgeInsets.zero,
                   child: Text(
@@ -139,7 +148,7 @@ class MessageBubble extends StatelessWidget {
               ],
               const SizedBox(height: 4),
               Padding(
-                padding: message.hasMedia
+                padding: isMedia
                     ? const EdgeInsets.symmetric(horizontal: 8)
                     : EdgeInsets.zero,
                 child: Text(

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/location/user_location.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
 import '../../domain/entities/event_category.dart';
@@ -26,6 +27,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     final content = Padding(
@@ -42,7 +44,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Kategorie',
+                l10n.category,
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.brandNavy.withValues(alpha: 0.9),
@@ -98,7 +100,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Wann?',
+                l10n.when,
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.brandNavy.withValues(alpha: 0.9),
@@ -115,7 +117,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: _QuickFilterChip(
-                      label: option.label,
+                      label: option.localizedLabel(l10n),
                       selected: filters.dateFilter == option,
                       onTap: () => _toggleDateFilter(option),
                     ),
@@ -128,7 +130,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
             children: [
               Expanded(
                 child: _DateFieldButton(
-                  label: 'Von',
+                  label: l10n.from,
                   value: filters.customDateFrom == null
                       ? null
                       : dateFormat.format(filters.customDateFrom!),
@@ -151,7 +153,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _DateFieldButton(
-                  label: 'Bis',
+                  label: l10n.to,
                   value: filters.customDateTo == null
                       ? null
                       : dateFormat.format(filters.customDateTo!),
@@ -183,7 +185,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Entfernung',
+                l10n.distance,
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.brandNavy.withValues(alpha: 0.9),
@@ -200,7 +202,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: _QuickFilterChip(
-                      label: option.label,
+                      label: option.localizedLabel(l10n),
                       selected: filters.distanceOption == option,
                       onTap: () {
                         onFiltersChanged(

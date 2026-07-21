@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../domain/entities/user_profile.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/profile_image_crop_editor.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -44,15 +44,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 85,
+    final cropped = await pickAndCropProfileImage(
+      context,
+      kind: ProfileCropKind.avatar,
     );
-    if (image == null || !mounted) return;
+    if (cropped == null || !mounted) return;
 
-    await ref.read(profileEditControllerProvider.notifier).uploadAvatar(image);
+    await ref
+        .read(profileEditControllerProvider.notifier)
+        .uploadAvatar(cropped.toXFile());
     if (!mounted) return;
 
     final error = ref.read(profileEditControllerProvider).error;
@@ -69,15 +69,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _pickCover() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      imageQuality: 85,
+    final cropped = await pickAndCropProfileImage(
+      context,
+      kind: ProfileCropKind.cover,
     );
-    if (image == null || !mounted) return;
+    if (cropped == null || !mounted) return;
 
-    await ref.read(profileEditControllerProvider.notifier).uploadCover(image);
+    await ref
+        .read(profileEditControllerProvider.notifier)
+        .uploadCover(cropped.toXFile());
     if (!mounted) return;
 
     final error = ref.read(profileEditControllerProvider).error;

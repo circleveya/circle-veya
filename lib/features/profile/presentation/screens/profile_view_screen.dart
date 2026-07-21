@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
@@ -22,6 +21,7 @@ import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_review.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/profile_image_crop_editor.dart';
 import '../widgets/star_rating.dart';
 
 class ProfileViewScreen extends ConsumerStatefulWidget {
@@ -225,15 +225,15 @@ class _ProfileCoverHeader extends ConsumerWidget {
   final bool showBackButton;
 
   Future<void> _pickAvatar(BuildContext context, WidgetRef ref) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 85,
+    final cropped = await pickAndCropProfileImage(
+      context,
+      kind: ProfileCropKind.avatar,
     );
-    if (image == null || !context.mounted) return;
+    if (cropped == null || !context.mounted) return;
 
-    await ref.read(profileEditControllerProvider.notifier).uploadAvatar(image);
+    await ref
+        .read(profileEditControllerProvider.notifier)
+        .uploadAvatar(cropped.toXFile());
     if (!context.mounted) return;
 
     final error = ref.read(profileEditControllerProvider).error;
@@ -247,15 +247,15 @@ class _ProfileCoverHeader extends ConsumerWidget {
   }
 
   Future<void> _pickCover(BuildContext context, WidgetRef ref) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      imageQuality: 85,
+    final cropped = await pickAndCropProfileImage(
+      context,
+      kind: ProfileCropKind.cover,
     );
-    if (image == null || !context.mounted) return;
+    if (cropped == null || !context.mounted) return;
 
-    await ref.read(profileEditControllerProvider.notifier).uploadCover(image);
+    await ref
+        .read(profileEditControllerProvider.notifier)
+        .uploadCover(cropped.toXFile());
     if (!context.mounted) return;
 
     final error = ref.read(profileEditControllerProvider).error;
@@ -386,13 +386,11 @@ class _ProfileCoverHeader extends ConsumerWidget {
                           if (profile.isDev)
                             const _ProfileStatusBadge(
                               label: 'Dev',
-                              icon: Icons.code,
                               background: Color(0xFFFFD54F),
                             )
                           else if (profile.isMarketing)
                             const _ProfileStatusBadge(
                               label: 'Marketing',
-                              icon: Icons.campaign,
                               background: Color(0xFFFFB74D),
                             )
                           else if (profile.isEventOrganizer)
@@ -444,21 +442,33 @@ class _ProfileCoverHeader extends ConsumerWidget {
 class _ProfileStatusBadge extends StatelessWidget {
   const _ProfileStatusBadge({
     required this.label,
-    required this.icon,
     required this.background,
+    this.icon,
     this.iconColor,
   });
 
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final Color background;
   final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final fg = iconColor ?? AppColors.brandNavy;
+    final labelStyle = TextStyle(
+      color: fg,
+      fontWeight: FontWeight.w800,
+      fontSize: 11,
+      height: 1.1,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.fromLTRB(
+        icon != null ? 6 : 8,
+        3,
+        8,
+        3,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(12),
@@ -470,21 +480,16 @@ class _ProfileStatusBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: fg),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              fontSize: 11,
+      child: icon == null
+          ? Text(label, style: labelStyle)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: fg),
+                const SizedBox(width: 4),
+                Text(label, style: labelStyle),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -1,3 +1,5 @@
+import '../../../../l10n/app_localizations.dart';
+
 /// Schnell-Auswahl für den Zeitraum im Entdecken-Feed.
 enum DiscoverDateFilterOption {
   all('Alle'),
@@ -10,6 +12,15 @@ enum DiscoverDateFilterOption {
   const DiscoverDateFilterOption(this.label);
 
   final String label;
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        all => l10n.all,
+        today => l10n.today,
+        tomorrow => l10n.tomorrow,
+        thisWeekend => l10n.thisWeekend,
+        thisWeek => l10n.thisWeek,
+        custom => l10n.pickDate,
+      };
 
   static const quickFilters = [
     DiscoverDateFilterOption.today,

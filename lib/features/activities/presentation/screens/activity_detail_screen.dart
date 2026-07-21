@@ -8,7 +8,9 @@ import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/share_links.dart';
 import '../../../../core/utils/url_utils.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/activity.dart';
@@ -74,7 +76,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final imageUrl = activity?.imageUrl?.trim();
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('EEEE, dd.MM.yyyy · HH:mm');
+    final l10n = AppLocalizations.of(context);
+    final localeTag = Localizations.localeOf(context).toString();
+    final dateFormat = DateFormat('EEEE, dd.MM.yyyy · HH:mm', localeTag);
 
     final screen = MediaQuery.sizeOf(context);
     // Rechteckiges Hero (4:3), zentriert – nicht über die volle Breite gezogen.
@@ -94,16 +98,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: AppColors.brandNavy,
             actions: [
+              if (activity != null)
+                IconButton(
+                  tooltip: l10n.share,
+                  onPressed: () => shareActivityLink(
+                    context,
+                    activityId: widget.activityId,
+                    title: activity.title,
+                  ),
+                  icon: const Icon(Icons.share_outlined),
+                ),
               if (isHost && activity != null) ...[
                 IconButton(
-                  tooltip: 'Bearbeiten',
+                  tooltip: l10n.edit,
                   onPressed: actionsState.isLoading
                       ? null
                       : () => _openEdit(context, activity),
                   icon: const Icon(Icons.edit_outlined),
                 ),
                 IconButton(
-                  tooltip: 'Löschen',
+                  tooltip: l10n.delete,
                   onPressed: actionsState.isLoading
                       ? null
                       : () => _confirmDelete(context, activity),
@@ -247,8 +261,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                             ),
                             child: Text(
                               activity.viewerAction == ViewerAction.directJoin
-                                  ? 'Zusagen'
-                                  : 'Interesse bekunden',
+                                  ? l10n.join
+                                  : l10n.expressInterest,
                             ),
                           ),
                         if (activity.isExternal) ...[
@@ -256,7 +270,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                             onPressed: () =>
                                 _planWithFriends(context, activity),
                             icon: const Icon(Icons.group_add_outlined),
-                            label: const Text('Mit Freunden zum Event'),
+                            label: Text(l10n.withFriendsToEvent),
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.brandNavy,
                               foregroundColor: Colors.white,
@@ -268,9 +282,43 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
+                            onPressed: () => shareActivityLink(
+                              context,
+                              activityId: widget.activityId,
+                              title: activity.title,
+                            ),
+                            icon: const Icon(Icons.share_outlined),
+                            label: Text(l10n.share),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
                             onPressed: () => _handleAction(context, activity),
                             icon: const Icon(Icons.open_in_new),
-                            label: const Text('Zur Event-Quelle'),
+                            label: Text(l10n.toEventSource),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (!activity.isExternal) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () => shareActivityLink(
+                              context,
+                              activityId: widget.activityId,
+                              title: activity.title,
+                            ),
+                            icon: const Icon(Icons.share_outlined),
+                            label: Text(l10n.share),
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
                               shape: RoundedRectangleBorder(

@@ -8,7 +8,9 @@ import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_layout_scaffold.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/branding/circleveya_brand.dart';
+import '../../../../core/l10n/language_switcher_button.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../../../sidebar/presentation/providers/sidebar_provider.dart';
@@ -141,18 +143,18 @@ class _MobileHomeShell extends ConsumerWidget {
   final ValueChanged<int> onIndexChanged;
   final Widget body;
 
-  static const _titles = [
-    'Entdecken',
-    'Erstellen',
-    'Meine Events',
-    'Freunde',
-    'Chats',
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
     final userId = ref.watch(authStateProvider).valueOrNull?.id;
+    final l10n = AppLocalizations.of(context);
+    final titles = [
+      l10n.discover,
+      l10n.create,
+      l10n.myActivities,
+      l10n.friends,
+      l10n.chats,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -165,13 +167,20 @@ class _MobileHomeShell extends ConsumerWidget {
                 minWidth: CircleVeyaBrand.minLogoExtent,
                 maxWidth: 36,
               ),
-              child: const CircleVeyaBrand(compact: true, logoHeight: 36),
+              child: CircleVeyaBrand(
+                compact: true,
+                logoHeight: 36,
+                onTap: () => ref
+                    .read(shellDestinationProvider.notifier)
+                    .set(WebShellDestination.discover),
+              ),
             ),
             const SizedBox(width: 12),
-            Flexible(child: Text(_titles[currentIndex])),
+            Flexible(child: Text(titles[currentIndex])),
           ],
         ),
         actions: [
+          const LanguageSwitcherButton(),
           if (userId != null)
             IconButton(
               onPressed: () => context.pushNamed(
@@ -180,7 +189,7 @@ class _MobileHomeShell extends ConsumerWidget {
                 queryParameters: {'own': 'true'},
               ),
               icon: const Icon(Icons.person_outline),
-              tooltip: 'Mein Profil',
+              tooltip: l10n.myProfile,
             ),
           IconButton(
             onPressed: isLoading
@@ -193,7 +202,7 @@ class _MobileHomeShell extends ConsumerWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.logout),
-            tooltip: 'Abmelden',
+            tooltip: l10n.signOut,
           ),
         ],
       ),
@@ -201,31 +210,31 @@ class _MobileHomeShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: onIndexChanged,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Entdecken',
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore),
+            label: l10n.discover,
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Erstellen',
+            icon: const Icon(Icons.add_circle_outline),
+            selectedIcon: const Icon(Icons.add_circle),
+            label: l10n.create,
           ),
           NavigationDestination(
-            icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
-            label: 'Events',
+            icon: const Icon(Icons.event_outlined),
+            selectedIcon: const Icon(Icons.event),
+            label: l10n.events,
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outlined),
-            selectedIcon: Icon(Icons.people),
-            label: 'Freunde',
+            icon: const Icon(Icons.people_outlined),
+            selectedIcon: const Icon(Icons.people),
+            label: l10n.friends,
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_outlined),
-            selectedIcon: Icon(Icons.chat),
-            label: 'Chats',
+            icon: const Icon(Icons.chat_outlined),
+            selectedIcon: const Icon(Icons.chat),
+            label: l10n.chats,
           ),
         ],
       ),

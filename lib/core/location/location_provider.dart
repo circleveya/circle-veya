@@ -30,6 +30,21 @@ class UserLocationController extends AsyncNotifier<UserLocation> {
     state = AsyncData(preset.toLocation());
   }
 
+  void selectPlace({
+    required String label,
+    required double latitude,
+    required double longitude,
+  }) {
+    state = AsyncData(
+      UserLocation(
+        latitude: latitude,
+        longitude: longitude,
+        source: LocationSource.manual,
+        label: label,
+      ),
+    );
+  }
+
   Future<void> requestGps() async {
     final previous = state.valueOrNull;
     try {

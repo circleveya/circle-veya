@@ -182,6 +182,8 @@ class ChatRemoteDatasource {
       lastMessagePreview: map['last_message_preview'] as String?,
       unreadCount: (map['unread_count'] as num).toInt(),
       otherUsername: map['other_username'] as String?,
+      avatarUrl: map['avatar_url'] as String?,
+      otherProfileId: map['other_profile_id'] as String?,
     );
   }
 
