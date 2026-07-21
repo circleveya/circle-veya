@@ -2,16 +2,37 @@ import 'package:equatable/equatable.dart';
 
 enum ChatType {
   activityGroup,
+  circleGroup,
   direct;
 
   static ChatType fromDb(String value) => switch (value) {
         'activity_group' => activityGroup,
+        'circle_group' => circleGroup,
         _ => direct,
       };
 
   String get label => switch (this) {
-        activityGroup => 'Kreis',
+        activityGroup => 'Aktivität',
+        circleGroup => 'Kreis',
         direct => 'Direkt',
+      };
+}
+
+enum ChatMessageType {
+  text,
+  image,
+  gif;
+
+  static ChatMessageType fromDb(String? value) => switch (value) {
+        'image' => image,
+        'gif' => gif,
+        _ => text,
+      };
+
+  String get dbValue => switch (this) {
+        text => 'text',
+        image => 'image',
+        gif => 'gif',
       };
 }
 
@@ -20,6 +41,7 @@ class ChatSummary extends Equatable {
     required this.id,
     required this.type,
     this.activityId,
+    this.circleGroupId,
     required this.title,
     this.lastMessageAt,
     this.lastMessagePreview,
@@ -30,13 +52,13 @@ class ChatSummary extends Equatable {
   final String id;
   final ChatType type;
   final String? activityId;
+  final String? circleGroupId;
   final String title;
   final DateTime? lastMessageAt;
   final String? lastMessagePreview;
   final int unreadCount;
   final String? otherUsername;
 
-  /// Anzeigename: bei Direktchats der andere User, sonst Chat-Titel.
   String get displayTitle {
     final other = otherUsername?.trim();
     if (type == ChatType.direct && other != null && other.isNotEmpty) {
@@ -50,6 +72,7 @@ class ChatSummary extends Equatable {
         id,
         type,
         activityId,
+        circleGroupId,
         title,
         lastMessageAt,
         lastMessagePreview,
@@ -67,6 +90,8 @@ class ChatMessage extends Equatable {
     required this.content,
     required this.createdAt,
     required this.isMine,
+    this.messageType = ChatMessageType.text,
+    this.mediaUrl,
   });
 
   final String id;
@@ -76,6 +101,14 @@ class ChatMessage extends Equatable {
   final String content;
   final DateTime createdAt;
   final bool isMine;
+  final ChatMessageType messageType;
+  final String? mediaUrl;
+
+  bool get hasMedia =>
+      mediaUrl != null &&
+      mediaUrl!.isNotEmpty &&
+      (messageType == ChatMessageType.image ||
+          messageType == ChatMessageType.gif);
 
   @override
   List<Object?> get props => [
@@ -86,5 +119,7 @@ class ChatMessage extends Equatable {
         content,
         createdAt,
         isMine,
+        messageType,
+        mediaUrl,
       ];
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/supabase_client.dart';
@@ -30,12 +31,16 @@ final onlineFriendsProvider =
 /// Tick für periodisches Neuladen der Sidebar-Daten.
 final sidebarRefreshTickProvider = StateProvider<int>((ref) => 0);
 
-/// Sendet alle 45s einen Online-Heartbeat und aktualisiert die Sidebar.
+/// Sendet alle 30s einen Online-Heartbeat solange die App sichtbar ist.
+/// Beim Verlassen/Hintergrund → sofort offline.
 final presenceHeartbeatProvider = Provider<void>((ref) {
   final datasource = ref.watch(sidebarRemoteDatasourceProvider);
   Timer? timer;
+  AppLifecycleListener? lifecycle;
+  var isActive = true;
 
   Future<void> pulse() async {
+    if (!isActive) return;
     try {
       await datasource.heartbeatPresence();
       ref.read(sidebarRefreshTickProvider.notifier).state++;
@@ -44,10 +49,50 @@ final presenceHeartbeatProvider = Provider<void>((ref) {
     }
   }
 
-  pulse();
-  timer = Timer.periodic(const Duration(seconds: 45), (_) => pulse());
+  Future<void> goOffline() async {
+    isActive = false;
+    timer?.cancel();
+    timer = null;
+    try {
+      await datasource.leavePresence();
+      ref.read(sidebarRefreshTickProvider.notifier).state++;
+    } catch (_) {
+      // Offline-Signal ist best-effort.
+    }
+  }
 
-  ref.onDispose(() => timer?.cancel());
+  void goOnline() {
+    if (isActive && timer != null) return;
+    isActive = true;
+    timer?.cancel();
+    pulse();
+    timer = Timer.periodic(const Duration(seconds: 30), (_) => pulse());
+  }
+
+  goOnline();
+
+  lifecycle = AppLifecycleListener(
+    onResume: goOnline,
+    onShow: goOnline,
+    onHide: () {
+      unawaited(goOffline());
+    },
+    onPause: () {
+      unawaited(goOffline());
+    },
+    onDetach: () {
+      unawaited(goOffline());
+    },
+    onInactive: () {
+      // Kurz inaktiv (z.B. Systemdialog) – noch online lassen.
+    },
+  );
+
+  ref.onDispose(() {
+    lifecycle?.dispose();
+    timer?.cancel();
+    unawaited(datasource.leavePresence());
+  });
 });
 
 String sidebarErrorMessage(Object error) {

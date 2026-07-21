@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -25,6 +26,11 @@ class MessageBubble extends StatelessWidget {
       bottomLeft: Radius.circular(isMine ? 16 : 4),
       bottomRight: Radius.circular(isMine ? 4 : 16),
     );
+    final content = message.content.trim();
+    final showCaption = content.isNotEmpty &&
+        content != 'Bild' &&
+        content != 'GIF' &&
+        content != ' ';
 
     return Align(
       alignment: alignment,
@@ -39,7 +45,9 @@ class MessageBubble extends StatelessWidget {
             left: isMine ? 48 : 0,
             right: isMine ? 0 : 48,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: message.hasMedia
+              ? const EdgeInsets.fromLTRB(6, 6, 6, 8)
+              : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: color,
             borderRadius: radius,
@@ -49,24 +57,59 @@ class MessageBubble extends StatelessWidget {
                 isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (!isMine)
-                Text(
-                  message.senderUsername,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.seed,
-                    fontWeight: FontWeight.w700,
+                Padding(
+                  padding: message.hasMedia
+                      ? const EdgeInsets.fromLTRB(8, 4, 8, 4)
+                      : EdgeInsets.zero,
+                  child: Text(
+                    message.senderUsername,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.seed,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              Text(
-                message.content,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.brandNavy,
+              if (message.hasMedia)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: message.mediaUrl!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    placeholder: (_, _) => const SizedBox(
+                      height: 160,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (_, _, _) => const SizedBox(
+                      height: 120,
+                      child: Center(child: Icon(Icons.broken_image_outlined)),
+                    ),
+                  ),
                 ),
-              ),
+              if (showCaption) ...[
+                if (message.hasMedia) const SizedBox(height: 6),
+                Padding(
+                  padding: message.hasMedia
+                      ? const EdgeInsets.symmetric(horizontal: 8)
+                      : EdgeInsets.zero,
+                  child: Text(
+                    content,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.brandNavy,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 4),
-              Text(
-                timestamp,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              Padding(
+                padding: message.hasMedia
+                    ? const EdgeInsets.symmetric(horizontal: 8)
+                    : EdgeInsets.zero,
+                child: Text(
+                  timestamp,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

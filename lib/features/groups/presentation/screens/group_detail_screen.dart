@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../chat/domain/entities/chat.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../domain/entities/circle_group.dart';
@@ -134,8 +135,29 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 const SizedBox(height: 12),
                 Text(
                   '${group.memberCount} Mitglieder · Erstellt am ${dateFormat.format(group.createdAt.toLocal())}',
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  group.membersCanPost
+                      ? 'Alle Mitglieder dürfen im Chat schreiben'
+                      : 'Nur Admins dürfen im Chat schreiben',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: isBusy ? null : () => _openGroupChat(group),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('Chat öffnen'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brandNavy,
+                    minimumSize: const Size.fromHeight(48),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -204,51 +226,98 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     _showControllerErrorOrSnack('Profilbild aktualisiert');
   }
 
+  Future<void> _openGroupChat(CircleGroup group) async {
+    final chatId =
+        await ref.read(groupsControllerProvider.notifier).openGroupChat(_groupId);
+    if (!mounted) return;
+
+    final error = ref.read(groupsControllerProvider).error;
+    if (error != null || chatId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Chat konnte nicht geöffnet werden: $error')),
+      );
+      return;
+    }
+
+    context.pushNamed(
+      RouteNames.chatRoom,
+      pathParameters: {'id': chatId},
+      extra: ChatSummary(
+        id: chatId,
+        type: ChatType.circleGroup,
+        circleGroupId: group.id,
+        title: group.name,
+        unreadCount: 0,
+      ),
+    );
+  }
+
   Future<void> _showEditDialog(CircleGroup group) async {
     final nameController = TextEditingController(text: group.name);
     final descriptionController = TextEditingController(
       text: group.description ?? '',
     );
+    var membersCanPost = group.membersCanPost;
 
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Kreis bearbeiten'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name des Kreises',
-                  border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Kreis bearbeiten'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name des Kreises',
+                        border: OutlineInputBorder(),
+                      ),
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLength: 80,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Beschreibung (optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      maxLength: 280,
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Mitglieder dürfen schreiben'),
+                      subtitle: Text(
+                        membersCanPost
+                            ? 'Alle Mitglieder können im Kreis-Chat schreiben'
+                            : 'Nur Admins können im Kreis-Chat schreiben',
+                      ),
+                      value: membersCanPost,
+                      onChanged: (value) {
+                        setDialogState(() => membersCanPost = value);
+                      },
+                    ),
+                  ],
                 ),
-                textCapitalization: TextCapitalization.sentences,
-                maxLength: 80,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Beschreibung (optional)',
-                  border: OutlineInputBorder(),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Abbrechen'),
                 ),
-                maxLines: 3,
-                maxLength: 280,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Speichern'),
-            ),
-          ],
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Speichern'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -273,6 +342,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           groupId: _groupId,
           name: name,
           description: description.isEmpty ? null : description,
+          membersCanPost: membersCanPost,
         );
 
     if (!mounted) return;

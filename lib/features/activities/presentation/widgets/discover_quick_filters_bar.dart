@@ -6,8 +6,9 @@ import '../../../../core/location/user_location.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
+import '../../domain/entities/event_category.dart';
 
-/// Schnellfilter: Zeitraum (Chips + Von/Bis) + Entfernung.
+/// Schnellfilter: Kategorie + Zeitraum (Chips + Von/Bis) + Entfernung.
 class DiscoverQuickFiltersBar extends ConsumerWidget {
   const DiscoverQuickFiltersBar({
     super.key,
@@ -32,6 +33,62 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              Icon(
+                Icons.category_outlined,
+                size: 18,
+                color: AppColors.brandNavy.withValues(alpha: 0.65),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Kategorie',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.brandNavy.withValues(alpha: 0.9),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.8),
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<EventCategory>(
+                  value: filters.category,
+                  isExpanded: true,
+                  icon: const Icon(Icons.arrow_drop_down),
+                  borderRadius: BorderRadius.circular(12),
+                  items: [
+                    for (final option in EventCategory.filterOptions)
+                      DropdownMenuItem(
+                        value: option,
+                        child: Text(option.label),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    onFiltersChanged(filters.copyWith(category: value));
+                  },
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Events in ${filters.category.filterPhrase} anzeigen.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 14),
           Row(
             children: [
               Icon(

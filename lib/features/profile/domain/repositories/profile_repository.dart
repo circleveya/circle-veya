@@ -13,4 +13,9 @@ abstract class ProfileRepository {
     required Uint8List bytes,
     required String fileName,
   });
+
+  Future<String> uploadCover({
+    required Uint8List bytes,
+    required String fileName,
+  });
 }

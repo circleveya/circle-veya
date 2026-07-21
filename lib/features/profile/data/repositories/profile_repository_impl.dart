@@ -62,4 +62,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
       throw ProfileFailure(error.message);
     }
   }
+
+  @override
+  Future<String> uploadCover({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      return await _datasource.uploadCover(bytes: bytes, fileName: fileName);
+    } on StorageException catch (error) {
+      throw ProfileFailure(error.message);
+    } on PostgrestException catch (error) {
+      throw ProfileFailure(error.message);
+    } on AuthException catch (error) {
+      throw ProfileFailure(error.message);
+    }
+  }
 }

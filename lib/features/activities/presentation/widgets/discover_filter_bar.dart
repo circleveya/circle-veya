@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity_filters.dart';
 import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
+import '../../domain/entities/event_category.dart';
 
 class DiscoverFilterBar extends StatefulWidget {
   const DiscoverFilterBar({
@@ -212,6 +213,9 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
 
   String _activeFilterSummary(ActivityDiscoverFilters filters) {
     final parts = <String>[];
+    if (filters.category != EventCategory.all) {
+      parts.add(filters.category.label);
+    }
     if (filters.locationType != null) {
       parts.add(filters.locationType!.label);
     }

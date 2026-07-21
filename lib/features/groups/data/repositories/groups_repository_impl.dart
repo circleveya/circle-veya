@@ -53,12 +53,18 @@ class GroupsRepositoryImpl implements GroupsRepository {
     required String groupId,
     required String name,
     String? description,
+    bool? membersCanPost,
   }) =>
       _datasource.updateGroup(
         groupId: groupId,
         name: name,
         description: description,
+        membersCanPost: membersCanPost,
       );
+
+  @override
+  Future<String> getOrCreateGroupChat(String groupId) =>
+      _datasource.getOrCreateGroupChat(groupId);
 
   @override
   Future<int> addMembers({

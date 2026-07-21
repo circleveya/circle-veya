@@ -35,6 +35,9 @@ class ChallengesRemoteDatasource {
             challengeType: map['challenge_type'] as String? ?? 'weekly',
             description: map['challenge_description'] as String?,
             howTo: map['challenge_how_to'] as String?,
+            resetCadence:
+                map['challenge_reset_cadence'] as String? ?? 'none',
+            periodKey: map['challenge_period_key'] as String?,
           ),
         );
       }

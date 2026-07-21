@@ -68,6 +68,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     );
   }
 
+  Future<void> _pickCover() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      imageQuality: 85,
+    );
+    if (image == null || !mounted) return;
+
+    await ref.read(profileEditControllerProvider.notifier).uploadCover(image);
+    if (!mounted) return;
+
+    final error = ref.read(profileEditControllerProvider).error;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Banner aktualisiert')),
+    );
+  }
+
   void _addInterest() {
     final value = _interestController.text.trim();
     if (value.isEmpty || _interests.contains(value)) return;
@@ -127,6 +152,75 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               key: _formKey,
               child: Column(
                 children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 6,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).colorScheme.primaryContainer,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer,
+                                ],
+                              ),
+                              image: profile.coverUrl != null
+                                  ? DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        profile.coverUrl!,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          Material(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            child: InkWell(
+                              onTap: isLoading ? null : _pickCover,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isLoading
+                                          ? Icons.hourglass_empty
+                                          : Icons.photo_camera_outlined,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      profile.coverUrl == null
+                                          ? 'Banner hinzufügen'
+                                          : 'Banner ändern',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Banner und Profilbild getrennt wählbar',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 20),
                   GestureDetector(
                     onTap: isLoading ? null : _pickAvatar,
                     child: Stack(
@@ -149,7 +243,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           child: CircleAvatar(
                             radius: 18,
                             child: Icon(
-                              isLoading ? Icons.hourglass_empty : Icons.camera_alt,
+                              isLoading
+                                  ? Icons.hourglass_empty
+                                  : Icons.camera_alt,
                               size: 18,
                             ),
                           ),

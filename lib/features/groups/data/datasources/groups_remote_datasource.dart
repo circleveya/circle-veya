@@ -110,6 +110,7 @@ class GroupsRemoteDatasource {
     required String groupId,
     required String name,
     String? description,
+    bool? membersCanPost,
   }) async {
     await _client.rpc(
       'update_circle_group',
@@ -117,8 +118,17 @@ class GroupsRemoteDatasource {
         'p_group_id': groupId,
         'p_name': name,
         'p_description': description,
+        if (membersCanPost != null) 'p_members_can_post': membersCanPost,
       },
     );
+  }
+
+  Future<String> getOrCreateGroupChat(String groupId) async {
+    final response = await _client.rpc(
+      'get_or_create_circle_group_chat',
+      params: {'p_group_id': groupId},
+    );
+    return response as String;
   }
 
   Future<int> addMembers({
@@ -216,6 +226,7 @@ class GroupsRemoteDatasource {
       myRole: map['my_role'] as String? ?? 'member',
       createdAt: DateTime.parse(map['created_at'] as String),
       imageUrl: map['image_url'] as String?,
+      membersCanPost: map['members_can_post'] as bool? ?? true,
     );
   }
 }

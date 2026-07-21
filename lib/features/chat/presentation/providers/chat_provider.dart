@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
@@ -39,6 +40,11 @@ final activityGroupChatProvider = FutureProvider.autoDispose
   return ref.watch(chatRepositoryProvider).getActivityGroupChatId(activityId);
 });
 
+final chatWallpaperProvider = FutureProvider.autoDispose
+    .family<String?, String>((ref, chatId) async {
+  return ref.watch(chatRepositoryProvider).getMyWallpaper(chatId);
+});
+
 class ChatActionsController extends AutoDisposeAsyncNotifier<void> {
   @override
   Future<void> build() async {}
@@ -70,11 +76,61 @@ class ChatActionsController extends AutoDisposeAsyncNotifier<void> {
   Future<void> sendMessage({
     required String chatId,
     required String content,
+    ChatMessageType messageType = ChatMessageType.text,
+    String? mediaUrl,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _repo.sendMessage(chatId: chatId, content: content),
+      () => _repo.sendMessage(
+        chatId: chatId,
+        content: content,
+        messageType: messageType,
+        mediaUrl: mediaUrl,
+      ),
     );
+  }
+
+  Future<void> sendMediaMessage({
+    required String chatId,
+    required XFile file,
+    ChatMessageType messageType = ChatMessageType.image,
+    String? caption,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final url = await _repo.uploadChatMedia(chatId: chatId, file: file);
+      await _repo.sendMessage(
+        chatId: chatId,
+        content: caption?.trim().isNotEmpty == true
+            ? caption!.trim()
+            : (messageType == ChatMessageType.gif ? 'GIF' : 'Bild'),
+        messageType: messageType,
+        mediaUrl: url,
+      );
+    });
+  }
+
+  Future<void> setWallpaperFromFile({
+    required String chatId,
+    required XFile file,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _repo.uploadWallpaper(chatId: chatId, file: file),
+    );
+    if (!state.hasError) {
+      ref.invalidate(chatWallpaperProvider(chatId));
+    }
+  }
+
+  Future<void> clearWallpaper(String chatId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _repo.setMyWallpaper(chatId: chatId, wallpaperUrl: null),
+    );
+    if (!state.hasError) {
+      ref.invalidate(chatWallpaperProvider(chatId));
+    }
   }
 
   Future<void> leaveChat(String chatId) async {

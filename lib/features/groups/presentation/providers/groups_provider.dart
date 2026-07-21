@@ -95,6 +95,7 @@ class GroupsController extends AutoDisposeAsyncNotifier<void> {
     required String groupId,
     required String name,
     String? description,
+    bool? membersCanPost,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -102,11 +103,22 @@ class GroupsController extends AutoDisposeAsyncNotifier<void> {
         groupId: groupId,
         name: name,
         description: description,
+        membersCanPost: membersCanPost,
       );
     });
     if (!state.hasError) {
       _invalidateGroup(groupId);
     }
+  }
+
+  Future<String?> openGroupChat(String groupId) async {
+    state = const AsyncLoading();
+    String? chatId;
+    state = await AsyncValue.guard(() async {
+      chatId = await _repo.getOrCreateGroupChat(groupId);
+    });
+    if (state.hasError) return null;
+    return chatId;
   }
 
   Future<int?> addMembers({

@@ -18,28 +18,120 @@ class ChallengesScreen extends ConsumerWidget {
     return statsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('$e')),
-      data: (stats) => ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(
-            'Challenges',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
+      data: (stats) {
+        final weekly = stats.weeklyChallenges;
+        final monthly = stats.monthlyChallenges;
+        final other = stats.otherChallenges;
+
+        return ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(
+              'Challenges',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          ChallengeLevelCard(stats: stats),
-          const SizedBox(height: 24),
-          Text('Aktive Challenges', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 12),
-          ...stats.challenges.map(
-            (c) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ChallengeProgressCard(challenge: c),
+            const SizedBox(height: 8),
+            Text(
+              'Wöchentliche Challenges starten montags neu, '
+              'monatliche am 1. des Monats.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
+            const SizedBox(height: 20),
+            ChallengeLevelCard(stats: stats),
+            if (weekly.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _SectionHeader(
+                title: 'Wöchentlich',
+                subtitle: 'Reset jeden Montag',
+                icon: Icons.date_range_outlined,
+              ),
+              const SizedBox(height: 12),
+              ...weekly.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ChallengeProgressCard(challenge: c),
+                ),
+              ),
+            ],
+            if (monthly.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _SectionHeader(
+                title: 'Monatlich',
+                subtitle: 'Reset am 1. des Monats',
+                icon: Icons.calendar_month_outlined,
+              ),
+              const SizedBox(height: 12),
+              ...monthly.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ChallengeProgressCard(challenge: c),
+                ),
+              ),
+            ],
+            if (other.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('Weitere Challenges', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 12),
+              ...other.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ChallengeProgressCard(challenge: c),
+                ),
+              ),
+            ],
+            if (stats.challenges.isEmpty) ...[
+              const SizedBox(height: 24),
+              Text(
+                'Noch keine aktiven Challenges.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.seed),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleMedium),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -114,6 +206,8 @@ class ChallengeProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -129,25 +223,49 @@ class ChallengeProgressCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.seed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Text(
-                      challenge.title,
-                      style: Theme.of(context).textTheme.titleSmall,
+                      challenge.periodBadgeLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.seed,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
+                  const Spacer(),
                   Text(
                     '${challenge.progress} / ${challenge.target}',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.seed,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.seed,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                challenge.title,
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                challenge.resetHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 10),
               ClipRRect(

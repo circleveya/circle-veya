@@ -54,6 +54,14 @@ class ChallengeDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
+            resolved.resetHint,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppColors.seed,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
             resolved.resolvedDescription,
             style: theme.textTheme.bodyLarge,
           ),

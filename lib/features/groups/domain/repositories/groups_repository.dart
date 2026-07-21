@@ -25,7 +25,10 @@ abstract class GroupsRepository {
     required String groupId,
     required String name,
     String? description,
+    bool? membersCanPost,
   });
+
+  Future<String> getOrCreateGroupChat(String groupId);
 
   Future<int> addMembers({
     required String groupId,

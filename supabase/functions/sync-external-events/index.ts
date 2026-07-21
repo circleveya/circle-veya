@@ -45,6 +45,8 @@ type EventfrogEventRaw = {
   shortDescription?: string[] | Record<string, string>;
   descriptionAsHTML?: string[] | Record<string, string>;
   locationIds?: string[];
+  rubricId?: string;
+  groupId?: string;
 };
 
 type EventfrogLocationRaw = {
@@ -55,6 +57,12 @@ type EventfrogLocationRaw = {
   city?: string;
   lat?: number;
   lng?: number;
+};
+
+type EventfrogRubricRaw = {
+  id: string;
+  parentId?: string | null;
+  title?: string;
 };
 
 type NormalizedEvent = {
@@ -71,6 +79,9 @@ type NormalizedEvent = {
   image_url: string | null;
   external_url: string;
   raw_data: Record<string, unknown> | null;
+  category: string | null;
+  category_label: string | null;
+  rubric_id: string | null;
 };
 
 type EventfrogFetchResult = {
@@ -294,9 +305,142 @@ function buildLocationName(location: EventfrogLocationRaw | undefined): string |
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
+async function fetchEventfrogRubrics(
+  apiKey: string,
+): Promise<Map<string, EventfrogRubricRaw>> {
+  const map = new Map<string, EventfrogRubricRaw>();
+  try {
+    const result = await eventfrogGet<{ rubrics?: EventfrogRubricRaw[] }>(
+      apiKey,
+      "/rubrics.json",
+      {},
+    );
+    if (!result.ok || !result.data?.rubrics) return map;
+    for (const rubric of result.data.rubrics) {
+      if (rubric?.id) map.set(rubric.id, rubric);
+    }
+  } catch {
+    // Rubrics optional – Fallback über Keywords
+  }
+  return map;
+}
+
+function mapRubricTitleToCategory(title: string | null | undefined): {
+  key: string;
+  label: string;
+} {
+  const raw = (title ?? "").trim();
+  const lower = raw.toLowerCase();
+
+  if (!raw) return { key: "other", label: "Sonstiges" };
+  if (lower.includes("konzert")) return { key: "concerts", label: "Konzerte" };
+  if (lower.includes("party") || lower.includes("nightlife") || lower.includes("club")) {
+    return { key: "parties", label: "Parties" };
+  }
+  if (lower.includes("festival") || lower.includes("volksfest") || lower.includes("feste")) {
+    return { key: "festivals", label: "Festivals" };
+  }
+  if (lower.includes("theater") || lower.includes("bühne") || lower.includes("musical")) {
+    return { key: "theater", label: "Theater & Bühne" };
+  }
+  if (lower.includes("comedy") || lower.includes("kabarett")) {
+    return { key: "comedy", label: "Comedy" };
+  }
+  if (lower.includes("sport") || lower.includes("fitness")) {
+    return { key: "sport", label: "Sport & Fitness" };
+  }
+  if (lower.includes("kinder") || lower.includes("familie") || lower.includes("jugend")) {
+    return { key: "kids", label: "Kinder & Familie" };
+  }
+  if (lower.includes("kurs") || lower.includes("seminar") || lower.includes("workshop")) {
+    return { key: "courses", label: "Kurse & Seminare" };
+  }
+  if (lower.includes("markt") || lower.includes("messe")) {
+    return { key: "markets", label: "Märkte & Messen" };
+  }
+  if (lower.includes("klassik") || lower.includes("oper") || lower.includes("ballett")) {
+    return { key: "classic", label: "Klassik & Oper" };
+  }
+  if (
+    lower.includes("freizeit") ||
+    lower.includes("ausflug") ||
+    lower.includes("führung") ||
+    lower.includes("vortrag")
+  ) {
+    return { key: "leisure", label: "Freizeit & Ausflüge" };
+  }
+
+  return { key: "other", label: raw || "Sonstiges" };
+}
+
+function resolveEventCategory(
+  event: EventfrogEventRaw,
+  rubrics: Map<string, EventfrogRubricRaw>,
+): { key: string; label: string; rubricId: string | null } {
+  const rubricId = typeof event.rubricId === "string" && event.rubricId
+    ? event.rubricId
+    : null;
+
+  if (rubricId) {
+    let current = rubrics.get(rubricId);
+    let top = current;
+    // Walk to parent rubric (Eventfrog hierarchy)
+    for (let i = 0; i < 5 && current?.parentId; i++) {
+      const parent = rubrics.get(current.parentId);
+      if (!parent) break;
+      top = parent;
+      current = parent;
+    }
+    const mapped = mapRubricTitleToCategory(top?.title ?? current?.title);
+    return { ...mapped, rubricId };
+  }
+
+  const haystack = [
+    localizedText(event.title) ?? "",
+    localizedText(event.shortDescription) ?? "",
+  ].join(" ").toLowerCase();
+
+  if (/(konzert|concert|band\b|gig\b)/.test(haystack)) {
+    return { key: "concerts", label: "Konzerte", rubricId: null };
+  }
+  if (/(party|club|disco|techno|rave|dj\b)/.test(haystack)) {
+    return { key: "parties", label: "Parties", rubricId: null };
+  }
+  if (/(festival|open\s*air|volksfest)/.test(haystack)) {
+    return { key: "festivals", label: "Festivals", rubricId: null };
+  }
+  if (/(theater|theatre|bühne|schauspiel|musical)/.test(haystack)) {
+    return { key: "theater", label: "Theater & Bühne", rubricId: null };
+  }
+  if (/(comedy|kabarett|stand[- ]?up)/.test(haystack)) {
+    return { key: "comedy", label: "Comedy", rubricId: null };
+  }
+  if (/(sport|fitness|yoga|tennis|fussball|fußball)/.test(haystack)) {
+    return { key: "sport", label: "Sport & Fitness", rubricId: null };
+  }
+  if (/(kinder|kids|familie|family)/.test(haystack)) {
+    return { key: "kids", label: "Kinder & Familie", rubricId: null };
+  }
+  if (/(kurs|seminar|workshop)/.test(haystack)) {
+    return { key: "courses", label: "Kurse & Seminare", rubricId: null };
+  }
+  if (/(markt|messe|flohmarkt)/.test(haystack)) {
+    return { key: "markets", label: "Märkte & Messen", rubricId: null };
+  }
+  if (/(oper|klassik|ballett|orchester)/.test(haystack)) {
+    return { key: "classic", label: "Klassik & Oper", rubricId: null };
+  }
+  if (/(wander|ausflug|freizeit|museum)/.test(haystack)) {
+    return { key: "leisure", label: "Freizeit & Ausflüge", rubricId: null };
+  }
+
+  return { key: "other", label: "Sonstiges", rubricId: null };
+}
+
 function mapEventfrogEvent(
   event: EventfrogEventRaw,
   locations: Map<string, EventfrogLocationRaw>,
+  rubrics: Map<string, EventfrogRubricRaw>,
 ): NormalizedEvent | null {
   if (!event.id) return null;
   if (event.cancelled === true) return null;
@@ -326,6 +470,8 @@ function mapEventfrogEvent(
     ? event.emblemToShow.url
     : null;
 
+  const category = resolveEventCategory(event, rubrics);
+
   return {
     external_id: event.id,
     external_provider: EVENTFROG_PROVIDER,
@@ -339,11 +485,16 @@ function mapEventfrogEvent(
     longitude: Number.isFinite(longitude) ? longitude : null,
     image_url: imageUrl,
     external_url: ticketUrl,
+    category: category.key,
+    category_label: category.label,
+    rubric_id: category.rubricId,
     raw_data: {
       id: event.id,
       begin: event.begin ?? null,
       end: event.end ?? null,
       locationId: locationId ?? null,
+      rubricId: category.rubricId,
+      groupId: event.groupId ?? null,
     },
   };
 }
@@ -468,9 +619,10 @@ async function fetchEventfrogForRegion(
   );
 
   const locations = await fetchEventfrogLocations(apiKey, locationIds);
+  const rubrics = await fetchEventfrogRubrics(apiKey);
 
   const events = rawEvents
-    .map((event) => mapEventfrogEvent(event, locations))
+    .map((event) => mapEventfrogEvent(event, locations, rubrics))
     .filter((event): event is NormalizedEvent => event != null)
     .slice(0, MAX_EVENTS_TO_SYNC);
 
@@ -551,6 +703,9 @@ serve(async (req) => {
           image_url: event.image_url,
           external_url: event.external_url,
           raw_data: event.raw_data,
+          category: event.category,
+          category_label: event.category_label,
+          rubric_id: event.rubric_id,
           is_cancelled: false,
           synced_at: new Date().toISOString(),
         };

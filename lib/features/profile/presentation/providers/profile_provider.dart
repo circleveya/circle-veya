@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
+import '../../../gallery/presentation/providers/gallery_provider.dart';
 import '../../data/datasources/profile_remote_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/repositories/unconfigured_profile_repository.dart';
@@ -113,8 +114,10 @@ class GalleryPrivacyController extends AutoDisposeAsyncNotifier<void> {
     if (!state.hasError) {
       final userId = ref.read(supabaseClientProvider).auth.currentUser?.id;
       ref.invalidate(myProfileProvider);
+      ref.invalidate(pastActivitiesGalleryProvider);
       if (userId != null) {
         ref.invalidate(profileProvider(userId));
+        ref.invalidate(publicGalleryForProfileProvider(userId));
       }
     }
   }
@@ -148,9 +151,34 @@ class ProfileEditController extends AutoDisposeAsyncNotifier<void> {
           );
     });
     if (!state.hasError) {
-      ref.invalidate(myProfileProvider);
+      _invalidateProfiles();
     }
     return url;
+  }
+
+  Future<String?> uploadCover(XFile image) async {
+    state = const AsyncLoading();
+    String? url;
+    state = await AsyncValue.guard(() async {
+      final bytes = await image.readAsBytes();
+      url = await ref.read(profileRepositoryProvider).uploadCover(
+            bytes: bytes,
+            fileName: image.name,
+          );
+    });
+    if (!state.hasError) {
+      _invalidateProfiles();
+    }
+    return url;
+  }
+
+  void _invalidateProfiles() {
+    ref.invalidate(myProfileProvider);
+    final userId =
+        ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (userId != null) {
+      ref.invalidate(profileProvider(userId));
+    }
   }
 }
 

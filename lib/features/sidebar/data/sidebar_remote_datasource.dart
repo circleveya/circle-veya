@@ -106,4 +106,8 @@ class SidebarRemoteDatasource {
   Future<void> heartbeatPresence() async {
     await _client.rpc('heartbeat_presence');
   }
+
+  Future<void> leavePresence() async {
+    await _client.rpc('leave_presence');
+  }
 }

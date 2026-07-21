@@ -20,6 +20,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _selectedIds = <String>{};
+  bool _membersCanPost = true;
 
   @override
   void dispose() {
@@ -57,6 +58,20 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
             ),
             maxLines: 3,
             maxLength: 280,
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Mitglieder dürfen schreiben'),
+            subtitle: Text(
+              _membersCanPost
+                  ? 'Alle Mitglieder können im Kreis-Chat schreiben'
+                  : 'Nur du (Admins) könnt im Kreis-Chat schreiben',
+            ),
+            value: _membersCanPost,
+            onChanged: isLoading
+                ? null
+                : (value) => setState(() => _membersCanPost = value),
           ),
           const SizedBox(height: 20),
           Text(
@@ -148,12 +163,31 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
         );
 
     if (!mounted) return;
-    final error = ref.read(groupsControllerProvider).error;
+    var error = ref.read(groupsControllerProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Fehler: $error')),
       );
       return;
+    }
+
+    if (id != null && !_membersCanPost) {
+      await ref.read(groupsControllerProvider.notifier).updateGroup(
+            groupId: id,
+            name: name,
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+            membersCanPost: false,
+          );
+      if (!mounted) return;
+      error = ref.read(groupsControllerProvider).error;
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $error')),
+        );
+        return;
+      }
     }
 
     if (id != null) {

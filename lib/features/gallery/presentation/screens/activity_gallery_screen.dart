@@ -82,7 +82,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
                     child: Text(
-                      'Deine Erinnerungen aus abgeschlossenen Aktivitäten',
+                      'Mit dem Schalter oben alle öffnen – oder hier einzeln steuern',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

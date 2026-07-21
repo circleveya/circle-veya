@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/failures.dart';
@@ -40,9 +41,68 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> sendMessage({
     required String chatId,
     required String content,
+    ChatMessageType messageType = ChatMessageType.text,
+    String? mediaUrl,
   }) async {
     try {
-      await _datasource.sendMessage(chatId: chatId, content: content);
+      await _datasource.sendMessage(
+        chatId: chatId,
+        content: content,
+        messageType: messageType,
+        mediaUrl: mediaUrl,
+      );
+    } on PostgrestException catch (error) {
+      throw ChatFailure(error.message);
+    }
+  }
+
+  @override
+  Future<String> uploadChatMedia({
+    required String chatId,
+    required XFile file,
+  }) async {
+    try {
+      return await _datasource.uploadChatMedia(chatId: chatId, file: file);
+    } on StorageException catch (error) {
+      throw ChatFailure(error.message);
+    } on PostgrestException catch (error) {
+      throw ChatFailure(error.message);
+    }
+  }
+
+  @override
+  Future<String?> getMyWallpaper(String chatId) async {
+    try {
+      return await _datasource.getMyWallpaper(chatId);
+    } on PostgrestException catch (error) {
+      throw ChatFailure(error.message);
+    }
+  }
+
+  @override
+  Future<void> setMyWallpaper({
+    required String chatId,
+    String? wallpaperUrl,
+  }) async {
+    try {
+      await _datasource.setMyWallpaper(
+        chatId: chatId,
+        wallpaperUrl: wallpaperUrl,
+      );
+    } on PostgrestException catch (error) {
+      throw ChatFailure(error.message);
+    }
+  }
+
+  @override
+  Future<String> uploadWallpaper({
+    required String chatId,
+    required XFile file,
+  }) async {
+    try {
+      return await _datasource.uploadWallpaper(chatId: chatId, file: file);
+    } on StorageException catch (error) {
+      throw ChatFailure(error.message);
     } on PostgrestException catch (error) {
       throw ChatFailure(error.message);
     }

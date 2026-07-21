@@ -59,6 +59,7 @@ class ExternalEventsCacheDatasource {
                       city.toLowerCase() != 'gps')
                   ? city
                   : null,
+              'p_category': filters.category.dbValue,
             },
           )
           .timeout(const Duration(seconds: 15));
@@ -148,6 +149,8 @@ class ExternalEventsCacheDatasource {
       externalUrl: _optionalString(map['external_url']),
       createdAt: null,
       participantAvatarUrls: const [],
+      category: _optionalString(map['category']),
+      categoryLabel: _optionalString(map['category_label']),
     );
   }
 

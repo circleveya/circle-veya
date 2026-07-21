@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/location/user_location.dart';
 import 'activity_filters.dart';
 import 'discover_date_filter.dart';
+import 'event_category.dart';
 
 class ActivityDiscoverFilters extends Equatable {
   const ActivityDiscoverFilters({
@@ -13,6 +14,7 @@ class ActivityDiscoverFilters extends Equatable {
     this.dateFilter = DiscoverDateFilterOption.all,
     this.customDateFrom,
     this.customDateTo,
+    this.category = EventCategory.all,
   });
 
   final LocationType? locationType;
@@ -22,6 +24,7 @@ class ActivityDiscoverFilters extends Equatable {
   final DiscoverDateFilterOption dateFilter;
   final DateTime? customDateFrom;
   final DateTime? customDateTo;
+  final EventCategory category;
 
   ({DateTime? start, DateTime? end}) get dateRange {
     if (dateFilter == DiscoverDateFilterOption.custom ||
@@ -41,7 +44,8 @@ class ActivityDiscoverFilters extends Equatable {
       maxDistanceKm != null ||
       dateFilter != DiscoverDateFilterOption.all ||
       customDateFrom != null ||
-      customDateTo != null;
+      customDateTo != null ||
+      category != EventCategory.all;
 
   ActivityDiscoverFilters copyWith({
     LocationType? locationType,
@@ -57,6 +61,7 @@ class ActivityDiscoverFilters extends Equatable {
     bool clearCustomDateFrom = false,
     bool clearCustomDateTo = false,
     bool clearCustomDateRange = false,
+    EventCategory? category,
   }) {
     return ActivityDiscoverFilters(
       locationType: clearLocationType ? null : (locationType ?? this.locationType),
@@ -73,6 +78,7 @@ class ActivityDiscoverFilters extends Equatable {
       customDateTo: clearCustomDateRange || clearCustomDateTo
           ? null
           : (customDateTo ?? this.customDateTo),
+      category: category ?? this.category,
     );
   }
 
@@ -87,5 +93,6 @@ class ActivityDiscoverFilters extends Equatable {
         dateFilter,
         customDateFrom,
         customDateTo,
+        category,
       ];
 }

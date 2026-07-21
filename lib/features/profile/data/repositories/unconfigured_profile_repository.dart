@@ -25,4 +25,11 @@ class UnconfiguredProfileRepository implements ProfileRepository {
     required String fileName,
   }) async =>
       _throw();
+
+  @override
+  Future<String> uploadCover({
+    required Uint8List bytes,
+    required String fileName,
+  }) async =>
+      _throw();
 }

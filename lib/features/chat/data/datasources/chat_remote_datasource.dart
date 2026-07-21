@@ -1,5 +1,7 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/storage/supabase_storage_helper.dart';
 import '../../domain/entities/chat.dart';
 
 class ChatRemoteDatasource {
@@ -62,6 +64,8 @@ class ChatRemoteDatasource {
   Future<void> sendMessage({
     required String chatId,
     required String content,
+    ChatMessageType messageType = ChatMessageType.text,
+    String? mediaUrl,
   }) async {
     final userId = _userId;
     if (userId == null) {
@@ -72,9 +76,65 @@ class ChatRemoteDatasource {
       'send_chat_message',
       params: {
         'p_chat_id': chatId,
-        'p_content': content.trim(),
+        'p_content': content.trim().isEmpty ? ' ' : content.trim(),
+        'p_message_type': messageType.dbValue,
+        'p_media_url': mediaUrl,
       },
     );
+  }
+
+  Future<String> uploadChatMedia({
+    required String chatId,
+    required XFile file,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Nicht angemeldet');
+    }
+    final ext = SupabaseStorageHelper.extensionFrom(file);
+    final path =
+        '$userId/$chatId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final helper = SupabaseStorageHelper(_client);
+    return helper.uploadImage(bucket: 'chat-media', path: path, file: file);
+  }
+
+  Future<String?> getMyWallpaper(String chatId) async {
+    final response = await _client.rpc(
+      'get_my_chat_wallpaper',
+      params: {'p_chat_id': chatId},
+    );
+    return response as String?;
+  }
+
+  Future<void> setMyWallpaper({
+    required String chatId,
+    String? wallpaperUrl,
+  }) async {
+    await _client.rpc(
+      'set_my_chat_wallpaper',
+      params: {
+        'p_chat_id': chatId,
+        'p_wallpaper_url': wallpaperUrl,
+      },
+    );
+  }
+
+  Future<String> uploadWallpaper({
+    required String chatId,
+    required XFile file,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Nicht angemeldet');
+    }
+    final ext = SupabaseStorageHelper.extensionFrom(file);
+    final path = '$userId/$chatId/wallpaper.$ext';
+    final helper = SupabaseStorageHelper(_client);
+    final url =
+        await helper.uploadImage(bucket: 'chat-wallpapers', path: path, file: file);
+    final withBust = '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+    await setMyWallpaper(chatId: chatId, wallpaperUrl: withBust);
+    return withBust;
   }
 
   Future<void> markChatRead(String chatId) async {
@@ -114,6 +174,7 @@ class ChatRemoteDatasource {
       id: map['id'] as String,
       type: ChatType.fromDb(map['type'] as String),
       activityId: map['activity_id'] as String?,
+      circleGroupId: map['circle_group_id'] as String?,
       title: map['title'] as String,
       lastMessageAt: map['last_message_at'] != null
           ? DateTime.parse(map['last_message_at'] as String)
@@ -135,9 +196,11 @@ class ChatRemoteDatasource {
       chatId: map['chat_id'] as String,
       senderId: senderId,
       senderUsername: profiles[senderId] ?? 'User',
-      content: map['content'] as String,
+      content: map['content'] as String? ?? '',
       createdAt: DateTime.parse(map['created_at'] as String),
       isMine: senderId == userId,
+      messageType: ChatMessageType.fromDb(map['message_type'] as String?),
+      mediaUrl: map['media_url'] as String?,
     );
   }
 }

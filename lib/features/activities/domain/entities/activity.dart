@@ -30,6 +30,8 @@ class DiscoverableActivity extends Equatable {
     this.sourceEventTitle,
     this.createdAt,
     this.participantAvatarUrls = const [],
+    this.category,
+    this.categoryLabel,
   });
 
   final String id;
@@ -59,6 +61,8 @@ class DiscoverableActivity extends Equatable {
   final String? sourceEventTitle;
   final DateTime? createdAt;
   final List<String> participantAvatarUrls;
+  final String? category;
+  final String? categoryLabel;
 
   bool get isExternal => source == ActivitySource.external;
 
@@ -125,6 +129,8 @@ class DiscoverableActivity extends Equatable {
       sourceEventTitle: sourceEventTitle,
       createdAt: createdAt,
       participantAvatarUrls: participantAvatarUrls,
+      category: category,
+      categoryLabel: categoryLabel,
     );
   }
 
@@ -155,6 +161,8 @@ class DiscoverableActivity extends Equatable {
         sourceEventTitle,
         createdAt,
         participantAvatarUrls,
+        category,
+        categoryLabel,
       ];
 }
 

@@ -45,8 +45,12 @@ class UnconfiguredGroupsRepository implements GroupsRepository {
     required String groupId,
     required String name,
     String? description,
+    bool? membersCanPost,
   }) async =>
       _throw();
+
+  @override
+  Future<String> getOrCreateGroupChat(String groupId) async => _throw();
 
   @override
   Future<int> addMembers({

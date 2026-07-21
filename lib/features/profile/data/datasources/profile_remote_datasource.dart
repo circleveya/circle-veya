@@ -199,12 +199,46 @@ class ProfileRemoteDatasource {
         );
 
     final publicUrl = _client.storage.from('avatars').getPublicUrl(path);
+    final withCacheBust = '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
 
     await _client.from('profiles').update({
-      'avatar_url': publicUrl,
+      'avatar_url': withCacheBust,
     }).eq('id', userId);
 
-    return publicUrl;
+    return withCacheBust;
+  }
+
+  Future<String> uploadCover({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw const AuthException('Nicht angemeldet');
+    }
+
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : 'jpg';
+    final path = '$userId/cover.$extension';
+
+    await _client.storage.from('avatars').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: _contentType(extension),
+          ),
+        );
+
+    final publicUrl = _client.storage.from('avatars').getPublicUrl(path);
+    final withCacheBust = '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+
+    await _client.from('profiles').update({
+      'cover_url': withCacheBust,
+    }).eq('id', userId);
+
+    return withCacheBust;
   }
 
   String _contentType(String extension) => switch (extension) {

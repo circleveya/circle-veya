@@ -246,16 +246,7 @@ class _ProfileCoverHeader extends StatelessWidget {
                           BlendMode.darken,
                         ),
                       )
-                    : profile.avatarUrl != null
-                        ? DecorationImage(
-                            image: CachedNetworkImageProvider(profile.avatarUrl!),
-                            fit: BoxFit.cover,
-                            colorFilter: ColorFilter.mode(
-                              Colors.black.withValues(alpha: 0.35),
-                              BlendMode.darken,
-                            ),
-                          )
-                        : null,
+                    : null,
               ),
             ),
           ),
@@ -753,7 +744,7 @@ class _ProfileGalleryTab extends ConsumerWidget {
                         content: Text(
                           error == null
                               ? (value
-                                  ? 'Erinnerungen sind öffentlich'
+                                  ? 'Alle Erinnerungen sind jetzt öffentlich'
                                   : 'Erinnerungen sind privat')
                               : 'Fehler: $error',
                         ),
@@ -763,8 +754,8 @@ class _ProfileGalleryTab extends ConsumerWidget {
             title: const Text('Erinnerungen öffentlich'),
             subtitle: Text(
               galleryPublic
-                  ? 'Andere sehen nur Erinnerungen, die du einzeln freigibst.'
-                  : 'Wenn aktiv, können andere freigegebene Erinnerungen sehen.',
+                  ? 'Alle deine Erinnerungen sind für andere sichtbar.'
+                  : 'Wenn aktiv, werden alle Erinnerungen automatisch öffentlich.',
             ),
             secondary: Icon(
               galleryPublic ? Icons.public : Icons.lock_outline,
