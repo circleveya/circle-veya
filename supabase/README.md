@@ -47,9 +47,14 @@ Ausführliche Anleitung: **`APP_DOCUMENTATION.md` → Abschnitt 8** und bisherig
 
 - `functions/sync-external-events` → Upsert in `public.external_events`
 - `functions/generate-stock-image` → Pexels-Cover für User-Activities
+- `functions/fetch-activity-image` → Groq-Keyword + Pexels
+- `functions/search-gifs` → Chat-GIF-Suche (optional `GIPHY_API_KEY`)
 
 ```bash
 npx supabase functions deploy sync-external-events
+npx supabase functions deploy search-gifs
+# optional:
+# supabase secrets set GIPHY_API_KEY=...
 ```
 
 ## 5. App starten
