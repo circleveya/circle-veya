@@ -95,6 +95,8 @@ class LevelBadgeImage extends StatelessWidget {
         height: size,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        gaplessPlayback: true,
         errorBuilder: (_, _, _) => Icon(
           Icons.emoji_events,
           size: size * 0.55,
@@ -140,34 +142,27 @@ class LevelMilestoneChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = light
-        ? Colors.white.withValues(alpha: 0.22)
-        : AppColors.seed.withValues(alpha: 0.15);
     final fg = light ? Colors.white : AppColors.brandNavy;
 
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LevelBadgeImage(milestone: milestone, size: 22),
-              const SizedBox(width: 6),
-              Text(
-                milestone.name,
-                style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LevelBadgeImage(milestone: milestone, size: 26),
+            const SizedBox(width: 6),
+            Text(
+              milestone.name,
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -341,20 +336,12 @@ class _MilestoneTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bg = unlocked
-        ? (highlighted
-            ? AppColors.seed.withValues(alpha: 0.22)
-            : AppColors.seed.withValues(alpha: 0.12))
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
-    final border = unlocked
-        ? (highlighted ? AppColors.seed : AppColors.seed.withValues(alpha: 0.35))
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
     final fg = unlocked
         ? AppColors.brandNavy
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
 
     return Material(
-      color: bg,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -364,7 +351,12 @@ class _MilestoneTile extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: border, width: highlighted ? 2 : 1),
+            border: Border.all(
+              color: highlighted
+                  ? AppColors.seed
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: highlighted ? 2 : 1,
+            ),
           ),
           child: Column(
             children: [
@@ -373,7 +365,7 @@ class _MilestoneTile extends StatelessWidget {
                 children: [
                   LevelBadgeImage(
                     milestone: milestone,
-                    size: 72,
+                    size: 84,
                     unlocked: unlocked,
                   ),
                   if (!unlocked)

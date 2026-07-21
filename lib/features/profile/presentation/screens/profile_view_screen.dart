@@ -546,33 +546,29 @@ class _ProfileBadgeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: () => showLevelMilestoneDetails(
-          context,
-          milestone,
-          unlocked: true,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LevelBadgeImage(milestone: milestone, size: 40),
-              const SizedBox(width: 8),
-              Text(
-                milestone.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
+    return InkWell(
+      onTap: () => showLevelMilestoneDetails(
+        context,
+        milestone,
+        unlocked: true,
+      ),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LevelBadgeImage(milestone: milestone, size: 44),
+            const SizedBox(width: 8),
+            Text(
+              milestone.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
