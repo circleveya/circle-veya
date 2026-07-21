@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/branding/circleveya_brand.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  ProfileAccountType _accountType = ProfileAccountType.standard;
 
   @override
   void dispose() {
@@ -33,6 +36,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
           username: _usernameController.text.trim(),
+          userType: _accountType.signupValue,
         );
 
     if (!mounted) return;
@@ -46,9 +50,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Konto erstellt. Bitte bestätige ggf. deine E-Mail und melde dich an.',
+          _accountType.isEventOrganizer
+              ? 'Event-Profil erstellt. Bitte bestätige ggf. deine E-Mail und melde dich an.'
+              : 'Konto erstellt. Bitte bestätige ggf. deine E-Mail und melde dich an.',
         ),
       ),
     );
@@ -58,6 +64,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,16 +82,57 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      'Konto-Typ',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Wähle, ob du als Privatperson oder als Event-Profil '
+                      '(Manager / Geschäft) starten möchtest.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _AccountTypeCard(
+                      selected: _accountType == ProfileAccountType.standard,
+                      icon: Icons.person_outline,
+                      title: ProfileAccountType.standard.label,
+                      subtitle: ProfileAccountType.standard.description,
+                      onTap: isLoading
+                          ? null
+                          : () => setState(
+                                () => _accountType = ProfileAccountType.standard,
+                              ),
+                    ),
+                    const SizedBox(height: 10),
+                    _AccountTypeCard(
+                      selected: _accountType == ProfileAccountType.event,
+                      icon: Icons.storefront_outlined,
+                      title: ProfileAccountType.event.label,
+                      subtitle: ProfileAccountType.event.description,
+                      onTap: isLoading
+                          ? null
+                          : () => setState(
+                                () => _accountType = ProfileAccountType.event,
+                              ),
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Benutzername',
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        labelText: _accountType.isEventOrganizer
+                            ? 'Name / Marke'
+                            : 'Benutzername',
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Bitte Benutzername eingeben';
+                          return 'Bitte Namen eingeben';
                         }
                         if (value.trim().length < 3) {
                           return 'Mindestens 3 Zeichen';
@@ -140,17 +188,101 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Konto erstellen'),
+                          : Text(
+                              _accountType.isEventOrganizer
+                                  ? 'Event-Profil erstellen'
+                                  : 'Konto erstellen',
+                            ),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: isLoading ? null : () => context.goNamed('login'),
+                      onPressed:
+                          isLoading ? null : () => context.goNamed('login'),
                       child: const Text('Bereits ein Konto? Anmelden'),
                     ),
                   ],
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountTypeCard extends StatelessWidget {
+  const _AccountTypeCard({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: selected
+          ? AppColors.seed.withValues(alpha: 0.12)
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? AppColors.seed
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: selected ? AppColors.seed : theme.colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                selected ? Icons.check_circle : Icons.circle_outlined,
+                color: selected
+                    ? AppColors.seed
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
         ),
       ),

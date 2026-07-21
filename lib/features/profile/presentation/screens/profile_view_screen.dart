@@ -408,9 +408,99 @@ class _ProfileCoverHeader extends ConsumerWidget {
                               ),
                             ),
                           ],
-                          if (profile.isCompany) ...[
-                            const SizedBox(width: 6),
-                            const Icon(Icons.verified, color: Colors.white),
+                          if (profile.isDev) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD54F),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.code,
+                                    size: 14,
+                                    color: AppColors.brandNavy,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Dev',
+                                    style: TextStyle(
+                                      color: AppColors.brandNavy,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else if (profile.isMarketing) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8A87C),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.campaign_outlined,
+                                    size: 14,
+                                    color: AppColors.brandNavy,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Marke',
+                                    style: TextStyle(
+                                      color: AppColors.brandNavy,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else if (profile.isEventOrganizer) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.verified,
+                                    size: 14,
+                                    color: Color(0xFF1DA1F2),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Event',
+                                    style: TextStyle(
+                                      color: AppColors.brandNavy,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ],
                       ),

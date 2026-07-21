@@ -1,5 +1,63 @@
 import 'package:equatable/equatable.dart';
 
+/// Account-/Profiltypen in CircleVeya.
+enum ProfileAccountType {
+  standard,
+  event,
+  company,
+  marketing,
+  dev;
+
+  static ProfileAccountType fromDb(String? value) => switch (value) {
+        'event' => event,
+        'company' => company,
+        'marketing' => marketing,
+        'dev' => dev,
+        _ => standard,
+      };
+
+  String get dbValue => name;
+
+  /// Für Auth-Signup-Metadaten (dev/marketing nie wählbar).
+  String get signupValue => switch (this) {
+        event || company => 'event',
+        _ => 'standard',
+      };
+
+  String get label => switch (this) {
+        standard => 'Privatperson',
+        event => 'Event-Profil',
+        company => 'Event-Profil',
+        marketing => 'Marke',
+        dev => 'Developer',
+      };
+
+  String get shortBadge => switch (this) {
+        standard => 'Mitglied',
+        event => 'Event',
+        company => 'Event',
+        marketing => 'Marke',
+        dev => 'Dev',
+      };
+
+  String get description => switch (this) {
+        standard => 'Für Leute, die mitmachen und Freunde treffen wollen.',
+        event || company =>
+          'Für Event-Manager und Geschäfte, die Events hochladen.',
+        marketing => 'Marketing & Markenaufbau für CircleVeya.',
+        dev => 'App-Besitzer / Developer',
+      };
+
+  bool get isEventOrganizer =>
+      this == event || this == company || this == dev;
+
+  bool get isMarketing => this == marketing;
+
+  bool get isDev => this == dev;
+
+  bool get isTeam => this == marketing || this == dev;
+}
+
 class UserProfile extends Equatable {
   const UserProfile({
     required this.id,
@@ -25,7 +83,18 @@ class UserProfile extends Equatable {
   final bool isPremium;
   final bool galleryPublic;
 
-  bool get isCompany => userType == 'company';
+  ProfileAccountType get accountType => ProfileAccountType.fromDb(userType);
+
+  /// Legacy: Business/Event-Partner (Sponsoring etc.).
+  bool get isCompany => accountType.isEventOrganizer;
+
+  bool get isEventOrganizer => accountType.isEventOrganizer;
+
+  bool get isMarketing => accountType.isMarketing;
+
+  bool get isDev => accountType.isDev;
+
+  bool get isTeam => accountType.isTeam;
 
   String get ageLabel => age != null ? '$age Jahre' : 'Alter nicht angegeben';
 

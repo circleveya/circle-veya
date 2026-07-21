@@ -72,19 +72,40 @@ class MessageBubble extends StatelessWidget {
               if (message.hasMedia)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl: message.mediaUrl!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    placeholder: (_, _) => const SizedBox(
-                      height: 160,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: (_, _, _) => const SizedBox(
-                      height: 120,
-                      child: Center(child: Icon(Icons.broken_image_outlined)),
-                    ),
-                  ),
+                  child: message.messageType == ChatMessageType.gif
+                      ? Image.network(
+                          message.mediaUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          gaplessPlayback: true,
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            height: 120,
+                            child: Center(
+                              child: Icon(Icons.broken_image_outlined),
+                            ),
+                          ),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const SizedBox(
+                              height: 160,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          },
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: message.mediaUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          placeholder: (_, _) => const SizedBox(
+                            height: 160,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (_, _, _) => const SizedBox(
+                            height: 120,
+                            child:
+                                Center(child: Icon(Icons.broken_image_outlined)),
+                          ),
+                        ),
                 ),
               if (showCaption) ...[
                 if (message.hasMedia) const SizedBox(height: 6),

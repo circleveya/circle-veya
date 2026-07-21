@@ -31,6 +31,7 @@ class UnconfiguredAuthRepository implements AuthRepository {
     required String email,
     required String password,
     required String username,
+    String userType = 'standard',
   }) {
     throw UnsupportedError(_message);
   }

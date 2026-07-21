@@ -9,6 +9,7 @@ import '../../features/sidebar/presentation/providers/sidebar_provider.dart';
 import '../location/distance_display.dart';
 import '../router/route_names.dart';
 import '../theme/app_colors.dart';
+import 'shell_destination_request.dart';
 import 'web_shell_destination.dart';
 
 /// Rechte Spalte – kontextabhängige Widget-Karten (live aus Supabase).
@@ -41,7 +42,7 @@ class WebRightPanel extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         children: switch (destination) {
           WebShellDestination.profile =>
-            _profileWidgets(context, statsAsync),
+            _profileWidgets(context, ref, statsAsync),
           _ => _feedWidgets(context, ref, statsAsync),
         },
       ),
@@ -113,6 +114,9 @@ class WebRightPanel extends ConsumerWidget {
       _PanelCard(
         title: 'Deine Challenges',
         icon: Icons.emoji_events_outlined,
+        onTap: () => ref
+            .read(shellDestinationRequestProvider.notifier)
+            .goTo(WebShellDestination.challenges),
         child: statsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('$e'),
@@ -138,6 +142,9 @@ class WebRightPanel extends ConsumerWidget {
         title: 'Freunde online',
         icon: Icons.circle,
         iconColor: Colors.green,
+        onTap: () => ref
+            .read(shellDestinationRequestProvider.notifier)
+            .goTo(WebShellDestination.friends),
         child: onlineFriendsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text(sidebarErrorMessage(e)),
@@ -185,6 +192,7 @@ class WebRightPanel extends ConsumerWidget {
 
   List<Widget> _profileWidgets(
     BuildContext context,
+    WidgetRef ref,
     AsyncValue<UserLevelStats> statsAsync,
   ) {
     return statsAsync.when(
@@ -196,6 +204,9 @@ class WebRightPanel extends ConsumerWidget {
         _PanelCard(
           title: 'Challenge Level',
           icon: Icons.military_tech_outlined,
+          onTap: () => ref
+              .read(shellDestinationRequestProvider.notifier)
+              .goTo(WebShellDestination.challenges),
           child: Row(
             children: [
               Container(
@@ -240,6 +251,9 @@ class WebRightPanel extends ConsumerWidget {
         _PanelCard(
           title: 'Aktive Challenges',
           icon: Icons.flag_outlined,
+          onTap: () => ref
+              .read(shellDestinationRequestProvider.notifier)
+              .goTo(WebShellDestination.challenges),
           child: Column(
             children: stats.challenges
                 .map(
@@ -259,51 +273,66 @@ class WebRightPanel extends ConsumerWidget {
     );
   }
 }
-
 class _PanelCard extends StatelessWidget {
   const _PanelCard({
     required this.title,
     required this.icon,
     required this.child,
     this.iconColor,
+    this.onTap,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
   final Color? iconColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 0,
       color: AppColors.surfaceTint,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: iconColor ?? AppColors.seed),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: iconColor ?? AppColors.seed),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
+                    ),
+                  ),
+                  if (onTap != null)
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              child,
+            ],
+          ),
         ),
       ),
     );

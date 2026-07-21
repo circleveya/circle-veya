@@ -4,20 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/gif_catalog.dart';
 import '../../domain/entities/chat.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/chat_emoji_gif_panel.dart';
 import '../widgets/message_bubble.dart';
-
-const _kEmojis = [
-  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
-  '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋',
-  '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐',
-  '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '😮', '😯',
-  '😲', '😳', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '😈',
-  '👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '🤟', '🤘', '👌',
-  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💔', '❣️',
-  '🔥', '⭐', '✨', '🎉', '🎊', '🎈', '💯', '✅', '❌', '🙏',
-];
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   const ChatRoomScreen({
@@ -36,7 +27,8 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
 class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  bool _showEmojiPicker = false;
+  final _focusNode = FocusNode();
+  ChatPickerTab? _pickerTab;
 
   @override
   void initState() {
@@ -50,6 +42,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -64,12 +57,21 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     });
   }
 
+  void _openPicker(ChatPickerTab tab) {
+    _focusNode.unfocus();
+    setState(() => _pickerTab = tab);
+  }
+
+  void _closePicker() {
+    setState(() => _pickerTab = null);
+  }
+
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     _controller.clear();
-    setState(() => _showEmojiPicker = false);
+    _closePicker();
     await ref.read(chatActionsProvider.notifier).sendMessage(
           chatId: widget.chatId,
           content: text,
@@ -84,19 +86,37 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     }
   }
 
-  Future<void> _pickAndSendMedia({required bool asGif}) async {
+  Future<void> _sendGif(CatalogGif gif) async {
+    _closePicker();
+    await ref.read(chatActionsProvider.notifier).sendMessage(
+          chatId: widget.chatId,
+          content: 'GIF',
+          messageType: ChatMessageType.gif,
+          mediaUrl: gif.url,
+        );
+
+    if (!mounted) return;
+    final error = ref.read(chatActionsProvider).error;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
     final picker = ImagePicker();
     final image = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: asGif ? null : 1600,
-      imageQuality: asGif ? null : 85,
+      maxWidth: 1600,
+      imageQuality: 85,
     );
     if (image == null || !mounted) return;
 
     await ref.read(chatActionsProvider.notifier).sendMediaMessage(
           chatId: widget.chatId,
           file: image,
-          messageType: asGif ? ChatMessageType.gif : ChatMessageType.image,
+          messageType: ChatMessageType.image,
         );
 
     if (!mounted) return;
@@ -228,6 +248,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     final wallpaperAsync = ref.watch(chatWallpaperProvider(widget.chatId));
     final isSending = ref.watch(chatActionsProvider).isLoading;
     final wallpaperUrl = wallpaperAsync.valueOrNull;
+    final theme = Theme.of(context);
+    final showPicker = _pickerTab != null;
 
     ref.listen(messagesProvider(widget.chatId), (_, next) {
       if (next.hasValue) {
@@ -273,7 +295,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           Expanded(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                color: theme.colorScheme.surfaceContainerLowest,
                 image: wallpaperUrl != null && wallpaperUrl.isNotEmpty
                     ? DecorationImage(
                         image: CachedNetworkImageProvider(wallpaperUrl),
@@ -321,82 +343,38 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ),
             ),
           ),
-          if (_showEmojiPicker)
-            Material(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: SizedBox(
-                height: 220,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Emojis',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            tooltip: 'Schließen',
-                            onPressed: () =>
-                                setState(() => _showEmojiPicker = false),
-                            icon: const Icon(Icons.keyboard_outlined),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 8,
-                        ),
-                        itemCount: _kEmojis.length,
-                        itemBuilder: (context, index) {
-                          final emoji = _kEmojis[index];
-                          return InkWell(
-                            onTap: () => _insertEmoji(emoji),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Center(
-                              child: Text(
-                                emoji,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          if (showPicker)
+            ChatEmojiGifPanel(
+              key: ValueKey(_pickerTab),
+              initialTab: _pickerTab!,
+              onEmojiSelected: _insertEmoji,
+              onGifSelected: _sendGif,
+              onClose: _closePicker,
             ),
           SafeArea(
+            top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 10),
+              padding: const EdgeInsets.fromLTRB(4, 6, 6, 10),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
                     tooltip: 'Anhang',
-                    onPressed: isSending ? null : () => _showAttachSheet(context),
+                    onPressed: isSending ? null : _pickAndSendImage,
                     icon: Icon(
                       Icons.add_circle,
-                      size: 32,
-                      color: Theme.of(context).colorScheme.primary,
+                      size: 30,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                   Expanded(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.7),
+                        color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -404,40 +382,62 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                           Expanded(
                             child: TextField(
                               controller: _controller,
+                              focusNode: _focusNode,
                               minLines: 1,
                               maxLines: 5,
                               decoration: const InputDecoration(
-                                hintText: 'Nachricht schreiben …',
+                                hintText: 'Nachricht …',
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.fromLTRB(
-                                  16,
-                                  12,
+                                  14,
+                                  10,
                                   4,
-                                  12,
+                                  10,
                                 ),
                               ),
                               textInputAction: TextInputAction.send,
                               onTap: () {
-                                if (_showEmojiPicker) {
-                                  setState(() => _showEmojiPicker = false);
-                                }
+                                if (showPicker) _closePicker();
                               },
                               onSubmitted: isSending ? null : (_) => _send(),
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Emoji',
+                            tooltip: 'Emoji & GIF',
                             onPressed: isSending
                                 ? null
-                                : () => setState(
-                                      () =>
-                                          _showEmojiPicker = !_showEmojiPicker,
-                                    ),
+                                : () {
+                                    if (_pickerTab == ChatPickerTab.emoji) {
+                                      _closePicker();
+                                    } else {
+                                      _openPicker(ChatPickerTab.emoji);
+                                    }
+                                  },
                             icon: Icon(
-                              _showEmojiPicker
+                              showPicker && _pickerTab == ChatPickerTab.emoji
                                   ? Icons.keyboard_outlined
-                                  : Icons.emoji_emotions_outlined,
+                                  : Icons.emoji_emotions,
                               size: 26,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'GIF suchen',
+                            onPressed: isSending
+                                ? null
+                                : () {
+                                    if (_pickerTab == ChatPickerTab.gif) {
+                                      _closePicker();
+                                    } else {
+                                      _openPicker(ChatPickerTab.gif);
+                                    }
+                                  },
+                            icon: Icon(
+                              Icons.gif_box_rounded,
+                              size: 28,
+                              color: _pickerTab == ChatPickerTab.gif
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -462,36 +462,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _showAttachSheet(BuildContext context) async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_outlined),
-              title: const Text('Bild senden'),
-              onTap: () => Navigator.pop(context, 'image'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.gif_box_outlined),
-              title: const Text('GIF / Animation senden'),
-              onTap: () => Navigator.pop(context, 'gif'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (choice == 'image') {
-      await _pickAndSendMedia(asGif: false);
-    } else if (choice == 'gif') {
-      await _pickAndSendMedia(asGif: true);
-    }
   }
 }
 

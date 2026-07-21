@@ -220,7 +220,9 @@ class ActivityRemoteDatasource {
             hostId: _requireString(map['host_id'], fallback: hostId),
             hostUsername: _optionalString(profile?['username']) ??
                 (isOwnHost ? 'Du' : 'User'),
-            hostIsCompany: profile?['user_type'] == 'company',
+            hostIsCompany: profile?['user_type'] == 'company' ||
+                profile?['user_type'] == 'event' ||
+                profile?['user_type'] == 'dev',
             hostAvatarUrl: _optionalString(profile?['avatar_url']),
             title: _requireString(map['title'], fallback: 'Aktivität'),
             description: _optionalString(map['description']),
@@ -237,7 +239,9 @@ class ActivityRemoteDatasource {
                 isOwnHost ? ViewerAction.host : ViewerAction.none,
             isSponsored: map['is_sponsored'] as bool? ?? false,
             isFeatured: (map['is_sponsored'] as bool? ?? false) &&
-                profile?['user_type'] == 'company',
+                (profile?['user_type'] == 'company' ||
+                    profile?['user_type'] == 'event' ||
+                    profile?['user_type'] == 'dev'),
             source: ActivitySource.fromDb(map['source'] as String?),
             externalUrl: _optionalString(map['external_url']),
             sourceEventId: _optionalString(map['source_event_id']),

@@ -33,6 +33,7 @@ class AuthController extends AsyncNotifier<void> {
     required String email,
     required String password,
     required String username,
+    String userType = 'standard',
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -40,6 +41,7 @@ class AuthController extends AsyncNotifier<void> {
         email: email,
         password: password,
         username: username,
+        userType: userType,
       );
     });
   }

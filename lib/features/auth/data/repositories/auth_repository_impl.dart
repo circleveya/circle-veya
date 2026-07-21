@@ -30,12 +30,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String username,
+    String userType = 'standard',
   }) async {
     try {
       final user = await _datasource.signUp(
         email: email,
         password: password,
         username: username,
+        userType: userType,
       );
       return _mapUser(user);
     } on AppAuthException catch (error) {

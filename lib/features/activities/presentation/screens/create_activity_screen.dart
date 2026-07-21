@@ -388,8 +388,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(createActivityProvider).isLoading;
     final isCompany = ref.watch(isCompanyPartnerProvider);
+    final myProfile = ref.watch(myProfileProvider).valueOrNull;
     final isPremium =
-        ref.watch(myProfileProvider).valueOrNull?.isPremium ?? false;
+        myProfile?.isPremium ?? false;
     final maxSlots = PremiumLimits.maxSlots(isPremium: isPremium);
     final maxRadius = PremiumLimits.maxRadiusKm(isPremium: isPremium);
     final theme = Theme.of(context);
@@ -462,10 +463,16 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             if (isCompany)
               Card(
                 color: theme.colorScheme.tertiaryContainer,
-                child: const ListTile(
-                  leading: Icon(Icons.business),
-                  title: Text('Community Partner'),
-                  subtitle: Text(
+                child: ListTile(
+                  leading: Icon(
+                    myProfile?.isDev == true
+                        ? Icons.code
+                        : Icons.storefront_outlined,
+                  ),
+                  title: Text(
+                    myProfile?.isDev == true ? 'Developer' : 'Event-Profil',
+                  ),
+                  subtitle: const Text(
                     'Du kannst Aktivitäten als gesponsert markieren '
                     'und im Feed featured werden.',
                   ),

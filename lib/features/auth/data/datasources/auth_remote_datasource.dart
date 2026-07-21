@@ -17,12 +17,18 @@ class AuthRemoteDatasource {
     required String email,
     required String password,
     required String username,
+    String userType = 'standard',
   }) async {
     try {
+      final safeType =
+          userType == 'event' || userType == 'company' ? 'event' : 'standard';
       final response = await _client.auth.signUp(
         email: email,
         password: password,
-        data: {'username': username},
+        data: {
+          'username': username,
+          'user_type': safeType,
+        },
       );
 
       final user = response.user;
