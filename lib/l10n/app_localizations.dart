@@ -1076,6 +1076,24 @@ abstract class AppLocalizations {
   /// **'Still locked. Reach level {level} to unlock this badge.\n\n{description}'**
   String badgeLockedHint(int level, String description);
 
+  /// No description provided for @badgeStillLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Still locked – unlocks at level {level}'**
+  String badgeStillLocked(int level);
+
+  /// No description provided for @unlockedBadgesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges you have already earned.'**
+  String get unlockedBadgesHint;
+
+  /// No description provided for @lockedBadgesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming badges – tap to preview.'**
+  String get lockedBadgesHint;
+
   /// No description provided for @levelBadges.
   ///
   /// In en, this message translates to:

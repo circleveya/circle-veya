@@ -219,6 +219,14 @@
       "description": {"type": "String"}
     }
   },
+  "badgeStillLocked": "Still locked – unlocks at level {level}",
+  "@badgeStillLocked": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "unlockedBadgesHint": "Badges you have already earned.",
+  "lockedBadgesHint": "Upcoming badges – tap to preview.",
   "levelBadges": "Level badges",
   "levelBadgesWithName": "Level badges · {name}",
   "@levelBadgesWithName": {

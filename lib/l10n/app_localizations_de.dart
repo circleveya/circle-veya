@@ -531,6 +531,18 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String badgeStillLocked(int level) {
+    return 'Noch gesperrt – freigeschaltet ab Level $level';
+  }
+
+  @override
+  String get unlockedBadgesHint =>
+      'Badges, die du bereits freigeschaltet hast.';
+
+  @override
+  String get lockedBadgesHint => 'Kommende Badges – tippen für Vorschau.';
+
+  @override
   String get levelBadges => 'Level-Badges ansehen';
 
   @override

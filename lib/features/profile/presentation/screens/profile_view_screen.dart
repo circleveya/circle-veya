@@ -472,8 +472,8 @@ class _ProfileCoverHeader extends ConsumerWidget {
                       const SizedBox(height: 8),
                       if (level != null)
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
+                          spacing: 10,
+                          runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Material(
@@ -488,7 +488,8 @@ class _ProfileCoverHeader extends ConsumerWidget {
                                     vertical: 4,
                                   ),
                                   child: Text(
-                                    'Level $level',
+                                    AppLocalizations.of(context)
+                                        .levelLabel(level!),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
@@ -498,17 +499,9 @@ class _ProfileCoverHeader extends ConsumerWidget {
                               ),
                             ),
                             if (LevelMilestone.currentFor(level!) != null)
-                              LevelMilestoneChip(
-                                milestone: LevelMilestone.currentFor(level!)!,
-                                light: true,
-                                onTap: () {
-                                  final m = LevelMilestone.currentFor(level!)!;
-                                  showLevelMilestoneDetails(
-                                    context,
-                                    m,
-                                    unlocked: true,
-                                  );
-                                },
+                              _ProfileBadgeButton(
+                                milestone:
+                                    LevelMilestone.currentFor(level!)!,
                               ),
                           ],
                         )
@@ -540,6 +533,47 @@ class _ProfileCoverHeader extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Aktuelles Level-Badge im Profil-Header (Tipp → Erklärung).
+class _ProfileBadgeButton extends StatelessWidget {
+  const _ProfileBadgeButton({required this.milestone});
+
+  final LevelMilestone milestone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: () => showLevelMilestoneDetails(
+          context,
+          milestone,
+          unlocked: true,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LevelBadgeImage(milestone: milestone, size: 40),
+              const SizedBox(width: 8),
+              Text(
+                milestone.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

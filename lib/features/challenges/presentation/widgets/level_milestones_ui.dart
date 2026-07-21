@@ -4,13 +4,14 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/level_milestone.dart';
 
-/// Zeigt Beschreibung eines Level-Badges.
+/// Zeigt Erklärung eines Level-Badges (Level, Name, Beschreibung).
 void showLevelMilestoneDetails(
   BuildContext context,
   LevelMilestone milestone, {
   required bool unlocked,
 }) {
   final l10n = AppLocalizations.of(context);
+  final lang = Localizations.localeOf(context).languageCode;
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -24,40 +25,40 @@ void showLevelMilestoneDetails(
             children: [
               LevelBadgeImage(
                 milestone: milestone,
-                size: 120,
+                size: 132,
                 unlocked: unlocked,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              Text(
+                l10n.levelLabel(milestone.level),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.seed,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 milestone.name,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.level(milestone.level),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.seed,
-                  fontWeight: FontWeight.w700,
+              if (!unlocked) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.badgeStillLocked(milestone.level),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 14),
               Text(
-                unlocked
-                    ? milestone.descriptionFor(
-                        Localizations.localeOf(context).languageCode,
-                      )
-                    : l10n.badgeLockedHint(
-                        milestone.level,
-                        milestone.descriptionFor(
-                          Localizations.localeOf(context).languageCode,
-                        ),
-                      ),
+                milestone.descriptionFor(lang),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.4,
+                  height: 1.45,
                 ),
               ),
             ],
@@ -196,7 +197,7 @@ class LevelMilestonesGallery extends StatelessWidget {
       padding: padding,
       children: [
         Text(
-          l10n.level(userLevel),
+          l10n.levelLabel(userLevel),
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -204,28 +205,39 @@ class LevelMilestonesGallery extends StatelessWidget {
         if (current != null) ...[
           const SizedBox(height: 12),
           Center(
-            child: LevelBadgeImage(
-              milestone: current,
-              size: 112,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            l10n.currentBadge(current.name),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.seed,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            current.descriptionFor(
-              Localizations.localeOf(context).languageCode,
-            ),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            child: InkWell(
+              onTap: () => showLevelMilestoneDetails(
+                context,
+                current,
+                unlocked: true,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    LevelBadgeImage(milestone: current, size: 120),
+                    const SizedBox(height: 10),
+                    Text(
+                      current.name,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.seed,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      current.descriptionFor(
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ] else ...[
@@ -237,11 +249,18 @@ class LevelMilestonesGallery extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         Text(
           l10n.unlockedBadges(unlocked.length),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.unlockedBadgesHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),
@@ -275,6 +294,13 @@ class LevelMilestonesGallery extends StatelessWidget {
           l10n.lockedBadges(locked.length),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.lockedBadgesHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),
@@ -342,10 +368,25 @@ class _MilestoneTile extends StatelessWidget {
           ),
           child: Column(
             children: [
-              LevelBadgeImage(
-                milestone: milestone,
-                size: 72,
-                unlocked: unlocked,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  LevelBadgeImage(
+                    milestone: milestone,
+                    size: 72,
+                    unlocked: unlocked,
+                  ),
+                  if (!unlocked)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Icon(
+                        Icons.lock,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
@@ -360,7 +401,7 @@ class _MilestoneTile extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Lv ${milestone.level}',
+                l10nLevel(context, milestone.level),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: fg,
                   fontWeight: FontWeight.w700,
@@ -372,4 +413,7 @@ class _MilestoneTile extends StatelessWidget {
       ),
     );
   }
+
+  String l10nLevel(BuildContext context, int level) =>
+      AppLocalizations.of(context).levelLabel(level);
 }
