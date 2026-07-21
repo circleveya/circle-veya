@@ -2,7 +2,7 @@
 
 > **Circle – Erlebnisse verbinden Menschen.**  
 > Soziale App für gemeinsame Aktivitäten (nicht Profil-Swiping).  
-> **Stand:** v2.4 · 09.07.2026
+> **Stand:** v2.6 · 21.07.2026
 
 ---
 
@@ -71,7 +71,7 @@
 - Freund-DMs: Chat-Icon bei Freunden
 - Migration `00010` (`get_or_create_friend_chat`)
 
-### v2.4 – Web UI Phase 2 & externe Events *(aktuell)*
+### v2.4 – Web UI Phase 2 & externe Events
 - **3-Spalten-Web-Layout** (Sidebar, Header, rechtes Panel)
 - **Entdecken:** Hero + responsives Grid (`DiscoverHero`, `DiscoverGridCard`)
 - **Challenges:** Level-System, Fortschrittskarten (Mock bis DB)
@@ -82,6 +82,94 @@
 - Migration `00011` (externe Events, `discover_activities` v2, `cover_url`)
 - Migration `00012` (`external_event_sync_log`)
 - Gesamtdokumentation: `DOKUMENTATION.md`
+
+---
+
+## v2.6 – 21.07.2026 (Profiltypen, Team-Status, Chat WhatsApp-Style)
+
+Session-Dokumentation der umgesetzten Schritte (Commits u. a. `7bfd447`, `4d06f0a`).
+
+### 1. Profiltypen: Privatperson vs. Event-Profil
+
+**Ziel:** Normale User und Event-Manager/Geschäfte klar trennen.
+
+| Schritt | Was |
+|---------|-----|
+| 1.1 | Enum `user_type` erweitert: `standard`, `company` (legacy), **`event`**, **`dev`**, **`marketing`** |
+| 1.2 | Trigger `handle_new_user`: liest `user_type` aus Auth-Metadaten (`standard` \| `event` \| `company`); **`dev`/`marketing` nie selbst wählbar** |
+| 1.3 | Trigger `protect_profile_user_type`: Team-Status Dev/Marketing nicht per Client änderbar |
+| 1.4 | Sponsoring erlaubt für `company` \| `event` \| `dev` |
+| 1.5 | Registrierung: Karten **Privatperson** / **Event-Profil** (`register_screen.dart`) |
+| 1.6 | Flutter: `ProfileAccountType` in `user_profile.dart` (`isEventOrganizer`, `isDev`, `isMarketing`) |
+
+**Migrationen:**
+
+- `supabase/migrations/20260721250000_profile_account_types.sql`
+- `supabase/migrations/20260721260000_marketing_account_type.sql`
+
+### 2. Team-Status (App-Team)
+
+| Username | `user_type` | Badge (UI) | Bedeutung |
+|----------|-------------|------------|-----------|
+| CircleVeya | `dev` | **Dev** | App-Besitzer / Developer |
+| Don | `marketing` | **Marketing** | Marketing / Markenaufbau |
+
+- Badges im Profilkopf wie **Premium** (Icon + Pill, Schatten)
+- Layout per `Wrap` → Badges **direkt neben dem Namen** (nicht weit rechts)
+- Datei: `profile_view_screen.dart` → `_ProfileStatusBadge`
+
+### 3. Rechtes Web-Panel – Navigation
+
+| Karte | Ziel-Tab |
+|-------|----------|
+| Deine Challenges | `WebShellDestination.challenges` |
+| Freunde online | `WebShellDestination.friends` |
+
+- Mechanismus: `shellDestinationRequestProvider` → `HomeShell`
+- Datei: `lib/core/layout/web_right_panel.dart`
+- Online-Avatare öffnen weiterhin das Profil
+
+### 4. Chat: Emojis, GIFs, WhatsApp-Stil
+
+| Schritt | Was |
+|---------|-----|
+| 4.1 | Eingabezeile: **+** (Bild), **Smiley** links, **GIF-Badge** rechts, Senden |
+| 4.2 | Icons: `WhatsAppSmileyIcon` + `WhatsAppGifIcon` („GIF“ im Rahmen) |
+| 4.3 | Picker: Emoji-Raster + Kategorien; unten Umschalter Smiley \| GIF |
+| 4.4 | Kein grauer Hover (`GestureDetector` statt `InkWell`) |
+| 4.5 | GIF-Suche: lokaler Katalog + Edge Function `search-gifs` (optional Giphy) |
+| 4.6 | GIF senden = URL in Nachricht (`message_type = gif`), kein Upload nötig |
+| 4.7 | GIF-Bubbles kompakt (max. ca. 180×140 px) |
+
+**Wichtige Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `chat_room_screen.dart` | Composer + Picker |
+| `chat_emoji_gif_panel.dart` | Emoji-/GIF-Panel |
+| `whatsapp_chat_icons.dart` | Smiley- & GIF-Icons |
+| `gif_catalog.dart` | Fallback-GIFs mit Tags |
+| `gif_search_service.dart` | Suche (Edge + Katalog) |
+| `message_bubble.dart` | Darstellung inkl. kleine GIFs |
+
+**Edge Function `search-gifs`:**
+
+```bash
+# Optional für volle Giphy-Suche:
+supabase secrets set GIPHY_API_KEY=dein-key
+# Deploy bereits remote; lokal:
+npx supabase functions deploy search-gifs
+```
+
+Ohne Key: Client filtert den eingebauten Katalog (z. B. „lol“, „danke“, „party“).
+
+### 5. Deploy (Live)
+
+| Was | Wie |
+|-----|-----|
+| Frontend | Push auf `main` → Vercel |
+| DB | Migrationen remote angewendet (Enum + Trigger + Team-Zuweisung) |
+| Edge | `search-gifs` deployed (`verify_jwt: true`) |
 
 ---
 
@@ -102,6 +190,8 @@
 | 00010 | `friend_direct_messages` | Freund-DMs |
 | 00011 | `external_events_and_discover_v2` | Externe Events, Discover v2, Cover |
 | 00012 | `external_event_sync_log` | Sync-Protokoll für Event-Aggregation |
+| 20260721250000 | `profile_account_types` | `event`/`dev`, Signup-Trigger, Protect, Sponsoring |
+| 20260721260000 | `marketing_account_type` | `marketing`, Don → Marketing, Protect erweitert |
 
 Details & Troubleshooting: `DOKUMENTATION.md`, `supabase/README.md`
 
@@ -152,9 +242,9 @@ SELECT public.seed_demo_data('DEINE-USER-UUID');
 
 - Freundschaftsanfragen (Pending-State)
 - Push-Benachrichtigungen
-- Circle-Gruppen, Challenges (Supabase-Backend), Premium/IAP
+- Premium/IAP-Store-Anbindung (Vorteile teilweise schon live)
 - Karte, KI-Empfehlungen, Kalender
-- Profil-Tabs Inhalt (Aktivitäten/Galerie/Bewertungen live)
+- Optional: `GIPHY_API_KEY` für Live-GIF-Suche über Giphy
 
 ---
 

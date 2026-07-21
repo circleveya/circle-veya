@@ -2,7 +2,7 @@
 
 > **Circle – Erlebnisse verbinden Menschen.**  
 > Vollständige Dokumentation aller umgesetzten Schritte, Setup-Anleitungen und Architektur.  
-> **Stand:** v2.4 · 09.07.2026
+> **Stand:** v2.6 · 21.07.2026
 
 ---
 
@@ -54,7 +54,9 @@
 │  ├── Realtime (Chat-Nachrichten)                            │
 │  └── Edge Functions (Deno)                                  │
 │       ├── generate-stock-image  → Pexels                    │
-│       └── sync-external-events  → Eventbrite/Ticketmaster   │
+│       ├── fetch-activity-image  → Groq + Pexels             │
+│       ├── sync-external-events  → Eventbrite/Ticketmaster   │
+│       └── search-gifs           → Giphy (optional) + Fallback│
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -295,6 +297,27 @@ curl -X POST "https://DEIN-PROJECT.supabase.co/functions/v1/sync-external-events
   -H "Authorization: Bearer DEIN-SERVICE-ROLE-KEY"
 ```
 
+### 5.3 `search-gifs` (Chat-GIF-Suche)
+
+**Pfad:** `supabase/functions/search-gifs/index.ts`
+
+**Zweck:** Liefert suchbare GIFs für den Chat-Picker (WhatsApp-ähnlich).
+
+**Ablauf:**
+
+1. Client ruft `functions.invoke('search-gifs', { query, limit })` auf
+2. Wenn Secret `GIPHY_API_KEY` gesetzt → Giphy Search/Trending
+3. Sonst (oder bei Fehler) → `source: "fallback"`; Flutter nutzt dann `gif_catalog.dart`
+
+**Secrets:**
+
+```bash
+supabase secrets set GIPHY_API_KEY=dein-giphy-key   # optional
+npx supabase functions deploy search-gifs
+```
+
+**Client-Dateien:** `gif_search_service.dart`, `gif_catalog.dart`, `chat_emoji_gif_panel.dart`
+
 ---
 
 ## 6. Externe Event-Aggregation
@@ -366,18 +389,23 @@ sequenceDiagram
 | Feature | Status |
 |---------|--------|
 | Auth (Login/Register) | ✅ |
-| Entdecken (Hero + Grid, Filter, Suche) | ✅ |
+| Registrierung: Privatperson vs. Event-Profil | ✅ |
+| Profiltypen `standard` / `event` / `company` / `dev` / `marketing` | ✅ |
+| Team-Badges Dev & Marketing (Profilkopf) | ✅ |
+| Entdecken (Hero + Grid, Filter, Suche, Kategorien) | ✅ |
 | Feed (Sektionen nach sozialem Kreis) | ✅ |
-| Aktivität erstellen (optional Datum/Bild) | ✅ |
+| Aktivität erstellen (optional Datum/Bild, Sponsoring für Event/Dev) | ✅ |
 | Aktivität löschen (Host) | ✅ |
 | Zusagen / Interesse | ✅ |
 | Externe Events („Zur Quelle“) | ✅ |
 | Freunde suchen & hinzufügen | ✅ |
 | Freund-DMs | ✅ |
-| Event-Chats (Realtime) | ✅ |
-| Profil (Cover, Stats, Tabs, Level) | ✅ |
-| Galerie (Post-Event) | ✅ |
-| Challenges (Mock UI) | ✅ |
+| Event-/Kreis-Chats (Realtime) | ✅ |
+| Chat: Emoji + GIF-Suche (WhatsApp-Stil) | ✅ |
+| Profil (Cover, Stats, Tabs, Level, Banner/Avatar-Edit) | ✅ |
+| Galerie (Post-Event, Erinnerungen öffentlich) | ✅ |
+| Challenges (wöchentlich/monatlich) | ✅ |
+| Rechtes Panel: Challenges/Freunde → Tabs | ✅ |
 | B2B / Gesponsert | ✅ |
 | Web 3-Spalten-Layout (≥900px) | ✅ |
 
@@ -395,9 +423,22 @@ lib/
 │   ├── discovery/       # DiscoverHero, DiscoverGrid
 │   ├── feed/            # FeedScreen
 │   ├── friends/         # Freunde-Liste, Suche, DM
+│   ├── chat/            # Chats, Emoji/GIF-Panel, Medien
 │   ├── home/            # HomeShell (Web/Mobile Routing)
-│   └── profile/         # Cover-Banner, Tabs
+│   └── profile/         # Cover-Banner, Tabs, Account-Typen
 ```
+
+### Profiltypen (`profiles.user_type`)
+
+| Wert | Wer | Registrierung | Badge |
+|------|-----|---------------|-------|
+| `standard` | Privatperson | wählbar | — |
+| `event` | Event-Manager / Geschäft | wählbar als „Event-Profil“ | Event |
+| `company` | Legacy-Partner | nicht neu | Event |
+| `dev` | App-Besitzer (CircleVeya) | nur DB/Admin | Dev |
+| `marketing` | Marketing-Team (Don) | nur DB/Admin | Marketing |
+
+Protect-Trigger verhindert Client-Änderungen von/zu `dev` und `marketing`.
 
 ### Wichtige Dateien
 
@@ -406,7 +447,10 @@ lib/
 | `home_shell.dart` | Web-Layout bei `kIsWeb && width >= 900` |
 | `discover_feed_screen.dart` | Hero + Grid + externe Links |
 | `discover_grid_card.dart` | Kompakte Karten mit Badges |
-| `profile_view_screen.dart` | Cover, Stats, Tabs, embedded-Modus |
+| `profile_view_screen.dart` | Cover, Stats, Tabs, embedded-Modus, Status-Badges |
+| `register_screen.dart` | Konto-Typ Privatperson / Event-Profil |
+| `chat_room_screen.dart` | Chat-Composer, Emoji/GIF |
+| `web_right_panel.dart` | Trend, Challenges, Freunde online (klickbar) |
 | `challenges_screen.dart` | Level + Fortschrittskarten |
 | `activity_remote_datasource.dart` | RPC-Mapping inkl. `source`, `external_url` |
 
@@ -503,8 +547,10 @@ LIMIT 20;
 | v2.2 | 08.07. | Optionales Datum/Bild, UI-Fixes |
 | v2.3 | 08.07. | Löschen, Freund-DMs |
 | **v2.4** | **09.07.** | **Web UI Phase 2, externe Events, Edge Functions** |
+| v2.5 | 10.07. | Discover-UI, fetch-activity-image, Detail/Edit |
+| **v2.6** | **21.07.** | **Profiltypen, Dev/Marketing, GIF-Suche, Panel-Nav, WhatsApp-Chat** |
 
-Details: `PROJEKT_VERLAUF.md`
+Details: `PROJEKT_VERLAUF.md` (Abschnitt **v2.6** = Schritt-für-Schritt dieser Session)
 
 ---
 
@@ -522,4 +568,4 @@ Details: `PROJEKT_VERLAUF.md`
 
 ---
 
-*Erstellt: 09.07.2026 · Circle v2.4*
+*Aktualisiert: 21.07.2026 · CircleVeya v2.6*
