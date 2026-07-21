@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/layout/shell_destination_request.dart';
+import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -123,6 +125,28 @@ class _ProfileBody extends ConsumerWidget {
             groups: groupCount,
             rating: rating,
             reviewCount: reviewCount,
+            onActivitiesTap: () => tabController.animateTo(1),
+            onFriendsTap: isOwnProfile
+                ? () {
+                    ref
+                        .read(shellDestinationRequestProvider.notifier)
+                        .goTo(WebShellDestination.friends);
+                    if (!embedded) {
+                      context.goNamed(RouteNames.home);
+                    }
+                  }
+                : null,
+            onGroupsTap: isOwnProfile
+                ? () {
+                    ref
+                        .read(shellDestinationRequestProvider.notifier)
+                        .goTo(WebShellDestination.groups);
+                    if (!embedded) {
+                      context.goNamed(RouteNames.home);
+                    }
+                  }
+                : null,
+            onRatingTap: () => tabController.animateTo(3),
           ),
         ),
         SliverPersistentHeader(
@@ -406,6 +430,10 @@ class _ProfileStatsRow extends StatelessWidget {
     required this.groups,
     required this.rating,
     required this.reviewCount,
+    this.onActivitiesTap,
+    this.onFriendsTap,
+    this.onGroupsTap,
+    this.onRatingTap,
   });
 
   final int activities;
@@ -413,6 +441,10 @@ class _ProfileStatsRow extends StatelessWidget {
   final int groups;
   final double rating;
   final int reviewCount;
+  final VoidCallback? onActivitiesTap;
+  final VoidCallback? onFriendsTap;
+  final VoidCallback? onGroupsTap;
+  final VoidCallback? onRatingTap;
 
   @override
   Widget build(BuildContext context) {
@@ -420,37 +452,67 @@ class _ProfileStatsRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       child: Row(
         children: [
-          _StatItem(label: 'Aktivitäten', value: '$activities'),
-          _StatItem(label: 'Freunde', value: '$friends'),
-          _StatItem(label: 'Kreise', value: '$groups'),
+          _StatItem(
+            label: 'Aktivitäten',
+            value: '$activities',
+            onTap: onActivitiesTap,
+          ),
+          _StatItem(
+            label: 'Freunde',
+            value: '$friends',
+            onTap: onFriendsTap,
+          ),
+          _StatItem(
+            label: 'Kreise',
+            value: '$groups',
+            onTap: onGroupsTap,
+          ),
           Expanded(
-            child: Column(
-              children: [
-                if (rating > 0) ...[
-                  Text(
-                    rating.toStringAsFixed(1),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.seed,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onRatingTap,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    children: [
+                      if (rating > 0) ...[
+                        Text(
+                          rating.toStringAsFixed(1),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.seed,
+                                  ),
                         ),
-                  ),
-                  const SizedBox(height: 2),
-                  StarRating(value: rating, size: 14, interactive: false),
-                ] else
-                  Text(
-                    '–',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.seed,
+                        const SizedBox(height: 2),
+                        StarRating(
+                          value: rating,
+                          size: 14,
+                          interactive: false,
                         ),
+                      ] else
+                        Text(
+                          '–',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.seed,
+                                  ),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reviewCount > 0
+                            ? 'Bewertung ($reviewCount)'
+                            : 'Bewertung',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                const SizedBox(height: 4),
-                Text(
-                  reviewCount > 0 ? 'Bewertung ($reviewCount)' : 'Bewertung',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center,
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -460,29 +522,44 @@ class _ProfileStatsRow extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.seed,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.seed,
+                      ),
                 ),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
