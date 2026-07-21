@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 enum LocationType {
   indoor,
   outdoor;
@@ -26,6 +28,12 @@ enum WeatherCondition {
         cold => 'Kälte',
         rain => 'Regen',
         sun => 'Sonne',
+      };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        cold => l10n.weatherCold,
+        rain => l10n.weatherRain,
+        sun => l10n.weatherSun,
       };
 
   String get dbValue => name;

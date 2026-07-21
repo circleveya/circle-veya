@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Legacy-Hero – Entdecken nutzt [DiscoverSearchHeader].
 /// Behalten für Kompatibilität / visuelle Referenz.
@@ -15,6 +16,7 @@ class DiscoverHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
@@ -34,7 +36,7 @@ class DiscoverHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Find people. Create memories.',
+            l10n.searchPlaceholderDiscover,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -43,8 +45,7 @@ class DiscoverHero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Entdecke Aktivitäten in deiner Nähe – mit Freunden, '
-            'der Community und Events aus deiner Region.',
+            l10n.discoverSubtitle,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.92),
               height: 1.45,
@@ -56,7 +57,7 @@ class DiscoverHero extends StatelessWidget {
             onSubmitted: onSearch,
             style: const TextStyle(color: Colors.black87),
             decoration: InputDecoration(
-              hintText: 'Was möchtest du heute erleben?',
+              hintText: l10n.discoverHeroHint,
               filled: true,
               fillColor: Colors.white,
               prefixIcon: Icon(

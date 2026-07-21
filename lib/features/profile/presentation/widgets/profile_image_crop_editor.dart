@@ -1,7 +1,8 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
@@ -89,9 +90,12 @@ class _ProfileImageCropScreenState extends State<ProfileImageCropScreen> {
 
   double _scale = 1;
   Offset _offset = Offset.zero;
-  Offset? _lastFocal;
-  double _startScale = 1;
   Size? _cropSize;
+
+  /// Aktiver Zeiger für Maus-/Finger-Drag (Web inkl.).
+  int? _activePointer;
+  Offset? _lastPointerLocal;
+  bool _dragging = false;
 
   /// Cover ~ Banner-Höhe 280 bei typischer Breite → ca. 2.8–3:1; Avatar 1:1
   double get _aspect =>
@@ -283,44 +287,91 @@ class _ProfileImageCropScreenState extends State<ProfileImageCropScreen> {
                               width: cropW,
                               height: cropH,
                               child: ClipRect(
-                                child: GestureDetector(
-                                  onScaleStart: (details) {
-                                    _lastFocal = details.localFocalPoint;
-                                    _startScale = _scale;
-                                  },
-                                  onScaleUpdate: (details) {
-                                    setState(() {
-                                      _scale = (_startScale * details.scale)
-                                          .clamp(1.0, 4.0);
-                                      if (_lastFocal != null) {
-                                        final delta = details.localFocalPoint -
-                                            _lastFocal!;
-                                        _offset += delta;
-                                        _lastFocal = details.localFocalPoint;
+                                child: MouseRegion(
+                                  cursor: _dragging
+                                      ? SystemMouseCursors.grabbing
+                                      : SystemMouseCursors.grab,
+                                  child: Listener(
+                                    behavior: HitTestBehavior.opaque,
+                                    onPointerDown: (event) {
+                                      if (_activePointer != null) return;
+                                      _activePointer = event.pointer;
+                                      _lastPointerLocal = event.localPosition;
+                                      setState(() => _dragging = true);
+                                    },
+                                    onPointerMove: (event) {
+                                      if (event.pointer != _activePointer) {
+                                        return;
                                       }
-                                      _clampOffset(cropSize, imageW, imageH);
-                                    });
-                                  },
-                                  onScaleEnd: (_) => _lastFocal = null,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      CustomPaint(
-                                        painter: _CropImagePainter(
-                                          image: _decoded!,
-                                          imageRect: _imageRect(
-                                            cropSize,
-                                            imageW,
-                                            imageH,
+                                      final last = _lastPointerLocal;
+                                      if (last == null) return;
+                                      final delta =
+                                          event.localPosition - last;
+                                      _lastPointerLocal = event.localPosition;
+                                      setState(() {
+                                        _offset += delta;
+                                        _clampOffset(
+                                          cropSize,
+                                          imageW,
+                                          imageH,
+                                        );
+                                      });
+                                    },
+                                    onPointerUp: (event) {
+                                      if (event.pointer != _activePointer) {
+                                        return;
+                                      }
+                                      _activePointer = null;
+                                      _lastPointerLocal = null;
+                                      setState(() => _dragging = false);
+                                    },
+                                    onPointerCancel: (event) {
+                                      if (event.pointer != _activePointer) {
+                                        return;
+                                      }
+                                      _activePointer = null;
+                                      _lastPointerLocal = null;
+                                      setState(() => _dragging = false);
+                                    },
+                                    onPointerSignal: (signal) {
+                                      if (signal is! PointerScrollEvent) {
+                                        return;
+                                      }
+                                      // Mausrad: zoomen um den Cursor
+                                      final zoomFactor = math.exp(
+                                        -signal.scrollDelta.dy * 0.0015,
+                                      );
+                                      setState(() {
+                                        final next = (_scale * zoomFactor)
+                                            .clamp(1.0, 4.0);
+                                        _scale = next;
+                                        _clampOffset(
+                                          cropSize,
+                                          imageW,
+                                          imageH,
+                                        );
+                                      });
+                                    },
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        CustomPaint(
+                                          painter: _CropImagePainter(
+                                            image: _decoded!,
+                                            imageRect: _imageRect(
+                                              cropSize,
+                                              imageW,
+                                              imageH,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      CustomPaint(
-                                        painter: _CropOverlayPainter(
-                                          isCircle: _isCircle,
+                                        CustomPaint(
+                                          painter: _CropOverlayPainter(
+                                            isCircle: _isCircle,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -332,7 +383,11 @@ class _ProfileImageCropScreenState extends State<ProfileImageCropScreen> {
                           child: Column(
                             children: [
                               Text(
-                                'Ziehen zum Verschieben · Pinch zum Zoomen',
+                                kIsWeb
+                                    ? 'Mit der Maus ziehen zum Verschieben · '
+                                        'Mausrad oder Slider zum Zoomen'
+                                    : 'Ziehen zum Verschieben · '
+                                        'Slider zum Zoomen',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: Colors.white70,
                                 ),

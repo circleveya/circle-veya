@@ -1,3 +1,5 @@
+import '../../../../l10n/app_localizations.dart';
+
 enum ViewerAction {
   directJoin,
   interest,
@@ -19,6 +21,18 @@ enum ViewerAction {
         _ => none,
       };
 
+  String localizedButtonLabel(AppLocalizations l10n) => switch (this) {
+        directJoin => l10n.actionJoin,
+        interest => l10n.actionInterested,
+        joined => l10n.actionJoined,
+        interestPending => l10n.actionInterestSent,
+        full => l10n.actionFull,
+        host => l10n.actionYourEvent,
+        externalLink => l10n.actionExternal,
+        none => '',
+      };
+
+  @Deprecated('Use localizedButtonLabel(AppLocalizations)')
   String get buttonLabel => switch (this) {
         directJoin => 'Ich bin dabei!',
         interest => 'Interessiert',
@@ -45,6 +59,13 @@ enum VisibleAs {
         _ => stranger,
       };
 
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        friend => l10n.friend,
+        acquaintance => l10n.acquaintance,
+        stranger => l10n.nearby,
+      };
+
+  @Deprecated('Use localizedLabel(AppLocalizations)')
   String get label => switch (this) {
         friend => 'Freund',
         acquaintance => 'Bekannter',

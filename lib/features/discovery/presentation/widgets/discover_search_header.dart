@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../activities/domain/entities/discover_filters.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/discover_quick_filters_bar.dart';
@@ -45,6 +46,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final hasActive = ref.watch(discoverFiltersProvider).hasActiveFilters;
 
     return Container(
@@ -65,7 +67,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Find people. Create memories.',
+            l10n.searchPlaceholderDiscover,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -74,8 +76,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Entdecke Aktivitäten in deiner Nähe – mit Freunden, '
-            'der Community und Events aus deiner Region.',
+            l10n.discoverSubtitle,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.92),
               height: 1.45,
@@ -89,7 +90,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
             style: const TextStyle(color: Colors.black87),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'Was möchtest du heute erleben?',
+              hintText: l10n.discoverHeroHint,
               hintStyle: TextStyle(
                 color: Colors.black.withValues(alpha: 0.38),
               ),
@@ -107,7 +108,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
                     children: [
                       if (value.text.isNotEmpty)
                         IconButton(
-                          tooltip: 'Leeren',
+                          tooltip: l10n.clearSearch,
                           onPressed: () {
                             controller.clear();
                             onSearch?.call('');
@@ -118,7 +119,7 @@ class DiscoverSearchHeader extends ConsumerWidget {
                           ),
                         ),
                       IconButton(
-                        tooltip: 'Filter',
+                        tooltip: l10n.filter,
                         onPressed: () => _openFilters(context, ref),
                         icon: Stack(
                           clipBehavior: Clip.none,
@@ -201,6 +202,7 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -220,7 +222,7 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
                   child: Row(
                     children: [
                       Text(
-                        'Filter',
+                        l10n.filter,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: AppColors.brandNavy,
@@ -231,7 +233,7 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
                         TextButton(
                           onPressed: () =>
                               _update(const ActivityDiscoverFilters.empty()),
-                          child: const Text('Zurücksetzen'),
+                          child: Text(l10n.reset),
                         ),
                     ],
                   ),
@@ -262,7 +264,7 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text('Fertig'),
+                    child: Text(l10n.finish),
                   ),
                 ),
               ],

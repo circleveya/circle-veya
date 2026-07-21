@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/challenges/domain/entities/challenge.dart';
+import '../../features/challenges/domain/entities/level_milestone.dart';
 import '../../features/challenges/presentation/providers/challenge_provider.dart';
+import '../../features/challenges/presentation/widgets/level_milestones_ui.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
 import '../../features/sidebar/presentation/providers/sidebar_provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../icons/company_building_icon.dart';
 import '../location/distance_display.dart';
 import '../router/route_names.dart';
 import '../theme/app_colors.dart';
@@ -25,6 +29,8 @@ class WebRightPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(userLevelStatsProvider);
+    final isBusiness =
+        ref.watch(myProfileProvider).valueOrNull?.isBusinessProfile ?? false;
 
     return Container(
       width: AppColors.rightPanelWidth,
@@ -42,8 +48,21 @@ class WebRightPanel extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         children: switch (destination) {
-          WebShellDestination.profile =>
-            _profileWidgets(context, ref, statsAsync),
+          WebShellDestination.profile => isBusiness
+              ? [
+                  _PanelCard(
+                    title: AppLocalizations.of(context).companies,
+                    iconWidget: CompanyBuildingIcon(
+                      size: 22,
+                      color: AppColors.seed,
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context).businessPanelHint,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ]
+              : _profileWidgets(context, ref, statsAsync),
           _ => _feedWidgets(context, ref, statsAsync),
         },
       ),
@@ -129,7 +148,7 @@ class WebRightPanel extends ConsumerWidget {
                   (c) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _ChallengeProgress(
-                      title: c.title,
+                      title: c.localizedTitle(l10n),
                       progress: c.progressRatio,
                       label: '${c.progress} / ${c.target}',
                     ),
@@ -197,14 +216,17 @@ class WebRightPanel extends ConsumerWidget {
     WidgetRef ref,
     AsyncValue<UserLevelStats> statsAsync,
   ) {
+    final l10n = AppLocalizations.of(context);
     return statsAsync.when(
       loading: () => [
         const Center(child: CircularProgressIndicator()),
       ],
       error: (e, _) => [Text('$e')],
-      data: (stats) => [
+      data: (stats) {
+        final milestone = LevelMilestone.currentFor(stats.level);
+        return [
         _PanelCard(
-          title: 'Challenge Level',
+          title: l10n.challenges,
           icon: Icons.military_tech_outlined,
           onTap: () => ref
               .read(shellDestinationRequestProvider.notifier)
@@ -219,7 +241,7 @@ class WebRightPanel extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Level ${stats.level}',
+                  l10n.levelLabel(stats.level),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -232,6 +254,28 @@ class WebRightPanel extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (milestone != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            LevelBadgeImage(milestone: milestone, size: 32),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                milestone.name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.seed,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Text(
                       '${stats.currentXp} XP',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -251,7 +295,7 @@ class WebRightPanel extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         _PanelCard(
-          title: 'Aktive Challenges',
+          title: l10n.yourChallenges,
           icon: Icons.flag_outlined,
           onTap: () => ref
               .read(shellDestinationRequestProvider.notifier)
@@ -262,7 +306,7 @@ class WebRightPanel extends ConsumerWidget {
                   (c) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _ChallengeProgress(
-                      title: c.title,
+                      title: c.localizedTitle(l10n),
                       progress: c.progressRatio,
                       label: '${c.progress} / ${c.target}',
                     ),
@@ -271,21 +315,24 @@ class WebRightPanel extends ConsumerWidget {
                 .toList(),
           ),
         ),
-      ],
+      ];
+      },
     );
   }
 }
 class _PanelCard extends StatelessWidget {
   const _PanelCard({
     required this.title,
-    required this.icon,
     required this.child,
+    this.icon,
+    this.iconWidget,
     this.iconColor,
     this.onTap,
-  });
+  }) : assert(icon != null || iconWidget != null);
 
   final String title;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final Widget child;
   final Color? iconColor;
   final VoidCallback? onTap;
@@ -313,7 +360,12 @@ class _PanelCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 18, color: iconColor ?? AppColors.seed),
+                  iconWidget ??
+                      Icon(
+                        icon,
+                        size: 18,
+                        color: iconColor ?? AppColors.seed,
+                      ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

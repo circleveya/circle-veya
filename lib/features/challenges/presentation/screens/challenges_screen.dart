@@ -4,14 +4,68 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/challenge.dart';
+import '../../domain/entities/level_milestone.dart';
 import '../providers/challenge_provider.dart';
+import '../widgets/level_milestones_ui.dart';
 
 class ChallengesScreen extends ConsumerWidget {
   const ChallengesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final myProfile = ref.watch(myProfileProvider).valueOrNull;
+    if (myProfile?.isBusinessProfile == true) {
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            l10n.companies,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 0,
+            color: AppColors.surfaceTint,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.businessNoLevelTitle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.businessNoLevelBody,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    myProfile!.followerCount == 1
+                        ? l10n.oneFollower
+                        : l10n.followersCount(myProfile.followerCount),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.seed,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     final statsAsync = ref.watch(userLevelStatsProvider);
     final theme = Theme.of(context);
 
@@ -27,26 +81,47 @@ class ChallengesScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-              'Challenges',
+              l10n.challenges,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Wöchentliche Challenges starten montags neu, '
-              'monatliche am 1. des Monats.',
+              l10n.weeklyChallengesHint,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 20),
             ChallengeLevelCard(stats: stats),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  showDragHandle: true,
+                  builder: (context) => SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.85,
+                    child: LevelMilestonesGallery(userLevel: stats.level),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.emoji_events_outlined),
+              label: Text(
+                LevelMilestone.currentFor(stats.level) != null
+                    ? l10n.levelBadgesWithName(
+                        LevelMilestone.currentFor(stats.level)!.name,
+                      )
+                    : l10n.levelBadges,
+              ),
+            ),
             if (weekly.isNotEmpty) ...[
               const SizedBox(height: 24),
               _SectionHeader(
-                title: 'Wöchentlich',
-                subtitle: 'Reset jeden Montag',
+                title: l10n.weekly,
+                subtitle: l10n.weeklyChallengesHint,
                 icon: Icons.date_range_outlined,
               ),
               const SizedBox(height: 12),
@@ -60,8 +135,8 @@ class ChallengesScreen extends ConsumerWidget {
             if (monthly.isNotEmpty) ...[
               const SizedBox(height: 12),
               _SectionHeader(
-                title: 'Monatlich',
-                subtitle: 'Reset am 1. des Monats',
+                title: l10n.monthly,
+                subtitle: l10n.monthlyReset,
                 icon: Icons.calendar_month_outlined,
               ),
               const SizedBox(height: 12),
@@ -74,7 +149,7 @@ class ChallengesScreen extends ConsumerWidget {
             ],
             if (other.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('Weitere Challenges', style: theme.textTheme.titleMedium),
+              Text(l10n.otherChallenges, style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
               ...other.map(
                 (c) => Padding(
@@ -86,7 +161,7 @@ class ChallengesScreen extends ConsumerWidget {
             if (stats.challenges.isEmpty) ...[
               const SizedBox(height: 24),
               Text(
-                'Noch keine aktiven Challenges.',
+                l10n.noActiveChallenges,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -143,6 +218,8 @@ class ChallengeLevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final milestone = LevelMilestone.currentFor(stats.level);
+    final l10n = AppLocalizations.of(context);
     return Card(
       elevation: 0,
       color: AppColors.surfaceTint,
@@ -157,7 +234,7 @@ class ChallengeLevelCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(
-                'Level ${stats.level}',
+                l10n.levelLabel(stats.level),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -170,6 +247,28 @@ class ChallengeLevelCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (milestone != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          LevelBadgeImage(milestone: milestone, size: 40),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              milestone.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.seed,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Text(
                     '${stats.currentXp} XP',
                     style: Theme.of(context).textTheme.titleMedium,
@@ -186,7 +285,10 @@ class ChallengeLevelCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Noch ${stats.xpForNextLevel - stats.currentXp} XP bis Level ${stats.level + 1}',
+                    l10n.xpRemaining(
+                      stats.xpForNextLevel - stats.currentXp,
+                      stats.level + 1,
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -207,6 +309,7 @@ class ChallengeProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -233,7 +336,7 @@ class ChallengeProgressCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      challenge.periodBadgeLabel,
+                      challenge.localizedPeriodBadge(l10n),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.seed,
                         fontWeight: FontWeight.w700,
@@ -257,12 +360,12 @@ class ChallengeProgressCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                challenge.title,
+                challenge.localizedTitle(l10n),
                 style: theme.textTheme.titleSmall,
               ),
               const SizedBox(height: 4),
               Text(
-                challenge.resetHint,
+                challenge.localizedResetHint(l10n),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

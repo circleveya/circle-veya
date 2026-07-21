@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/location/distance_display.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 
@@ -32,6 +33,7 @@ class ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isFeatured = activity.isFeatured;
 
     return Material(
@@ -108,18 +110,21 @@ class ActivityCard extends StatelessWidget {
                           isCompany: activity.hostIsCompany,
                         ),
                         const SizedBox(width: 8),
-                        _RelationBadge(label: activity.visibleAs.label),
+                        _RelationBadge(
+                          label: activity.visibleAs.localizedLabel(l10n),
+                        ),
                         if (activity.isNew) ...[
                           const SizedBox(width: 6),
                           _RelationBadge(
-                            label: 'Neu',
+                            label: l10n.newBadge,
                             muted: true,
                           ),
                         ],
                         const Spacer(),
                         if (_showActionButton)
                           _ActionButton(
-                            label: activity.viewerAction.buttonLabel,
+                            label: activity.viewerAction
+                                .localizedButtonLabel(l10n),
                             enabled:
                                 activity.viewerAction.canTap && !isLoading,
                             isLoading: isLoading,

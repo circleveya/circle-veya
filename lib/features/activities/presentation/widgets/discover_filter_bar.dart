@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/activity_filters.dart';
 import '../../domain/entities/discover_date_filter.dart';
 import '../../domain/entities/discover_filters.dart';
@@ -34,6 +35,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final hasFilters = widget.filters.hasActiveFilters;
 
     return Material(
@@ -66,7 +68,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Filter',
+                            l10n.filter,
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: _expanded
                                   ? Colors.white
@@ -76,7 +78,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                           ),
                           if (!_expanded && hasFilters)
                             Text(
-                              _activeFilterSummary(widget.filters),
+                              _activeFilterSummary(widget.filters, l10n),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.primary,
                               ),
@@ -94,7 +96,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                           foregroundColor:
                               _expanded ? Colors.white : theme.colorScheme.primary,
                         ),
-                        child: const Text('Zurücksetzen'),
+                        child: Text(l10n.reset),
                       ),
                     Icon(
                       _expanded
@@ -119,7 +121,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ort',
+                      l10n.location,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: Colors.white.withValues(alpha: 0.95),
                       ),
@@ -160,7 +162,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Wetter',
+                      l10n.weather,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: Colors.white.withValues(alpha: 0.95),
                       ),
@@ -173,7 +175,7 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
                         final selected =
                             widget.filters.weatherCondition == condition;
                         return FilterChip(
-                          label: Text(condition.label),
+                          label: Text(condition.localizedLabel(l10n)),
                           avatar: Icon(condition.icon, size: 16),
                           selected: selected,
                           showCheckmark: false,
@@ -211,22 +213,25 @@ class _DiscoverFilterBarState extends State<DiscoverFilterBar> {
     );
   }
 
-  String _activeFilterSummary(ActivityDiscoverFilters filters) {
+  String _activeFilterSummary(
+    ActivityDiscoverFilters filters,
+    AppLocalizations l10n,
+  ) {
     final parts = <String>[];
     if (filters.category != EventCategory.all) {
-      parts.add(filters.category.label);
+      parts.add(filters.category.localizedLabel(l10n));
     }
     if (filters.locationType != null) {
       parts.add(filters.locationType!.label);
     }
     if (filters.weatherCondition != null) {
-      parts.add(filters.weatherCondition!.label);
+      parts.add(filters.weatherCondition!.localizedLabel(l10n));
     }
     if (filters.maxDistanceKm != null) {
-      parts.add('max. ${filters.maxDistanceKm!.round()} km');
+      parts.add(l10n.maxDistanceKm(filters.maxDistanceKm!.round()));
     }
     if (filters.dateFilter != DiscoverDateFilterOption.all) {
-      parts.add(filters.dateFilter.label);
+      parts.add(filters.dateFilter.localizedLabel(l10n));
     }
     return parts.join(' · ');
   }

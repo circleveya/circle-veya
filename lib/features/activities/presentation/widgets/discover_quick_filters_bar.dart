@@ -72,7 +72,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
                     for (final option in EventCategory.filterOptions)
                       DropdownMenuItem(
                         value: option,
-                        child: Text(option.label),
+                        child: Text(option.localizedLabel(l10n)),
                       ),
                   ],
                   onChanged: (value) {
@@ -85,7 +85,7 @@ class DiscoverQuickFiltersBar extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Events in ${filters.category.filterPhrase} anzeigen.',
+            l10n.showEventsIn(filters.category.localizedFilterPhrase(l10n)),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

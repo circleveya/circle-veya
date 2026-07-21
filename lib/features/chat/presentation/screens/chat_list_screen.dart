@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../domain/entities/chat.dart';
@@ -38,7 +39,7 @@ class ChatListScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => ref.invalidate(chatListProvider),
-                child: const Text('Erneut laden'),
+                child: Text(AppLocalizations.of(context).retry),
               ),
             ],
           ),
@@ -199,7 +200,7 @@ class ChatListScreen extends ConsumerWidget {
                                 FilledButton(
                                   onPressed: () => sheetRef
                                       .invalidate(myConnectionsProvider),
-                                  child: const Text('Erneut laden'),
+                                  child: Text(AppLocalizations.of(context).retry),
                                 ),
                               ],
                             ),
@@ -336,26 +337,29 @@ class ChatListScreen extends ConsumerWidget {
   Future<bool?> _confirmLeave(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Chat löschen?'),
-        content: const Text(
-          'Der Chat verschwindet aus deiner Liste. '
-          'Bei Gruppenchats bleibt er für andere Teilnehmer erhalten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: const Text('Chat löschen?'),
+          content: const Text(
+            'Der Chat verschwindet aus deiner Liste. '
+            'Bei Gruppenchats bleibt er für andere Teilnehmer erhalten.',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
             ),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
   }
 

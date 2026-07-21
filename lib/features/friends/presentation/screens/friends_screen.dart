@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../domain/entities/connection.dart';
 import '../providers/friends_provider.dart';
@@ -34,7 +35,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final connectionsAsync = ref.watch(myConnectionsProvider);
+    final followedAsync = ref.watch(myFollowedCompaniesProvider);
     final searchAsync = _searchQuery.length >= 2
         ? ref.watch(profileSearchProvider(_searchQuery))
         : const AsyncValue<List<SearchableProfile>>.data([]);
@@ -47,7 +50,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Username suchen',
+              hintText: l10n.searchPeopleOrCompanies,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -71,9 +74,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               error: (e, _) => Center(child: Text(e.toString())),
               data: (results) {
                 if (results.isEmpty) {
-                  return const Center(
-                    child: Text('Keine Profile gefunden.'),
-                  );
+                  return Center(child: Text(l10n.noProfilesFound));
                 }
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
@@ -93,6 +94,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       onRemove: () => ref
                           .read(friendsActionsProvider.notifier)
                           .removeConnection(profile.id),
+                      onFollow: () => ref
+                          .read(friendsActionsProvider.notifier)
+                          .followCompany(profile.id),
+                      onUnfollow: () => ref
+                          .read(friendsActionsProvider.notifier)
+                          .unfollowCompany(profile.id),
                       onTapProfile: () => context.pushNamed(
                         RouteNames.profileView,
                         pathParameters: {'id': profile.id},
@@ -115,8 +122,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 final acquaintances = connections
                     .where((c) => c.type == ConnectionType.acquaintance)
                     .toList();
+                final followed = followedAsync.valueOrNull ?? [];
 
-                if (connections.isEmpty) {
+                if (connections.isEmpty && followed.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
@@ -126,13 +134,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                           const Icon(Icons.people_outline, size: 64),
                           const SizedBox(height: 16),
                           Text(
-                            'Noch keine Verbindungen',
+                            l10n.noConnectionsYet,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Suche oben nach anderen Nutzer:innen '
-                            'und füge sie als Freund:in oder Bekanntschaft hinzu.',
+                          Text(
+                            l10n.followHint,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -144,13 +151,29 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(myConnectionsProvider);
-                    await ref.read(myConnectionsProvider.future);
+                    ref.invalidate(myFollowedCompaniesProvider);
+                    await Future.wait([
+                      ref.read(myConnectionsProvider.future),
+                      ref.read(myFollowedCompaniesProvider.future),
+                    ]);
                   },
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      _FollowedCompaniesSection(
+                        companies: followed,
+                        isLoading: isLoading,
+                        onUnfollow: (id) => ref
+                            .read(friendsActionsProvider.notifier)
+                            .unfollowCompany(id),
+                        onTapProfile: (id) => context.pushNamed(
+                          RouteNames.profileView,
+                          pathParameters: {'id': id},
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       _ConnectionSection(
-                        title: 'Freunde',
+                        title: l10n.friends,
                         icon: Icons.favorite_outline,
                         connections: friends,
                         isLoading: isLoading,
@@ -166,7 +189,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       ),
                       const SizedBox(height: 24),
                       _ConnectionSection(
-                        title: 'Bekannte',
+                        title: l10n.acquaintances,
                         icon: Icons.people_outline,
                         connections: acquaintances,
                         isLoading: isLoading,
@@ -208,6 +231,72 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         SnackBar(content: Text('$error')),
       );
     }
+  }
+}
+
+class _FollowedCompaniesSection extends StatelessWidget {
+  const _FollowedCompaniesSection({
+    required this.companies,
+    required this.isLoading,
+    required this.onUnfollow,
+    required this.onTapProfile,
+  });
+
+  final List<FollowedCompany> companies;
+  final bool isLoading;
+  final void Function(String id) onUnfollow;
+  final void Function(String id) onTapProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.storefront_outlined, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              l10n.companies,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(width: 8),
+            Text('(${companies.length})'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (companies.isEmpty)
+          Text(
+            l10n.noCompaniesFollowed,
+            style: Theme.of(context).textTheme.bodyMedium,
+          )
+        else
+          ...companies.map(
+            (company) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                onTap: () => onTapProfile(company.profileId),
+                leading: CircleAvatar(
+                  backgroundImage: company.avatarUrl != null
+                      ? CachedNetworkImageProvider(company.avatarUrl!)
+                      : null,
+                  child: company.avatarUrl == null
+                      ? Text(company.username[0].toUpperCase())
+                      : null,
+                ),
+                title: Text(company.username),
+                subtitle: Text(company.bio ?? l10n.eventProfileShort),
+                trailing: TextButton(
+                  onPressed:
+                      isLoading ? null : () => onUnfollow(company.profileId),
+                  child: Text(l10n.unfollow),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -329,6 +418,8 @@ class _SearchResultTile extends StatelessWidget {
     required this.onAddFriend,
     required this.onAddAcquaintance,
     required this.onRemove,
+    required this.onFollow,
+    required this.onUnfollow,
     required this.onTapProfile,
   });
 
@@ -337,10 +428,15 @@ class _SearchResultTile extends StatelessWidget {
   final VoidCallback onAddFriend;
   final VoidCallback onAddAcquaintance;
   final VoidCallback onRemove;
+  final VoidCallback onFollow;
+  final VoidCallback onUnfollow;
   final VoidCallback onTapProfile;
 
   @override
   Widget build(BuildContext context) {
+    final isBusiness = profile.isBusinessProfile;
+    final l10n = AppLocalizations.of(context);
+
     return ListTile(
       onTap: onTapProfile,
       leading: CircleAvatar(
@@ -353,33 +449,49 @@ class _SearchResultTile extends StatelessWidget {
       ),
       title: Text(profile.username),
       subtitle: Text(
-        profile.connectionStatus?.label ?? profile.bio ?? 'Noch nicht verbunden',
+        isBusiness
+            ? (profile.isFollowing
+                ? l10n.companyFollowing
+                : l10n.companyCanFollow)
+            : (profile.connectionStatus?.localizedLabel(l10n) ??
+                profile.bio ??
+                l10n.noConnectionsYet),
       ),
-      trailing: profile.isConnected
-          ? IconButton(
-              onPressed: isLoading ? null : onRemove,
-              icon: const Icon(Icons.check_circle_outline),
-              tooltip: 'Verbunden – tippen zum Entfernen',
-              color: Theme.of(context).colorScheme.primary,
-            )
-          : PopupMenuButton<String>(
-              enabled: !isLoading,
-              onSelected: (value) {
-                if (value == 'friend') onAddFriend();
-                if (value == 'acquaintance') onAddAcquaintance();
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'friend',
-                  child: Text('Als Freund hinzufügen'),
-                ),
-                PopupMenuItem(
-                  value: 'acquaintance',
-                  child: Text('Als Bekannten hinzufügen'),
-                ),
-              ],
-              icon: const Icon(Icons.person_add_outlined),
-            ),
+      trailing: isBusiness
+          ? (profile.isFollowing
+              ? TextButton(
+                  onPressed: isLoading ? null : onUnfollow,
+                  child: Text(l10n.following),
+                )
+              : FilledButton(
+                  onPressed: isLoading ? null : onFollow,
+                  child: Text(l10n.follow),
+                ))
+          : (profile.isConnected
+              ? IconButton(
+                  onPressed: isLoading ? null : onRemove,
+                  icon: const Icon(Icons.check_circle_outline),
+                  tooltip: l10n.following,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+              : PopupMenuButton<String>(
+                  enabled: !isLoading,
+                  onSelected: (value) {
+                    if (value == 'friend') onAddFriend();
+                    if (value == 'acquaintance') onAddAcquaintance();
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'friend',
+                      child: Text(l10n.addAsFriend),
+                    ),
+                    PopupMenuItem(
+                      value: 'acquaintance',
+                      child: Text(l10n.addAsAcquaintance),
+                    ),
+                  ],
+                  icon: const Icon(Icons.person_add_outlined),
+                )),
     );
   }
 }

@@ -153,5 +153,309 @@
   "gpsTaken": "Location taken from GPS.",
   "mockLocationHint": "Test location active. GPS or a place chip overrides the mock.",
   "finish": "Done",
-  "searchPlaceholderDiscover": "Find people. Create memories."
+  "searchPlaceholderDiscover": "Find people. Create memories.",
+  "aboutMe": "About",
+  "activities": "Activities",
+  "gallery": "Gallery",
+  "reviews": "Reviews",
+  "levelTab": "Level",
+  "follow": "Follow",
+  "following": "Following",
+  "unfollow": "Unfollow",
+  "followers": "Followers",
+  "followersCount": "{count} followers",
+  "@followersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "oneFollower": "1 follower",
+  "companies": "Companies",
+  "acquaintances": "Acquaintances",
+  "acquaintance": "Acquaintance",
+  "friend": "Friend",
+  "noConnectionsYet": "No connections yet",
+  "searchPeopleOrCompanies": "Search people & companies",
+  "followHint": "Search for people as friends or follow companies / event profiles.",
+  "noCompaniesFollowed": "No companies followed yet.",
+  "noProfilesFound": "No profiles found.",
+  "addAsFriend": "Add as friend",
+  "addAsAcquaintance": "Add as acquaintance",
+  "companyFollowing": "Company · Following",
+  "companyCanFollow": "Company · Follow",
+  "eventProfileShort": "Event profile",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+  "weeklyChallengesHint": "Weekly challenges reset every Monday, monthly ones on the 1st of the month.",
+  "otherChallenges": "More challenges",
+  "noActiveChallenges": "No active challenges.",
+  "businessNoLevelTitle": "No personal level",
+  "businessNoLevelBody": "Event and company profiles have no personal level or challenge system.\n\nSoon you’ll be able to create one monthly challenge for your followers.",
+  "businessPanelHint": "No personal level. Followers and events come first.",
+  "currentBadge": "Current badge: {name}",
+  "@currentBadge": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "unlockedBadges": "Unlocked ({count})",
+  "@unlockedBadges": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "lockedBadges": "Still locked ({count})",
+  "@lockedBadges": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noBadgesYet": "No badges unlocked yet.",
+  "noBadgeYetHint": "No badge yet – Spark awaits you at level 5.",
+  "badgeLockedHint": "Still locked. Reach level {level} to unlock this badge.\n\n{description}",
+  "@badgeLockedHint": {
+    "placeholders": {
+      "level": {"type": "int"},
+      "description": {"type": "String"}
+    }
+  },
+  "levelBadges": "Level badges",
+  "levelBadgesWithName": "Level badges · {name}",
+  "@levelBadgesWithName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "xpRemaining": "{xp} XP left until level {level}",
+  "@xpRemaining": {
+    "placeholders": {
+      "xp": {"type": "int"},
+      "level": {"type": "int"}
+    }
+  },
+  "notSignedIn": "Not signed in",
+  "bio": "Bio",
+  "topInterests": "Top interests",
+  "noInterestsYet": "No interests added yet.",
+  "noActivitiesYet": "No activities yet.\nCreate one or join a friend’s.",
+  "noVisibleActivities": "No visible activities.",
+  "resetFilters": "Reset search / filters",
+  "reset": "Reset",
+  "showEventsIn": "Show events in {category}.",
+  "@showEventsIn": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "catAll": "All categories",
+  "catConcerts": "Concerts",
+  "catParties": "Parties",
+  "catFestivals": "Festivals",
+  "catTheater": "Theater & stage",
+  "catComedy": "Comedy",
+  "catSport": "Sports & fitness",
+  "catKids": "Kids & family",
+  "catCourses": "Courses & seminars",
+  "catMarkets": "Markets & fairs",
+  "catClassic": "Classical & opera",
+  "catLeisure": "Leisure & trips",
+  "catOther": "Other",
+  "phraseAll": "all categories",
+  "phraseConcerts": "concerts",
+  "phraseParties": "parties",
+  "phraseFestivals": "festivals",
+  "phraseTheater": "theater & stage",
+  "phraseComedy": "comedy",
+  "phraseSport": "sports & fitness",
+  "phraseKids": "kids & family",
+  "phraseCourses": "courses & seminars",
+  "phraseMarkets": "markets & fairs",
+  "phraseClassic": "classical & opera",
+  "phraseLeisure": "leisure & trips",
+  "phraseOther": "other",
+  "feedFromFriends": "Activities from friends and acquaintances",
+  "noFeedYet": "No activities from friends or acquaintances yet.\nAdd friends to see their events here.",
+  "searchFriendsHint": "Search friends or profiles…",
+  "searchActivitiesHint": "Search activities…",
+  "searchMessagesHint": "Search chats…",
+  "searchFeedHint": "Search feed…",
+  "searchDiscoverHint": "Search events…",
+  "searchEverything": "Everything",
+  "searchResults": "Results · {context}",
+  "@searchResults": {
+    "placeholders": {
+      "context": {"type": "String"}
+    }
+  },
+  "applyPlace": "Apply place",
+  "weeklyReset": "Resets every Monday",
+  "monthlyReset": "Resets on the 1st of the month",
+  "onceOnly": "One-time",
+  "challenge": "Challenge",
+  "nearby": "Nearby",
+  "actionJoin": "I'm in!",
+  "actionInterested": "Interested",
+  "actionJoined": "Going",
+  "actionInterestSent": "Interest sent",
+  "actionFull": "Sold out",
+  "actionYourEvent": "Your event",
+  "actionExternal": "Open source",
+  "levelLabel": "Level {level}",
+  "@levelLabel": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "discoverHeroHint": "What do you want to experience today?",
+  "optionalComment": "Optional comment",
+  "tellAboutYou": "Tell us a bit about yourself…",
+  "interestExample": "e.g. go-kart, football",
+  "activityTitleHint": "e.g. go-karting",
+  "locationExampleHint": "e.g. Berlin Mitte",
+  "gifSearchHint": "Search GIFs…",
+  "activitySingular": "activity",
+  "activityPlural": "activities",
+  "challengeHowToWeekly": "Create or join activities – counts this week (resets Monday).",
+  "challengeHowToMonthly": "Create or join activities – counts this month (resets on the 1st).",
+  "challengeHowToSocial": "Make new friendships – counts this month (resets on the 1st).",
+  "challengeHowToSport": "Join sports/outdoor activities – counts this month (resets on the 1st).",
+  "challengeHowToDefault": "Complete the goal to claim the reward.",
+  "weatherCold": "Cold",
+  "weatherRain": "Rain",
+  "weatherSun": "Sun",
+  "newBadge": "New",
+  "clearSearch": "Clear",
+  "targetAudiences": "Audiences",
+  "friendsCanJoin": "Can join directly",
+  "acquaintancesCanInterest": "Can show interest",
+  "strangersAudience": "Strangers / like-minded",
+  "strangersSubtitle": "Radius-based, show interest",
+  "discoveryRadius": "Discovery radius: {km} km",
+  "@discoveryRadius": {
+    "placeholders": {
+      "km": {"type": "int"}
+    }
+  },
+  "radiusFreePremiumHint": "Free: max. {freeKm} km · Premium: up to {premiumKm} km",
+  "@radiusFreePremiumHint": {
+    "placeholders": {
+      "freeKm": {"type": "int"},
+      "premiumKm": {"type": "int"}
+    }
+  },
+  "settingsSubtitle": "Manage account and test features",
+  "accountTypePerson": "Private person",
+  "accountTypeEvent": "Event profile",
+  "accountTypeCompany": "Company",
+  "progress": "Progress",
+  "rewardXp": "Reward: {xp} XP",
+  "@rewardXp": {
+    "placeholders": {
+      "xp": {"type": "int"}
+    }
+  },
+  "howToComplete": "How to complete",
+  "challengeNotFound": "Challenge not found.",
+  "claimReward": "Claim reward",
+  "challengeComplete": "Completed",
+  "rewardClaimed": "Reward claimed (+{xp} XP)",
+  "@rewardClaimed": {
+    "placeholders": {
+      "xp": {"type": "int"}
+    }
+  },
+  "goToFriends": "Go to friends",
+  "discoverActivities": "Discover activities",
+  "getStarted": "Get started",
+  "success": "Success!",
+  "noExternalSource": "No external source available",
+  "linkOpenFailed": "Could not open link",
+  "tryAgain": "Try again",
+  "weather": "Weather",
+  "maxDistanceKm": "max. {km} km",
+  "@maxDistanceKm": {
+    "placeholders": {
+      "km": {"type": "int"}
+    }
+  },
+  "discoverSubtitle": "Discover activities near you – with friends, the community, and events from your region.",
+  "daily": "Daily",
+  "repeat": "Repeat",
+  "noOwnActivitiesYet": "No activities of your own yet.\nCreate one or join a friend’s.",
+  "noCurrentActivities": "No upcoming activities.\nPast ones are below.",
+  "pastActivities": "Past activities",
+  "galleryEmptyPast": "No completed activities yet.\nAfter an event you can store your photos here.",
+  "noPhotosYetUpload": "No photos yet.\nUpload your first memories.",
+  "noPhotosInMemory": "No photos in this memory yet.",
+  "photoSingular": "photo",
+  "photoPlural": "photos",
+  "memoriesPrivateHint": "Memories are private and only visible to the account owner.",
+  "noPublicMemories": "No public memories yet.",
+  "noReviewsReceived": "No reviews received yet.",
+  "noReviewsBeFirst": "No reviews yet – be the first.",
+  "allReviews": "All reviews",
+  "addPhoto": "Add photo",
+  "locationType": "Location type",
+  "deleteAllNotifications": "Delete all?",
+  "deleteAllNotificationsBody": "All notifications will be permanently removed.",
+  "deleteAllTooltip": "Delete all",
+  "markAllRead": "Mark all read",
+  "noNotifications": "No notifications",
+  "noSearchHits": "No matches in this area.",
+  "challengeTitleWeekly": "{count} activities this week",
+  "@challengeTitleWeekly": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "challengeTitleMonthly": "{count} activities this month",
+  "@challengeTitleMonthly": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "challengeTitleSocial": "{count} new friends this month",
+  "@challengeTitleSocial": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "challengeTitleSport": "{count} sports activities this month",
+  "@challengeTitleSport": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "challengeDescWeekly": "Join or create activities this week. Resets every Monday.",
+  "challengeDescMonthly": "Join or create activities this month. Resets on the 1st.",
+  "challengeDescSocial": "Make new friendships this month. Resets on the 1st.",
+  "challengeDescSport": "Join sports/outdoor activities this month. Resets on the 1st.",
+  "deleteActivityTitle": "Delete activity?",
+  "activityDeleted": "Activity deleted",
+  "memoriesPublicTitle": "Public memories",
+  "memoriesPublicOn": "All your memories are visible to others.",
+  "memoriesPublicOff": "When on, all memories become public automatically.",
+  "memoriesNowPublic": "All memories are now public",
+  "memoriesNowPrivate": "Memories are private",
+  "updateYourReview": "Update your review",
+  "tapStarsToRate": "Tap stars to rate",
+  "submitReview": "Submit review",
+  "saveReview": "Save review",
+  "reviewSaved": "Review saved",
+  "reviewSingular": "Review",
+  "reviewWithCount": "Review ({count})",
+  "@reviewWithCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "changeBanner": "Change banner",
+  "changeProfilePhoto": "Change profile photo",
+  "marketing": "Marketing",
+  "deleteActivityBody": "“{title}” will be permanently deleted (including participants, interests, and chats).",
+  "@deleteActivityBody": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  }
 }

@@ -56,6 +56,9 @@ enum ProfileAccountType {
   bool get isDev => this == dev;
 
   bool get isTeam => this == marketing || this == dev;
+
+  /// Event-/Unternehmens-Profile (ohne persönliches Level).
+  bool get isBusinessProfile => this == event || this == company;
 }
 
 class UserProfile extends Equatable {
@@ -70,6 +73,9 @@ class UserProfile extends Equatable {
     this.userType = 'standard',
     this.isPremium = false,
     this.galleryPublic = false,
+    this.level = 1,
+    this.followedByMe = false,
+    this.followerCount = 0,
   });
 
   final String id;
@@ -82,6 +88,10 @@ class UserProfile extends Equatable {
   final String userType;
   final bool isPremium;
   final bool galleryPublic;
+  /// `null` bei Event-/Unternehmens-Profilen (kein Level-System).
+  final int? level;
+  final bool followedByMe;
+  final int followerCount;
 
   ProfileAccountType get accountType => ProfileAccountType.fromDb(userType);
 
@@ -96,6 +106,10 @@ class UserProfile extends Equatable {
 
   bool get isTeam => accountType.isTeam;
 
+  bool get isBusinessProfile => accountType.isBusinessProfile;
+
+  bool get hasLevelSystem => !isBusinessProfile;
+
   String get ageLabel => age != null ? '$age Jahre' : 'Alter nicht angegeben';
 
   UserProfile copyWith({
@@ -106,9 +120,13 @@ class UserProfile extends Equatable {
     int? age,
     List<String>? interests,
     bool? galleryPublic,
+    int? level,
+    bool? followedByMe,
+    int? followerCount,
     bool clearBio = false,
     bool clearAge = false,
     bool clearAvatar = false,
+    bool clearLevel = false,
   }) {
     return UserProfile(
       id: id,
@@ -121,6 +139,9 @@ class UserProfile extends Equatable {
       userType: userType,
       isPremium: isPremium,
       galleryPublic: galleryPublic ?? this.galleryPublic,
+      level: clearLevel ? null : (level ?? this.level),
+      followedByMe: followedByMe ?? this.followedByMe,
+      followerCount: followerCount ?? this.followerCount,
     );
   }
 
@@ -136,6 +157,9 @@ class UserProfile extends Equatable {
         userType,
         isPremium,
         galleryPublic,
+        level,
+        followedByMe,
+        followerCount,
       ];
 }
 

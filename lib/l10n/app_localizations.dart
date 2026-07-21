@@ -841,6 +841,1176 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Find people. Create memories.'**
   String get searchPlaceholderDiscover;
+
+  /// No description provided for @aboutMe.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutMe;
+
+  /// No description provided for @activities.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities'**
+  String get activities;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @reviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews'**
+  String get reviews;
+
+  /// No description provided for @levelTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get levelTab;
+
+  /// No description provided for @follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get follow;
+
+  /// No description provided for @following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get following;
+
+  /// No description provided for @unfollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get unfollow;
+
+  /// No description provided for @followers.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers'**
+  String get followers;
+
+  /// No description provided for @followersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} followers'**
+  String followersCount(int count);
+
+  /// No description provided for @oneFollower.
+  ///
+  /// In en, this message translates to:
+  /// **'1 follower'**
+  String get oneFollower;
+
+  /// No description provided for @companies.
+  ///
+  /// In en, this message translates to:
+  /// **'Companies'**
+  String get companies;
+
+  /// No description provided for @acquaintances.
+  ///
+  /// In en, this message translates to:
+  /// **'Acquaintances'**
+  String get acquaintances;
+
+  /// No description provided for @acquaintance.
+  ///
+  /// In en, this message translates to:
+  /// **'Acquaintance'**
+  String get acquaintance;
+
+  /// No description provided for @friend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend'**
+  String get friend;
+
+  /// No description provided for @noConnectionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No connections yet'**
+  String get noConnectionsYet;
+
+  /// No description provided for @searchPeopleOrCompanies.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people & companies'**
+  String get searchPeopleOrCompanies;
+
+  /// No description provided for @followHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for people as friends or follow companies / event profiles.'**
+  String get followHint;
+
+  /// No description provided for @noCompaniesFollowed.
+  ///
+  /// In en, this message translates to:
+  /// **'No companies followed yet.'**
+  String get noCompaniesFollowed;
+
+  /// No description provided for @noProfilesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No profiles found.'**
+  String get noProfilesFound;
+
+  /// No description provided for @addAsFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as friend'**
+  String get addAsFriend;
+
+  /// No description provided for @addAsAcquaintance.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as acquaintance'**
+  String get addAsAcquaintance;
+
+  /// No description provided for @companyFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Company · Following'**
+  String get companyFollowing;
+
+  /// No description provided for @companyCanFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Company · Follow'**
+  String get companyCanFollow;
+
+  /// No description provided for @eventProfileShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Event profile'**
+  String get eventProfileShort;
+
+  /// No description provided for @weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get weekly;
+
+  /// No description provided for @monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthly;
+
+  /// No description provided for @weeklyChallengesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly challenges reset every Monday, monthly ones on the 1st of the month.'**
+  String get weeklyChallengesHint;
+
+  /// No description provided for @otherChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'More challenges'**
+  String get otherChallenges;
+
+  /// No description provided for @noActiveChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'No active challenges.'**
+  String get noActiveChallenges;
+
+  /// No description provided for @businessNoLevelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No personal level'**
+  String get businessNoLevelTitle;
+
+  /// No description provided for @businessNoLevelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Event and company profiles have no personal level or challenge system.\n\nSoon you’ll be able to create one monthly challenge for your followers.'**
+  String get businessNoLevelBody;
+
+  /// No description provided for @businessPanelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No personal level. Followers and events come first.'**
+  String get businessPanelHint;
+
+  /// No description provided for @currentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Current badge: {name}'**
+  String currentBadge(String name);
+
+  /// No description provided for @unlockedBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked ({count})'**
+  String unlockedBadges(int count);
+
+  /// No description provided for @lockedBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Still locked ({count})'**
+  String lockedBadges(int count);
+
+  /// No description provided for @noBadgesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No badges unlocked yet.'**
+  String get noBadgesYet;
+
+  /// No description provided for @noBadgeYetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No badge yet – Spark awaits you at level 5.'**
+  String get noBadgeYetHint;
+
+  /// No description provided for @badgeLockedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Still locked. Reach level {level} to unlock this badge.\n\n{description}'**
+  String badgeLockedHint(int level, String description);
+
+  /// No description provided for @levelBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Level badges'**
+  String get levelBadges;
+
+  /// No description provided for @levelBadgesWithName.
+  ///
+  /// In en, this message translates to:
+  /// **'Level badges · {name}'**
+  String levelBadgesWithName(String name);
+
+  /// No description provided for @xpRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP left until level {level}'**
+  String xpRemaining(int xp, int level);
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @bio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get bio;
+
+  /// No description provided for @topInterests.
+  ///
+  /// In en, this message translates to:
+  /// **'Top interests'**
+  String get topInterests;
+
+  /// No description provided for @noInterestsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No interests added yet.'**
+  String get noInterestsYet;
+
+  /// No description provided for @noActivitiesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities yet.\nCreate one or join a friend’s.'**
+  String get noActivitiesYet;
+
+  /// No description provided for @noVisibleActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'No visible activities.'**
+  String get noVisibleActivities;
+
+  /// No description provided for @resetFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset search / filters'**
+  String get resetFilters;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @showEventsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Show events in {category}.'**
+  String showEventsIn(String category);
+
+  /// No description provided for @catAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get catAll;
+
+  /// No description provided for @catConcerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Concerts'**
+  String get catConcerts;
+
+  /// No description provided for @catParties.
+  ///
+  /// In en, this message translates to:
+  /// **'Parties'**
+  String get catParties;
+
+  /// No description provided for @catFestivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Festivals'**
+  String get catFestivals;
+
+  /// No description provided for @catTheater.
+  ///
+  /// In en, this message translates to:
+  /// **'Theater & stage'**
+  String get catTheater;
+
+  /// No description provided for @catComedy.
+  ///
+  /// In en, this message translates to:
+  /// **'Comedy'**
+  String get catComedy;
+
+  /// No description provided for @catSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports & fitness'**
+  String get catSport;
+
+  /// No description provided for @catKids.
+  ///
+  /// In en, this message translates to:
+  /// **'Kids & family'**
+  String get catKids;
+
+  /// No description provided for @catCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Courses & seminars'**
+  String get catCourses;
+
+  /// No description provided for @catMarkets.
+  ///
+  /// In en, this message translates to:
+  /// **'Markets & fairs'**
+  String get catMarkets;
+
+  /// No description provided for @catClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classical & opera'**
+  String get catClassic;
+
+  /// No description provided for @catLeisure.
+  ///
+  /// In en, this message translates to:
+  /// **'Leisure & trips'**
+  String get catLeisure;
+
+  /// No description provided for @catOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get catOther;
+
+  /// No description provided for @phraseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'all categories'**
+  String get phraseAll;
+
+  /// No description provided for @phraseConcerts.
+  ///
+  /// In en, this message translates to:
+  /// **'concerts'**
+  String get phraseConcerts;
+
+  /// No description provided for @phraseParties.
+  ///
+  /// In en, this message translates to:
+  /// **'parties'**
+  String get phraseParties;
+
+  /// No description provided for @phraseFestivals.
+  ///
+  /// In en, this message translates to:
+  /// **'festivals'**
+  String get phraseFestivals;
+
+  /// No description provided for @phraseTheater.
+  ///
+  /// In en, this message translates to:
+  /// **'theater & stage'**
+  String get phraseTheater;
+
+  /// No description provided for @phraseComedy.
+  ///
+  /// In en, this message translates to:
+  /// **'comedy'**
+  String get phraseComedy;
+
+  /// No description provided for @phraseSport.
+  ///
+  /// In en, this message translates to:
+  /// **'sports & fitness'**
+  String get phraseSport;
+
+  /// No description provided for @phraseKids.
+  ///
+  /// In en, this message translates to:
+  /// **'kids & family'**
+  String get phraseKids;
+
+  /// No description provided for @phraseCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'courses & seminars'**
+  String get phraseCourses;
+
+  /// No description provided for @phraseMarkets.
+  ///
+  /// In en, this message translates to:
+  /// **'markets & fairs'**
+  String get phraseMarkets;
+
+  /// No description provided for @phraseClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'classical & opera'**
+  String get phraseClassic;
+
+  /// No description provided for @phraseLeisure.
+  ///
+  /// In en, this message translates to:
+  /// **'leisure & trips'**
+  String get phraseLeisure;
+
+  /// No description provided for @phraseOther.
+  ///
+  /// In en, this message translates to:
+  /// **'other'**
+  String get phraseOther;
+
+  /// No description provided for @feedFromFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities from friends and acquaintances'**
+  String get feedFromFriends;
+
+  /// No description provided for @noFeedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities from friends or acquaintances yet.\nAdd friends to see their events here.'**
+  String get noFeedYet;
+
+  /// No description provided for @searchFriendsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search friends or profiles…'**
+  String get searchFriendsHint;
+
+  /// No description provided for @searchActivitiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search activities…'**
+  String get searchActivitiesHint;
+
+  /// No description provided for @searchMessagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats…'**
+  String get searchMessagesHint;
+
+  /// No description provided for @searchFeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search feed…'**
+  String get searchFeedHint;
+
+  /// No description provided for @searchDiscoverHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search events…'**
+  String get searchDiscoverHint;
+
+  /// No description provided for @searchEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get searchEverything;
+
+  /// No description provided for @searchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Results · {context}'**
+  String searchResults(String context);
+
+  /// No description provided for @applyPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply place'**
+  String get applyPlace;
+
+  /// No description provided for @weeklyReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets every Monday'**
+  String get weeklyReset;
+
+  /// No description provided for @monthlyReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets on the 1st of the month'**
+  String get monthlyReset;
+
+  /// No description provided for @onceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time'**
+  String get onceOnly;
+
+  /// No description provided for @challenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge'**
+  String get challenge;
+
+  /// No description provided for @nearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby'**
+  String get nearby;
+
+  /// No description provided for @actionJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m in!'**
+  String get actionJoin;
+
+  /// No description provided for @actionInterested.
+  ///
+  /// In en, this message translates to:
+  /// **'Interested'**
+  String get actionInterested;
+
+  /// No description provided for @actionJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Going'**
+  String get actionJoined;
+
+  /// No description provided for @actionInterestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest sent'**
+  String get actionInterestSent;
+
+  /// No description provided for @actionFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold out'**
+  String get actionFull;
+
+  /// No description provided for @actionYourEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Your event'**
+  String get actionYourEvent;
+
+  /// No description provided for @actionExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source'**
+  String get actionExternal;
+
+  /// No description provided for @levelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}'**
+  String levelLabel(int level);
+
+  /// No description provided for @discoverHeroHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you want to experience today?'**
+  String get discoverHeroHint;
+
+  /// No description provided for @optionalComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional comment'**
+  String get optionalComment;
+
+  /// No description provided for @tellAboutYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us a bit about yourself…'**
+  String get tellAboutYou;
+
+  /// No description provided for @interestExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. go-kart, football'**
+  String get interestExample;
+
+  /// No description provided for @activityTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. go-karting'**
+  String get activityTitleHint;
+
+  /// No description provided for @locationExampleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Berlin Mitte'**
+  String get locationExampleHint;
+
+  /// No description provided for @gifSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIFs…'**
+  String get gifSearchHint;
+
+  /// No description provided for @activitySingular.
+  ///
+  /// In en, this message translates to:
+  /// **'activity'**
+  String get activitySingular;
+
+  /// No description provided for @activityPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'activities'**
+  String get activityPlural;
+
+  /// No description provided for @challengeHowToWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join activities – counts this week (resets Monday).'**
+  String get challengeHowToWeekly;
+
+  /// No description provided for @challengeHowToMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join activities – counts this month (resets on the 1st).'**
+  String get challengeHowToMonthly;
+
+  /// No description provided for @challengeHowToSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Make new friendships – counts this month (resets on the 1st).'**
+  String get challengeHowToSocial;
+
+  /// No description provided for @challengeHowToSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Join sports/outdoor activities – counts this month (resets on the 1st).'**
+  String get challengeHowToSport;
+
+  /// No description provided for @challengeHowToDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the goal to claim the reward.'**
+  String get challengeHowToDefault;
+
+  /// No description provided for @weatherCold.
+  ///
+  /// In en, this message translates to:
+  /// **'Cold'**
+  String get weatherCold;
+
+  /// No description provided for @weatherRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weatherRain;
+
+  /// No description provided for @weatherSun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get weatherSun;
+
+  /// No description provided for @newBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get newBadge;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearSearch;
+
+  /// No description provided for @targetAudiences.
+  ///
+  /// In en, this message translates to:
+  /// **'Audiences'**
+  String get targetAudiences;
+
+  /// No description provided for @friendsCanJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Can join directly'**
+  String get friendsCanJoin;
+
+  /// No description provided for @acquaintancesCanInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Can show interest'**
+  String get acquaintancesCanInterest;
+
+  /// No description provided for @strangersAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'Strangers / like-minded'**
+  String get strangersAudience;
+
+  /// No description provided for @strangersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius-based, show interest'**
+  String get strangersSubtitle;
+
+  /// No description provided for @discoveryRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery radius: {km} km'**
+  String discoveryRadius(int km);
+
+  /// No description provided for @radiusFreePremiumHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free: max. {freeKm} km · Premium: up to {premiumKm} km'**
+  String radiusFreePremiumHint(int freeKm, int premiumKm);
+
+  /// No description provided for @settingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage account and test features'**
+  String get settingsSubtitle;
+
+  /// No description provided for @accountTypePerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Private person'**
+  String get accountTypePerson;
+
+  /// No description provided for @accountTypeEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Event profile'**
+  String get accountTypeEvent;
+
+  /// No description provided for @accountTypeCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get accountTypeCompany;
+
+  /// No description provided for @progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progress;
+
+  /// No description provided for @rewardXp.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward: {xp} XP'**
+  String rewardXp(int xp);
+
+  /// No description provided for @howToComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'How to complete'**
+  String get howToComplete;
+
+  /// No description provided for @challengeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge not found.'**
+  String get challengeNotFound;
+
+  /// No description provided for @claimReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim reward'**
+  String get claimReward;
+
+  /// No description provided for @challengeComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get challengeComplete;
+
+  /// No description provided for @rewardClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward claimed (+{xp} XP)'**
+  String rewardClaimed(int xp);
+
+  /// No description provided for @goToFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to friends'**
+  String get goToFriends;
+
+  /// No description provided for @discoverActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover activities'**
+  String get discoverActivities;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get getStarted;
+
+  /// No description provided for @success.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get success;
+
+  /// No description provided for @noExternalSource.
+  ///
+  /// In en, this message translates to:
+  /// **'No external source available'**
+  String get noExternalSource;
+
+  /// No description provided for @linkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link'**
+  String get linkOpenFailed;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// No description provided for @weather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get weather;
+
+  /// No description provided for @maxDistanceKm.
+  ///
+  /// In en, this message translates to:
+  /// **'max. {km} km'**
+  String maxDistanceKm(int km);
+
+  /// No description provided for @discoverSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover activities near you – with friends, the community, and events from your region.'**
+  String get discoverSubtitle;
+
+  /// No description provided for @daily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get daily;
+
+  /// No description provided for @repeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get repeat;
+
+  /// No description provided for @noOwnActivitiesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities of your own yet.\nCreate one or join a friend’s.'**
+  String get noOwnActivitiesYet;
+
+  /// No description provided for @noCurrentActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming activities.\nPast ones are below.'**
+  String get noCurrentActivities;
+
+  /// No description provided for @pastActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'Past activities'**
+  String get pastActivities;
+
+  /// No description provided for @galleryEmptyPast.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed activities yet.\nAfter an event you can store your photos here.'**
+  String get galleryEmptyPast;
+
+  /// No description provided for @noPhotosYetUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet.\nUpload your first memories.'**
+  String get noPhotosYetUpload;
+
+  /// No description provided for @noPhotosInMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos in this memory yet.'**
+  String get noPhotosInMemory;
+
+  /// No description provided for @photoSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'photo'**
+  String get photoSingular;
+
+  /// No description provided for @photoPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'photos'**
+  String get photoPlural;
+
+  /// No description provided for @memoriesPrivateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Memories are private and only visible to the account owner.'**
+  String get memoriesPrivateHint;
+
+  /// No description provided for @noPublicMemories.
+  ///
+  /// In en, this message translates to:
+  /// **'No public memories yet.'**
+  String get noPublicMemories;
+
+  /// No description provided for @noReviewsReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews received yet.'**
+  String get noReviewsReceived;
+
+  /// No description provided for @noReviewsBeFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet – be the first.'**
+  String get noReviewsBeFirst;
+
+  /// No description provided for @allReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'All reviews'**
+  String get allReviews;
+
+  /// No description provided for @addPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get addPhoto;
+
+  /// No description provided for @locationType.
+  ///
+  /// In en, this message translates to:
+  /// **'Location type'**
+  String get locationType;
+
+  /// No description provided for @deleteAllNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all?'**
+  String get deleteAllNotifications;
+
+  /// No description provided for @deleteAllNotificationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All notifications will be permanently removed.'**
+  String get deleteAllNotificationsBody;
+
+  /// No description provided for @deleteAllTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get deleteAllTooltip;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get markAllRead;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
+
+  /// No description provided for @noSearchHits.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches in this area.'**
+  String get noSearchHits;
+
+  /// No description provided for @challengeTitleWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} activities this week'**
+  String challengeTitleWeekly(int count);
+
+  /// No description provided for @challengeTitleMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} activities this month'**
+  String challengeTitleMonthly(int count);
+
+  /// No description provided for @challengeTitleSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new friends this month'**
+  String challengeTitleSocial(int count);
+
+  /// No description provided for @challengeTitleSport.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sports activities this month'**
+  String challengeTitleSport(int count);
+
+  /// No description provided for @challengeDescWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Join or create activities this week. Resets every Monday.'**
+  String get challengeDescWeekly;
+
+  /// No description provided for @challengeDescMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Join or create activities this month. Resets on the 1st.'**
+  String get challengeDescMonthly;
+
+  /// No description provided for @challengeDescSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Make new friendships this month. Resets on the 1st.'**
+  String get challengeDescSocial;
+
+  /// No description provided for @challengeDescSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Join sports/outdoor activities this month. Resets on the 1st.'**
+  String get challengeDescSport;
+
+  /// No description provided for @deleteActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete activity?'**
+  String get deleteActivityTitle;
+
+  /// No description provided for @activityDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity deleted'**
+  String get activityDeleted;
+
+  /// No description provided for @memoriesPublicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Public memories'**
+  String get memoriesPublicTitle;
+
+  /// No description provided for @memoriesPublicOn.
+  ///
+  /// In en, this message translates to:
+  /// **'All your memories are visible to others.'**
+  String get memoriesPublicOn;
+
+  /// No description provided for @memoriesPublicOff.
+  ///
+  /// In en, this message translates to:
+  /// **'When on, all memories become public automatically.'**
+  String get memoriesPublicOff;
+
+  /// No description provided for @memoriesNowPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'All memories are now public'**
+  String get memoriesNowPublic;
+
+  /// No description provided for @memoriesNowPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Memories are private'**
+  String get memoriesNowPrivate;
+
+  /// No description provided for @updateYourReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your review'**
+  String get updateYourReview;
+
+  /// No description provided for @tapStarsToRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap stars to rate'**
+  String get tapStarsToRate;
+
+  /// No description provided for @submitReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit review'**
+  String get submitReview;
+
+  /// No description provided for @saveReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Save review'**
+  String get saveReview;
+
+  /// No description provided for @reviewSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Review saved'**
+  String get reviewSaved;
+
+  /// No description provided for @reviewSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get reviewSingular;
+
+  /// No description provided for @reviewWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Review ({count})'**
+  String reviewWithCount(int count);
+
+  /// No description provided for @changeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Change banner'**
+  String get changeBanner;
+
+  /// No description provided for @changeProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change profile photo'**
+  String get changeProfilePhoto;
+
+  /// No description provided for @deleteActivityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” will be permanently deleted (including participants, interests, and chats).'**
+  String deleteActivityBody(String title);
 }
 
 class _AppLocalizationsDelegate

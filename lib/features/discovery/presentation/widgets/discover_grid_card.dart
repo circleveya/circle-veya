@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/location/distance_display.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../activities/domain/entities/activity.dart';
 import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/presentation/widgets/activity_status_badges.dart';
@@ -35,6 +36,7 @@ class DiscoverGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateLabel = _formatDateLabel(activity.dateTime);
 
     return Card(
@@ -208,7 +210,10 @@ class DiscoverGridCard extends StatelessWidget {
                                     color: Colors.white,
                                   ),
                                 )
-                              : Text(activity.viewerAction.buttonLabel),
+                              : Text(
+                                  activity.viewerAction
+                                      .localizedButtonLabel(l10n),
+                                ),
                         ),
                       ),
                     ],

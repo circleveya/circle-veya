@@ -12,7 +12,9 @@ import '../../../activities/domain/entities/activity.dart';
 import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../activities/presentation/widgets/activity_card.dart';
+import '../../../challenges/domain/entities/level_milestone.dart';
 import '../../../challenges/presentation/providers/challenge_provider.dart';
+import '../../../challenges/presentation/widgets/level_milestones_ui.dart';
 import '../../../friends/domain/entities/connection.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../gallery/presentation/providers/gallery_provider.dart';
@@ -23,8 +25,9 @@ import '../../domain/entities/user_review.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_image_crop_editor.dart';
 import '../widgets/star_rating.dart';
+import '../../../../l10n/app_localizations.dart';
 
-class ProfileViewScreen extends ConsumerStatefulWidget {
+class ProfileViewScreen extends ConsumerWidget {
   const ProfileViewScreen({
     super.key,
     required this.profileId,
@@ -37,61 +40,66 @@ class ProfileViewScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
   @override
-  ConsumerState<ProfileViewScreen> createState() => _ProfileViewScreenState();
-}
-
-class _ProfileViewScreenState extends ConsumerState<ProfileViewScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final profileAsync = ref.watch(profileProvider(widget.profileId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(profileProvider(profileId));
     final sessionUserId =
         ref.watch(supabaseClientProvider).auth.currentUser?.id;
-    final isOwnProfile = widget.isOwnProfile ||
-        (sessionUserId != null && sessionUserId == widget.profileId);
+    final isOwn = isOwnProfile ||
+        (sessionUserId != null && sessionUserId == profileId);
 
     return profileAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('$e')),
       data: (profile) => _ProfileBody(
+        key: ValueKey('${profile.id}-${profile.hasLevelSystem}'),
         profile: profile,
-        isOwnProfile: isOwnProfile,
-        embedded: widget.embedded,
-        tabController: _tabController,
+        isOwnProfile: isOwn,
+        embedded: embedded,
       ),
     );
   }
 }
 
-class _ProfileBody extends ConsumerWidget {
+class _ProfileBody extends ConsumerStatefulWidget {
   const _ProfileBody({
+    super.key,
     required this.profile,
     required this.isOwnProfile,
     required this.embedded,
-    required this.tabController,
   });
 
   final UserProfile profile;
   final bool isOwnProfile;
   final bool embedded;
-  final TabController tabController;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ProfileBody> createState() => _ProfileBodyState();
+}
+
+class _ProfileBodyState extends ConsumerState<_ProfileBody>
+    with SingleTickerProviderStateMixin {
+  late final TabController tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    tabController = TabController(
+      length: widget.profile.hasLevelSystem ? 5 : 4,
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.profile;
+    final isOwnProfile = widget.isOwnProfile;
+    final embedded = widget.embedded;
     final theme = Theme.of(context);
     final statsAsync = ref.watch(userLevelStatsProvider);
     final ratingAsync = ref.watch(profileRatingProvider(profile.id));
@@ -105,9 +113,16 @@ class _ProfileBody extends ConsumerWidget {
         ? ref.watch(myGroupsProvider).valueOrNull?.length ?? 0
         : 0;
 
-    final level = statsAsync.valueOrNull?.level ?? 1;
+    final level = !profile.hasLevelSystem
+        ? null
+        : (isOwnProfile
+            ? (statsAsync.valueOrNull?.level ?? profile.level ?? 1)
+            : (profile.level ?? 1));
     final rating = ratingAsync.valueOrNull?.avgRating ?? 0.0;
     final reviewCount = ratingAsync.valueOrNull?.reviewCount ?? 0;
+    final followBusy = ref.watch(friendsActionsProvider).isLoading;
+    final showLevelTab = profile.hasLevelSystem;
+    final l10n = AppLocalizations.of(context);
 
     final content = CustomScrollView(
       slivers: [
@@ -116,18 +131,58 @@ class _ProfileBody extends ConsumerWidget {
             profile: profile,
             isOwnProfile: isOwnProfile,
             level: level,
+            onLevelTap: showLevelTab ? () => tabController.animateTo(2) : null,
             showBackButton: !embedded,
           ),
         ),
+        if (!isOwnProfile && profile.isBusinessProfile)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              child: FilledButton.icon(
+                onPressed: followBusy
+                    ? null
+                    : () async {
+                        final actions =
+                            ref.read(friendsActionsProvider.notifier);
+                        if (profile.followedByMe) {
+                          await actions.unfollowCompany(profile.id);
+                        } else {
+                          await actions.followCompany(profile.id);
+                        }
+                      },
+                icon: Icon(
+                  profile.followedByMe ? Icons.check : Icons.person_add_alt_1,
+                ),
+                label: Text(
+                  profile.followedByMe ? l10n.following : l10n.follow,
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: profile.followedByMe
+                      ? theme.colorScheme.surfaceContainerHighest
+                      : AppColors.seed,
+                  foregroundColor: profile.followedByMe
+                      ? theme.colorScheme.onSurface
+                      : Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+            ),
+          ),
         SliverToBoxAdapter(
           child: _ProfileStatsRow(
             activities: activityCount,
-            friends: friendCount,
-            groups: groupCount,
+            friends: profile.isBusinessProfile
+                ? profile.followerCount
+                : friendCount,
+            groups: profile.isBusinessProfile ? 0 : groupCount,
             rating: rating,
             reviewCount: reviewCount,
+            friendsLabel:
+                profile.isBusinessProfile ? l10n.followers : l10n.friends,
+            hideGroups: profile.isBusinessProfile,
             onActivitiesTap: () => tabController.animateTo(1),
-            onFriendsTap: isOwnProfile
+            onFriendsTap: (!profile.isBusinessProfile && isOwnProfile)
                 ? () {
                     ref
                         .read(shellDestinationRequestProvider.notifier)
@@ -137,7 +192,7 @@ class _ProfileBody extends ConsumerWidget {
                     }
                   }
                 : null,
-            onGroupsTap: isOwnProfile
+            onGroupsTap: (!profile.isBusinessProfile && isOwnProfile)
                 ? () {
                     ref
                         .read(shellDestinationRequestProvider.notifier)
@@ -147,7 +202,7 @@ class _ProfileBody extends ConsumerWidget {
                     }
                   }
                 : null,
-            onRatingTap: () => tabController.animateTo(3),
+            onRatingTap: () => tabController.animateTo(showLevelTab ? 4 : 3),
           ),
         ),
         SliverPersistentHeader(
@@ -157,11 +212,12 @@ class _ProfileBody extends ConsumerWidget {
               controller: tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              tabs: const [
-                Tab(text: 'Über mich'),
-                Tab(text: 'Aktivitäten'),
-                Tab(text: 'Galerie'),
-                Tab(text: 'Bewertungen'),
+              tabs: [
+                Tab(text: l10n.aboutMe),
+                Tab(text: l10n.activities),
+                if (showLevelTab) Tab(text: l10n.levelTab),
+                Tab(text: l10n.gallery),
+                Tab(text: l10n.reviews),
               ],
             ),
           ),
@@ -175,6 +231,8 @@ class _ProfileBody extends ConsumerWidget {
                 profileId: profile.id,
                 isOwnProfile: isOwnProfile,
               ),
+              if (showLevelTab)
+                LevelMilestonesGallery(userLevel: level ?? 1),
               _ProfileGalleryTab(
                 profileId: profile.id,
                 isOwnProfile: isOwnProfile,
@@ -204,7 +262,7 @@ class _ProfileBody extends ConsumerWidget {
           ? FloatingActionButton.extended(
               onPressed: () => context.pushNamed(RouteNames.profileEdit),
               icon: const Icon(Icons.edit),
-              label: const Text('Bearbeiten'),
+              label: Text(AppLocalizations.of(context).edit),
             )
           : null,
     );
@@ -216,12 +274,14 @@ class _ProfileCoverHeader extends ConsumerWidget {
     required this.profile,
     required this.isOwnProfile,
     required this.level,
+    this.onLevelTap,
     this.showBackButton = false,
   });
 
   final UserProfile profile;
   final bool isOwnProfile;
-  final int level;
+  final int? level;
+  final VoidCallback? onLevelTap;
   final bool showBackButton;
 
   Future<void> _pickAvatar(BuildContext context, WidgetRef ref) async {
@@ -410,23 +470,69 @@ class _ProfileCoverHeader extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Level $level',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                      if (level != null)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Material(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              child: InkWell(
+                                onTap: onLevelTap,
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    'Level $level',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (LevelMilestone.currentFor(level!) != null)
+                              LevelMilestoneChip(
+                                milestone: LevelMilestone.currentFor(level!)!,
+                                light: true,
+                                onTap: () {
+                                  final m = LevelMilestone.currentFor(level!)!;
+                                  showLevelMilestoneDetails(
+                                    context,
+                                    m,
+                                    unlocked: true,
+                                  );
+                                },
+                              ),
+                          ],
+                        )
+                      else if (profile.isBusinessProfile)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            profile.followerCount == 1
+                                ? AppLocalizations.of(context).oneFollower
+                                : AppLocalizations.of(context)
+                                    .followersCount(profile.followerCount),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -584,6 +690,8 @@ class _ProfileStatsRow extends StatelessWidget {
     required this.groups,
     required this.rating,
     required this.reviewCount,
+    this.friendsLabel = '',
+    this.hideGroups = false,
     this.onActivitiesTap,
     this.onFriendsTap,
     this.onGroupsTap,
@@ -595,6 +703,8 @@ class _ProfileStatsRow extends StatelessWidget {
   final int groups;
   final double rating;
   final int reviewCount;
+  final String friendsLabel;
+  final bool hideGroups;
   final VoidCallback? onActivitiesTap;
   final VoidCallback? onFriendsTap;
   final VoidCallback? onGroupsTap;
@@ -602,25 +712,27 @@ class _ProfileStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       child: Row(
         children: [
           _StatItem(
-            label: 'Aktivitäten',
+            label: l10n.activities,
             value: '$activities',
             onTap: onActivitiesTap,
           ),
           _StatItem(
-            label: 'Freunde',
+            label: friendsLabel.isEmpty ? l10n.friends : friendsLabel,
             value: '$friends',
             onTap: onFriendsTap,
           ),
-          _StatItem(
-            label: 'Kreise',
-            value: '$groups',
-            onTap: onGroupsTap,
-          ),
+          if (!hideGroups)
+            _StatItem(
+              label: AppLocalizations.of(context).groups,
+              value: '$groups',
+              onTap: onGroupsTap,
+            ),
           Expanded(
             child: Material(
               color: Colors.transparent,
@@ -727,21 +839,22 @@ class _AboutTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-          Text('Bio', style: theme.textTheme.titleMedium),
+          Text(l10n.bio, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(profile.bio!, style: theme.textTheme.bodyLarge),
           const SizedBox(height: 24),
         ],
-        Text('Top Interessen', style: theme.textTheme.titleMedium),
+        Text(l10n.topInterests, style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         if (profile.interests.isEmpty)
           Text(
-            'Noch keine Interessen hinterlegt.',
+            l10n.noInterestsYet,
             style: theme.textTheme.bodyMedium,
           )
         else
@@ -775,6 +888,7 @@ class _ProfileActivitiesTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final args = (profileId: profileId, isOwn: isOwnProfile);
     final activitiesAsync = ref.watch(profileActivitiesProvider(args));
+    final l10n = AppLocalizations.of(context);
 
     return activitiesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -789,7 +903,7 @@ class _ProfileActivitiesTab extends ConsumerWidget {
               FilledButton(
                 onPressed: () =>
                     ref.invalidate(profileActivitiesProvider(args)),
-                child: const Text('Erneut versuchen'),
+                child: Text(l10n.tryAgain),
               ),
             ],
           ),
@@ -802,9 +916,8 @@ class _ProfileActivitiesTab extends ConsumerWidget {
               padding: const EdgeInsets.all(32),
               child: Text(
                 isOwnProfile
-                    ? 'Noch keine Aktivitäten.\n'
-                        'Erstelle eine oder sage bei Freunden zu.'
-                    : 'Keine sichtbaren Aktivitäten.',
+                    ? l10n.noActivitiesYet
+                    : l10n.noVisibleActivities,
                 textAlign: TextAlign.center,
               ),
             ),
@@ -932,9 +1045,9 @@ class _ProfileGalleryTab extends ConsumerWidget {
     }
 
     if (!galleryPublic) {
-      return const _PlaceholderTab(
+      return _PlaceholderTab(
         icon: Icons.lock_outline,
-        text: 'Erinnerungen sind privat und nur für den Account-Inhaber sichtbar.',
+        text: AppLocalizations.of(context).memoriesPrivateHint,
       );
     }
 
@@ -944,9 +1057,9 @@ class _ProfileGalleryTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('$e')),
       data: (items) {
         if (items.isEmpty) {
-          return const _PlaceholderTab(
+          return _PlaceholderTab(
             icon: Icons.photo_library_outlined,
-            text: 'Noch keine öffentlichen Erinnerungen.',
+            text: AppLocalizations.of(context).noPublicMemories,
           );
         }
         return ListView.separated(
@@ -967,7 +1080,10 @@ class _ProfileGalleryTab extends ConsumerWidget {
               ),
               leading: const Icon(Icons.public, color: AppColors.seed),
               title: Text(item.title),
-              subtitle: Text('${item.photoCount} Fotos'),
+              subtitle: Text(
+                '${item.photoCount} '
+                '${item.photoCount == 1 ? AppLocalizations.of(context).photoSingular : AppLocalizations.of(context).photoPlural}',
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.pushNamed(
                 RouteNames.activityGallery,
@@ -1072,8 +1188,8 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
                 controller: _commentController,
                 maxLines: 3,
                 maxLength: 280,
-                decoration: const InputDecoration(
-                  hintText: 'Optionaler Kommentar',
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).optionalComment,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -1106,7 +1222,7 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
               const SizedBox(height: 12),
             ],
             Text(
-              'Alle Bewertungen',
+              AppLocalizations.of(context).allReviews,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -1117,8 +1233,8 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   widget.isOwnProfile
-                      ? 'Noch keine Bewertungen erhalten.'
-                      : 'Noch keine Bewertungen – sei die erste Person.',
+                      ? AppLocalizations.of(context).noReviewsReceived
+                      : AppLocalizations.of(context).noReviewsBeFirst,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

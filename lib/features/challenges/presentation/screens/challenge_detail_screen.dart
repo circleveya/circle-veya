@@ -6,6 +6,7 @@ import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/challenge.dart';
 import '../providers/challenge_provider.dart';
 
@@ -24,6 +25,7 @@ class ChallengeDetailScreen extends ConsumerWidget {
     final statsAsync = ref.watch(userLevelStatsProvider);
     final isCompleting = ref.watch(challengeActionsProvider).isLoading;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final resolved = challenge ??
         statsAsync.valueOrNull?.challenges
@@ -36,25 +38,25 @@ class ChallengeDetailScreen extends ConsumerWidget {
 
     if (resolved == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Challenge')),
-        body: const Center(child: Text('Challenge nicht gefunden.')),
+        appBar: AppBar(title: Text(l10n.challenge)),
+        body: Center(child: Text(l10n.challengeNotFound)),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(resolved.title)),
+      appBar: AppBar(title: Text(resolved.localizedTitle(l10n))),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            resolved.title,
+            resolved.localizedTitle(l10n),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            resolved.resetHint,
+            resolved.localizedResetHint(l10n),
             style: theme.textTheme.labelLarge?.copyWith(
               color: AppColors.seed,
               fontWeight: FontWeight.w600,
@@ -62,12 +64,12 @@ class ChallengeDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            resolved.resolvedDescription,
+            resolved.localizedDescription(l10n),
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 24),
           Text(
-            'Fortschritt',
+            l10n.progress,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -98,20 +100,23 @@ class ChallengeDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Belohnung: ${resolved.xpReward} XP',
+            l10n.rewardXp(resolved.xpReward),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 28),
           Text(
-            'So schließt du sie ab',
+            l10n.howToComplete,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
-          Text(resolved.resolvedHowTo, style: theme.textTheme.bodyMedium),
+          Text(
+            resolved.localizedHowTo(l10n),
+            style: theme.textTheme.bodyMedium,
+          ),
           const SizedBox(height: 32),
           if (resolved.isComplete)
             FilledButton(
@@ -127,7 +132,7 @@ class ChallengeDetailScreen extends ConsumerWidget {
                         SnackBar(
                           content: Text(
                             error == null
-                                ? 'Belohnung abgeholt (+${resolved.xpReward} XP)'
+                                ? l10n.rewardClaimed(resolved.xpReward)
                                 : '$error',
                           ),
                         ),
@@ -144,7 +149,7 @@ class ChallengeDetailScreen extends ConsumerWidget {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Belohnung abholen'),
+                  : Text(l10n.claimReward),
             )
           else
             FilledButton(
@@ -164,10 +169,10 @@ class ChallengeDetailScreen extends ConsumerWidget {
               ),
               child: Text(
                 switch (resolved.challengeType) {
-                  'social' => 'Zu Freunden',
-                  'weekly' => 'Aktivität erstellen',
-                  'sport' => 'Aktivitäten entdecken',
-                  _ => 'Loslegen',
+                  'social' => l10n.goToFriends,
+                  'weekly' => l10n.createActivity,
+                  'sport' => l10n.discoverActivities,
+                  _ => l10n.getStarted,
                 },
               ),
             ),

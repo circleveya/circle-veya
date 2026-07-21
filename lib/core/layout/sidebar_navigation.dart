@@ -55,11 +55,14 @@ class SidebarNavigation extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
                 for (final dest in kWebSidebarMainNav)
-                  _SidebarNavItem(
-                    destination: dest,
-                    isSelected: selected == dest,
-                    onTap: () => onSelected(dest),
-                  ),
+                  if (!(dest == WebShellDestination.challenges &&
+                      (ref.watch(myProfileProvider).valueOrNull?.isBusinessProfile ??
+                          false)))
+                    _SidebarNavItem(
+                      destination: dest,
+                      isSelected: selected == dest,
+                      onTap: () => onSelected(dest),
+                    ),
                 const SizedBox(height: 12),
                 Divider(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 const SizedBox(height: 8),

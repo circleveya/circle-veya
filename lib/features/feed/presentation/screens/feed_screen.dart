@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/url_utils.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../activities/domain/entities/activity.dart';
 import '../../../activities/domain/entities/activity_enums.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
@@ -18,6 +19,7 @@ class FeedScreen extends ConsumerWidget {
     final feedAsync = ref.watch(socialFeedProvider);
     final actionsState = ref.watch(activityActionsProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isActionLoading = actionsState.isLoading;
 
     return feedAsync.when(
@@ -32,7 +34,7 @@ class FeedScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => ref.invalidate(socialFeedProvider),
-                child: const Text('Erneut versuchen'),
+                child: Text(l10n.tryAgain),
               ),
             ],
           ),
@@ -54,14 +56,14 @@ class FeedScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Feed',
+                      l10n.feed,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Aktivitäten von Freunden und Bekannten',
+                      l10n.feedFromFriends,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -71,13 +73,12 @@ class FeedScreen extends ConsumerWidget {
               ),
             ),
             if (activities.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Noch keine Aktivitäten von Freunden oder Bekannten.\n'
-                      'Füge Freunde hinzu oder warte auf neue Events in deinem Kreis.',
+                      l10n.noFeedYet,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -85,14 +86,14 @@ class FeedScreen extends ConsumerWidget {
               )
             else ...[
               _FeedSection(
-                title: 'Freunde',
+                title: l10n.friends,
                 activities: friends,
                 isActionLoading: isActionLoading,
                 onTap: (a) => _openDetail(context, a),
                 onAction: (a) => _handleAction(context, ref, a),
               ),
               _FeedSection(
-                title: 'Bekannte',
+                title: l10n.acquaintances,
                 activities: acquaintances,
                 isActionLoading: isActionLoading,
                 onTap: (a) => _openDetail(context, a),
@@ -119,11 +120,12 @@ class FeedScreen extends ConsumerWidget {
     WidgetRef ref,
     DiscoverableActivity activity,
   ) async {
+    final l10n = AppLocalizations.of(context);
     if (activity.viewerAction == ViewerAction.externalLink) {
       final url = activity.externalUrl;
       if (url == null || url.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Keine externe Quelle verfügbar')),
+          SnackBar(content: Text(l10n.noExternalSource)),
         );
         return;
       }
@@ -131,7 +133,7 @@ class FeedScreen extends ConsumerWidget {
       if (!context.mounted) return;
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Link konnte nicht geöffnet werden')),
+          SnackBar(content: Text(l10n.linkOpenFailed)),
         );
       }
       return;
@@ -153,7 +155,7 @@ class FeedScreen extends ConsumerWidget {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erfolgreich!')),
+        SnackBar(content: Text(l10n.success)),
       );
       ref.invalidate(socialFeedProvider);
     }

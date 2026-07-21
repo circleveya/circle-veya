@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/activity.dart';
 import '../providers/activity_provider.dart';
 
@@ -123,12 +124,13 @@ class _EditActivityScreenState extends ConsumerState<EditActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('EEE, dd.MM.yyyy · HH:mm', 'de_CH');
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Bearbeiten'),
+        title: Text(l10n.edit),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -138,7 +140,7 @@ class _EditActivityScreenState extends ConsumerState<EditActivityScreen> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Speichern'),
+                : Text(l10n.save),
           ),
         ],
       ),

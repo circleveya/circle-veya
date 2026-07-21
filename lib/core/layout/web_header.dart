@@ -296,6 +296,7 @@ class _ContextualSearchFieldState
     final theme = Theme.of(context);
     final searchContext = ref.watch(searchContextProvider);
     final searchState = ref.watch(globalSearchProvider);
+    final l10n = AppLocalizations.of(context);
 
     ref.listen(globalSearchProvider, (prev, next) {
       _syncOverlay(next.isOverlayOpen && next.hasQuery);
@@ -319,14 +320,14 @@ class _ContextualSearchFieldState
         },
         onTap: () => ref.read(globalSearchProvider.notifier).openOverlay(),
         decoration: InputDecoration(
-          hintText: searchContext.hintText,
+          hintText: searchContext.localizedHint(l10n),
           prefixIcon: Icon(
             Icons.search,
             color: theme.colorScheme.onSurfaceVariant,
           ),
           suffixIcon: searchState.query.isNotEmpty
               ? IconButton(
-                  tooltip: 'Leeren',
+                  tooltip: l10n.clearSearch,
                   onPressed: () {
                     ref.read(globalSearchProvider.notifier).clear();
                     _controller.clear();
@@ -348,7 +349,7 @@ class _ContextualSearchFieldState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        searchContext.label,
+                        searchContext.localizedLabel(l10n),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.brandNavy.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w600,
@@ -393,6 +394,7 @@ class _SearchOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final searchContext = ref.watch(searchContextProvider);
     final resultsAsync = ref.watch(globalSearchResultsProvider);
 
@@ -427,7 +429,7 @@ class _SearchOverlay extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                     child: Text(
-                      'Ergebnisse · ${searchContext.label}',
+                      l10n.searchResults(searchContext.localizedLabel(l10n)),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: AppColors.brandNavy.withValues(alpha: 0.65),
                         fontWeight: FontWeight.w600,
@@ -452,9 +454,9 @@ class _SearchOverlay extends ConsumerWidget {
                       ),
                       data: (results) {
                         if (results.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 8, 16, 20),
-                            child: Text('Keine Treffer in diesem Bereich.'),
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                            child: Text(l10n.noSearchHits),
                           );
                         }
                         return ListView.separated(
@@ -534,6 +536,7 @@ class _NotificationsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final notificationsAsync = ref.watch(notificationsStreamProvider);
     final notifications = notificationsAsync.valueOrNull ?? [];
     final unreadCount = notifications.where((n) => !n.isRead).length;
@@ -550,7 +553,7 @@ class _NotificationsSheet extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Benachrichtigungen',
+                    l10n.notifications,
                     style: theme.textTheme.titleLarge,
                   ),
                 ),
@@ -561,11 +564,11 @@ class _NotificationsSheet extends ConsumerWidget {
                         : () => ref
                             .read(notificationsControllerProvider.notifier)
                             .markAllAsRead(),
-                    child: const Text('Alle gelesen'),
+                    child: Text(l10n.markAllRead),
                   ),
                 if (notifications.isNotEmpty)
                   IconButton(
-                    tooltip: 'Alle löschen',
+                    tooltip: l10n.deleteAllTooltip,
                     onPressed: isBusy
                         ? null
                         : () => _confirmDeleteAll(context, ref),
@@ -575,9 +578,9 @@ class _NotificationsSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             if (notifications.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text('Keine Benachrichtigungen')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: Text(l10n.noNotifications)),
               )
             else
               Flexible(
@@ -635,7 +638,7 @@ class _NotificationsSheet extends ConsumerWidget {
                                 ),
                               ),
                             IconButton(
-                              tooltip: 'Löschen',
+                              tooltip: l10n.delete,
                               onPressed: isBusy
                                   ? null
                                   : () => ref
@@ -662,25 +665,26 @@ class _NotificationsSheet extends ConsumerWidget {
   Future<void> _confirmDeleteAll(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Alle löschen?'),
-        content: const Text(
-          'Alle Benachrichtigungen werden unwiderruflich entfernt.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l10n.deleteAllNotifications),
+          content: Text(l10n.deleteAllNotificationsBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
             ),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed == true) {
       await ref.read(notificationsControllerProvider.notifier).deleteAll();

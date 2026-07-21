@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/gallery_provider.dart';
 
 /// Persönliche Erinnerungen: nur abgeschlossene eigene Aktivitäten + eigene Fotos.
@@ -25,6 +26,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
     final isPrivacySaving =
         ref.watch(memoryPrivacyControllerProvider).isLoading;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     return pastAsync.when(
@@ -39,7 +41,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => ref.invalidate(pastActivitiesGalleryProvider),
-                child: const Text('Erneut versuchen'),
+                child: Text(l10n.tryAgain),
               ),
             ],
           ),
@@ -61,7 +63,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Erinnerungen',
+                          l10n.memories,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -90,14 +92,13 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                   ),
                 ),
               if (activities.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'Noch keine abgeschlossenen Aktivitäten.\n'
-                        'Nach einem Event kannst du hier deine Fotos ablegen.',
+                        l10n.galleryEmptyPast,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -120,7 +121,7 @@ class PastActivitiesGalleryScreen extends ConsumerWidget {
                       }
                       subtitle.write(
                         '\n${activity.photoCount} '
-                        '${activity.photoCount == 1 ? 'Foto' : 'Fotos'}',
+                        '${activity.photoCount == 1 ? l10n.photoSingular : l10n.photoPlural}',
                       );
                       if (activity.isHost) {
                         subtitle.write(' · von dir erstellt');
@@ -281,10 +282,11 @@ class ActivityGalleryScreen extends ConsumerWidget {
         : const AsyncValue<bool>.data(false);
     final isUploading = ref.watch(galleryUploadControllerProvider).isLoading;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(activityTitle ?? 'Erinnerung'),
+        title: Text(activityTitle ?? l10n.memories),
       ),
       floatingActionButton: canUploadAsync.maybeWhen(
         data: (canUpload) => canUpload
@@ -299,7 +301,7 @@ class ActivityGalleryScreen extends ConsumerWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.add_a_photo),
-                label: const Text('Foto hinzufügen'),
+                label: Text(l10n.addPhoto),
               )
             : null,
         orElse: () => null,
@@ -314,8 +316,8 @@ class ActivityGalleryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(32),
                 child: Text(
                   canUploadAsync.valueOrNull == true
-                      ? 'Noch keine Fotos.\nLade deine ersten Erinnerungen hoch.'
-                      : 'Noch keine Fotos in dieser Erinnerung.',
+                      ? l10n.noPhotosYetUpload
+                      : l10n.noPhotosInMemory,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

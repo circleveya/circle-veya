@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../layout/web_shell_destination.dart';
 
 /// Such-Kontext abgeleitet vom aktiven Shell-Tab.
@@ -13,6 +14,25 @@ enum SearchContext {
 }
 
 extension SearchContextX on SearchContext {
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        SearchContext.activities => l10n.activities,
+        SearchContext.friends => l10n.friends,
+        SearchContext.messages => l10n.messages,
+        SearchContext.feed => l10n.feed,
+        SearchContext.discover => l10n.discover,
+        SearchContext.general => l10n.searchEverything,
+      };
+
+  String localizedHint(AppLocalizations l10n) => switch (this) {
+        SearchContext.activities => l10n.searchActivitiesHint,
+        SearchContext.friends => l10n.searchFriendsHint,
+        SearchContext.messages => l10n.searchMessagesHint,
+        SearchContext.feed => l10n.searchFeedHint,
+        SearchContext.discover => l10n.searchDiscoverHint,
+        SearchContext.general => l10n.searchHint,
+      };
+
+  @Deprecated('Use localizedLabel(AppLocalizations)')
   String get label => switch (this) {
         SearchContext.activities => 'Aktivitäten',
         SearchContext.friends => 'Freunde',
@@ -22,6 +42,7 @@ extension SearchContextX on SearchContext {
         SearchContext.general => 'Alles',
       };
 
+  @Deprecated('Use localizedHint(AppLocalizations)')
   String get hintText => switch (this) {
         SearchContext.activities => 'Eigene Aktivitäten suchen …',
         SearchContext.friends => 'Freunde oder Profile suchen …',

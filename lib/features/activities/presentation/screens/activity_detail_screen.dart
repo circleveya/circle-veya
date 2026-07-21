@@ -567,23 +567,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Aktivität löschen?'),
-        content: Text('„${activity.title}“ wird unwiderruflich gelöscht.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: const Text('Aktivität löschen?'),
+          content: Text('„${activity.title}“ wird unwiderruflich gelöscht.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
             ),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true || !context.mounted) return;
@@ -614,28 +617,31 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   ) async {
     final includePending = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kreis erstellen'),
-        content: const Text(
-          'Es wird ein Kreis mit dir als Owner und allen '
-          'Teilnehmern sowie akzeptierten Interessenten erstellt.\n\n'
-          'Auch noch ausstehende Interessenten einladen?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: const Text('Kreis erstellen'),
+          content: const Text(
+            'Es wird ein Kreis mit dir als Owner und allen '
+            'Teilnehmern sowie akzeptierten Interessenten erstellt.\n\n'
+            'Auch noch ausstehende Interessenten einladen?',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Nur Teilnehmer'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mit ausstehenden'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Nur Teilnehmer'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Mit ausstehenden'),
+            ),
+          ],
+        );
+      },
     );
 
     if (includePending == null || !context.mounted) return;

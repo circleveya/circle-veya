@@ -10,6 +10,7 @@ import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/url_utils.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/discover_activity_grouper.dart';
 import '../../domain/discover_feed_item.dart';
 import '../widgets/discover_activity_grid.dart';
@@ -327,7 +328,7 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: onRetry,
-            child: const Text('Erneut versuchen'),
+            child: Text(AppLocalizations.of(context).tryAgain),
           ),
         ],
       ),

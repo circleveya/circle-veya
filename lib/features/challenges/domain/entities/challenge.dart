@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 class UserChallenge extends Equatable {
   const UserChallenge({
     required this.id,
@@ -40,6 +42,17 @@ class UserChallenge extends Equatable {
       challengeType == 'social' ||
       challengeType == 'sport';
 
+  String localizedPeriodBadge(AppLocalizations l10n) => switch (resetCadence) {
+        'weekly' => l10n.weekly,
+        'monthly' => l10n.monthly,
+        _ => switch (challengeType) {
+            'weekly' => l10n.weekly,
+            'monthly' || 'social' || 'sport' => l10n.monthly,
+            _ => l10n.challenge,
+          },
+      };
+
+  @Deprecated('Use localizedPeriodBadge(AppLocalizations)')
   String get periodBadgeLabel => switch (resetCadence) {
         'weekly' => 'Wöchentlich',
         'monthly' => 'Monatlich',
@@ -50,6 +63,17 @@ class UserChallenge extends Equatable {
           },
       };
 
+  String localizedResetHint(AppLocalizations l10n) => switch (resetCadence) {
+        'weekly' => l10n.weeklyReset,
+        'monthly' => l10n.monthlyReset,
+        _ => switch (challengeType) {
+            'weekly' => l10n.weeklyReset,
+            'monthly' || 'social' || 'sport' => l10n.monthlyReset,
+            _ => l10n.onceOnly,
+          },
+      };
+
+  @Deprecated('Use localizedResetHint(AppLocalizations)')
   String get resetHint => switch (resetCadence) {
         'weekly' => 'Reset jeden Montag',
         'monthly' => 'Reset am 1. des Monats',
@@ -60,6 +84,38 @@ class UserChallenge extends Equatable {
           },
       };
 
+  String localizedHowTo(AppLocalizations l10n) {
+    return switch (challengeType) {
+      'weekly' => l10n.challengeHowToWeekly,
+      'monthly' => l10n.challengeHowToMonthly,
+      'social' => l10n.challengeHowToSocial,
+      'sport' => l10n.challengeHowToSport,
+      _ => (howTo != null && howTo!.trim().isNotEmpty)
+          ? howTo!
+          : l10n.challengeHowToDefault,
+    };
+  }
+
+  String localizedTitle(AppLocalizations l10n) => switch (challengeType) {
+        'weekly' => l10n.challengeTitleWeekly(target),
+        'monthly' => l10n.challengeTitleMonthly(target),
+        'social' => l10n.challengeTitleSocial(target),
+        'sport' => l10n.challengeTitleSport(target),
+        _ => title,
+      };
+
+  String localizedDescription(AppLocalizations l10n) =>
+      switch (challengeType) {
+        'weekly' => l10n.challengeDescWeekly,
+        'monthly' => l10n.challengeDescMonthly,
+        'social' => l10n.challengeDescSocial,
+        'sport' => l10n.challengeDescSport,
+        _ => (description != null && description!.trim().isNotEmpty)
+            ? description!
+            : localizedHowTo(l10n),
+      };
+
+  @Deprecated('Use localizedHowTo(AppLocalizations)')
   String get resolvedHowTo {
     if (howTo != null && howTo!.trim().isNotEmpty) return howTo!;
     return switch (challengeType) {
@@ -75,6 +131,7 @@ class UserChallenge extends Equatable {
     };
   }
 
+  @Deprecated('Use localizedDescription(AppLocalizations)')
   String get resolvedDescription {
     if (description != null && description!.trim().isNotEmpty) {
       return description!;
@@ -122,9 +179,8 @@ class UserLevelStats extends Equatable {
   List<UserChallenge> get monthlyChallenges =>
       challenges.where((c) => c.isMonthly && !c.isWeekly).toList();
 
-  List<UserChallenge> get otherChallenges => challenges
-      .where((c) => !c.isWeekly && !c.isMonthly)
-      .toList();
+  List<UserChallenge> get otherChallenges =>
+      challenges.where((c) => !c.isWeekly && !c.isMonthly).toList();
 
   @override
   List<Object?> get props =>

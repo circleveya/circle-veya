@@ -16,6 +16,17 @@ class UnconfiguredFriendsRepository implements FriendsRepository {
   Future<List<UserConnection>> getMyConnections() async => [];
 
   @override
+  Future<List<FollowedCompany>> getMyFollowedCompanies() async => [];
+
+  @override
+  Future<void> followCompany(String companyId) async =>
+      throw UnsupportedError('Supabase ist nicht konfiguriert.');
+
+  @override
+  Future<void> unfollowCompany(String companyId) async =>
+      throw UnsupportedError('Supabase ist nicht konfiguriert.');
+
+  @override
   Future<void> removeConnection(String profileId) async =>
       throw UnsupportedError('Supabase ist nicht konfiguriert.');
 

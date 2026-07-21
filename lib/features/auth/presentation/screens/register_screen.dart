@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/branding/circleveya_brand.dart';
+import '../../../../core/icons/company_building_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../profile/domain/entities/user_profile.dart';
@@ -100,7 +101,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 12),
                     _AccountTypeCard(
                       selected: _accountType == ProfileAccountType.standard,
-                      icon: Icons.person_outline,
+                      icon: Icon(
+                        Icons.person_outline,
+                        size: 28,
+                        color: _accountType == ProfileAccountType.standard
+                            ? AppColors.seed
+                            : theme.colorScheme.onSurface,
+                      ),
                       title: l10n.privatePerson,
                       subtitle: l10n.privatePersonDesc,
                       onTap: isLoading
@@ -112,7 +119,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 10),
                     _AccountTypeCard(
                       selected: _accountType == ProfileAccountType.event,
-                      icon: Icons.business_outlined,
+                      icon: CompanyBuildingIcon(
+                        size: 28,
+                        color: _accountType == ProfileAccountType.event
+                            ? AppColors.seed
+                            : theme.colorScheme.onSurface,
+                      ),
                       title: l10n.eventProfile,
                       subtitle: l10n.eventProfileDesc,
                       onTap: isLoading
@@ -222,7 +234,7 @@ class _AccountTypeCard extends StatelessWidget {
   });
 
   final bool selected;
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
@@ -252,11 +264,7 @@ class _AccountTypeCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                size: 28,
-                color: selected ? AppColors.seed : theme.colorScheme.onSurface,
-              ),
+              icon,
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

@@ -33,6 +33,33 @@ class FriendsRepositoryImpl implements FriendsRepository {
   }
 
   @override
+  Future<List<FollowedCompany>> getMyFollowedCompanies() async {
+    try {
+      return await _datasource.getMyFollowedCompanies();
+    } on PostgrestException catch (error) {
+      throw FriendsFailure(error.message);
+    }
+  }
+
+  @override
+  Future<void> followCompany(String companyId) async {
+    try {
+      await _datasource.followCompany(companyId);
+    } on PostgrestException catch (error) {
+      throw FriendsFailure(error.message);
+    }
+  }
+
+  @override
+  Future<void> unfollowCompany(String companyId) async {
+    try {
+      await _datasource.unfollowCompany(companyId);
+    } on PostgrestException catch (error) {
+      throw FriendsFailure(error.message);
+    }
+  }
+
+  @override
   Future<void> addFriend(String profileId) async {
     try {
       await _datasource.addFriend(profileId);

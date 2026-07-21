@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/user_profile.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_image_crop_editor.dart';
 
@@ -137,9 +138,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(myProfileProvider);
     final isLoading = ref.watch(profileEditControllerProvider).isLoading;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil bearbeiten')),
+      appBar: AppBar(title: Text(l10n.editProfile)),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
@@ -333,7 +335,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Speichern'),
+                          : Text(l10n.save),
                     ),
                   ),
                 ],

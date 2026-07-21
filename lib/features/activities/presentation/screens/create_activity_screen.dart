@@ -12,6 +12,7 @@ import '../../../../core/location/location_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/domain/premium_limits.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/activity.dart';
@@ -621,7 +622,11 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                         .map(
                           (interval) => DropdownMenuItem(
                             value: interval,
-                            child: Text(interval.label),
+                            child: Text(
+                              interval.localizedLabel(
+                                AppLocalizations.of(context),
+                              ),
+                            ),
                           ),
                         )
                         .toList(),
@@ -652,7 +657,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   ),
                   FilledButton.tonal(
                     onPressed: isLoading ? null : _applyRecurrence,
-                    child: const Text('Wiederholen'),
+                    child: Text(AppLocalizations.of(context).repeat),
                   ),
                 ],
               ),
@@ -660,7 +665,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               Text(
                 isPremium
                     ? 'Wiederholen erzeugt bis $maxSlots× '
-                        '${_recurrenceInterval.label.toLowerCase()} ab dem ersten Termin.'
+                        '${_recurrenceInterval.localizedLabel(AppLocalizations.of(context)).toLowerCase()} ab dem ersten Termin.'
                     : 'Free: max. ${PremiumLimits.freeMaxSlots} Termine · '
                         'Premium: bis ${PremiumLimits.premiumMaxSlots}.',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -671,7 +676,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<LocationType>(
               initialValue: _locationType,
-              decoration: const InputDecoration(labelText: 'Ort-Typ'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).locationType,
+              ),
               items: LocationType.values
                   .map(
                     (type) => DropdownMenuItem(
@@ -687,12 +694,18 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<WeatherCondition>(
               initialValue: _weatherCondition,
-              decoration: const InputDecoration(labelText: 'Wetter'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).weather,
+              ),
               items: WeatherCondition.values
                   .map(
                     (condition) => DropdownMenuItem(
                       value: condition,
-                      child: Text(condition.label),
+                      child: Text(
+                        condition.localizedLabel(
+                          AppLocalizations.of(context),
+                        ),
+                      ),
                     ),
                   )
                   .toList(),
@@ -887,10 +900,10 @@ enum _RecurrenceInterval {
   weekly,
   monthly;
 
-  String get label => switch (this) {
-        daily => 'Täglich',
-        weekly => 'Wöchentlich',
-        monthly => 'Monatlich',
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        daily => l10n.daily,
+        weekly => l10n.weekly,
+        monthly => l10n.monthly,
       };
 }
 

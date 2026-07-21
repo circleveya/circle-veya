@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -12,12 +13,13 @@ class SettingsScreen extends ConsumerWidget {
     final profileAsync = ref.watch(myProfileProvider);
     final premiumState = ref.watch(premiumSimulationControllerProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(
-          'Einstellungen',
+          l10n.settings,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
             color: AppColors.brandNavy,
@@ -25,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Account und Testfunktionen verwalten',
+          l10n.settingsSubtitle,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

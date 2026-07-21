@@ -263,6 +263,9 @@ class ProfileRemoteDatasource {
       userType: map['user_type'] as String? ?? 'standard',
       isPremium: map['is_premium'] as bool? ?? false,
       galleryPublic: map['gallery_public'] as bool? ?? false,
+      level: map['level'] == null ? null : (map['level'] as num).toInt(),
+      followedByMe: map['followed_by_me'] as bool? ?? false,
+      followerCount: (map['follower_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

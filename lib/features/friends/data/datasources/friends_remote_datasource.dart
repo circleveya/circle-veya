@@ -39,8 +39,33 @@ class FriendsRemoteDatasource {
         bio: map['bio'] as String?,
         connectionStatus:
             ConnectionType.fromDb(map['connection_status'] as String?),
+        userType: map['user_type'] as String? ?? 'standard',
+        isFollowing: map['is_following'] as bool? ?? false,
       );
     }).toList();
+  }
+
+  Future<List<FollowedCompany>> getMyFollowedCompanies() async {
+    final response = await _client.rpc('get_my_followed_companies');
+    return (response as List).map((row) {
+      final map = row as Map<String, dynamic>;
+      return FollowedCompany(
+        profileId: map['profile_id'] as String,
+        username: map['username'] as String,
+        avatarUrl: map['avatar_url'] as String?,
+        bio: map['bio'] as String?,
+        userType: map['user_type'] as String? ?? 'event',
+        followedAt: DateTime.parse(map['followed_at'] as String),
+      );
+    }).toList();
+  }
+
+  Future<void> followCompany(String companyId) async {
+    await _client.rpc('follow_company', params: {'p_company_id': companyId});
+  }
+
+  Future<void> unfollowCompany(String companyId) async {
+    await _client.rpc('unfollow_company', params: {'p_company_id': companyId});
   }
 
   Future<void> addFriend(String profileId) async {

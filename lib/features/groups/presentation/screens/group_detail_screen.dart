@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../chat/domain/entities/chat.dart';
 import '../../../friends/domain/entities/connection.dart';
@@ -38,12 +39,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     final currentUserId = ref.watch(authStateProvider).valueOrNull?.id;
     final isBusy = ref.watch(groupsControllerProvider).isLoading;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          detailAsync.valueOrNull?.name ?? widget.groupName ?? 'Kreis',
+          detailAsync.valueOrNull?.name ?? widget.groupName ?? l10n.circle,
         ),
         actions: [
           if (detailAsync case AsyncData(:final value) when value.isAdmin)
@@ -87,7 +89,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 FilledButton(
                   onPressed: () =>
                       ref.invalidate(groupDetailProvider(_groupId)),
-                  child: const Text('Erneut versuchen'),
+                  child: Text(l10n.tryAgain),
                 ),
               ],
             ),
@@ -309,11 +311,11 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Abbrechen'),
+                  child: Text(AppLocalizations.of(context).cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Speichern'),
+                  child: Text(AppLocalizations.of(context).save),
                 ),
               ],
             );
@@ -406,7 +408,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                 TextButton(
                                   onPressed: () => sheetRef
                                       .invalidate(myConnectionsProvider),
-                                  child: const Text('Erneut laden'),
+                                  child: Text(AppLocalizations.of(context).retry),
                                 ),
                               ],
                             ),
@@ -560,7 +562,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Abbrechen'),
+                child: Text(AppLocalizations.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
@@ -590,7 +592,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Abbrechen'),
+                child: Text(AppLocalizations.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),

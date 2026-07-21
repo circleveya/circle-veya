@@ -396,4 +396,652 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchPlaceholderDiscover => 'Find people. Create memories.';
+
+  @override
+  String get aboutMe => 'About';
+
+  @override
+  String get activities => 'Activities';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get reviews => 'Reviews';
+
+  @override
+  String get levelTab => 'Level';
+
+  @override
+  String get follow => 'Follow';
+
+  @override
+  String get following => 'Following';
+
+  @override
+  String get unfollow => 'Unfollow';
+
+  @override
+  String get followers => 'Followers';
+
+  @override
+  String followersCount(int count) {
+    return '$count followers';
+  }
+
+  @override
+  String get oneFollower => '1 follower';
+
+  @override
+  String get companies => 'Companies';
+
+  @override
+  String get acquaintances => 'Acquaintances';
+
+  @override
+  String get acquaintance => 'Acquaintance';
+
+  @override
+  String get friend => 'Friend';
+
+  @override
+  String get noConnectionsYet => 'No connections yet';
+
+  @override
+  String get searchPeopleOrCompanies => 'Search people & companies';
+
+  @override
+  String get followHint =>
+      'Search for people as friends or follow companies / event profiles.';
+
+  @override
+  String get noCompaniesFollowed => 'No companies followed yet.';
+
+  @override
+  String get noProfilesFound => 'No profiles found.';
+
+  @override
+  String get addAsFriend => 'Add as friend';
+
+  @override
+  String get addAsAcquaintance => 'Add as acquaintance';
+
+  @override
+  String get companyFollowing => 'Company · Following';
+
+  @override
+  String get companyCanFollow => 'Company · Follow';
+
+  @override
+  String get eventProfileShort => 'Event profile';
+
+  @override
+  String get weekly => 'Weekly';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get weeklyChallengesHint =>
+      'Weekly challenges reset every Monday, monthly ones on the 1st of the month.';
+
+  @override
+  String get otherChallenges => 'More challenges';
+
+  @override
+  String get noActiveChallenges => 'No active challenges.';
+
+  @override
+  String get businessNoLevelTitle => 'No personal level';
+
+  @override
+  String get businessNoLevelBody =>
+      'Event and company profiles have no personal level or challenge system.\n\nSoon you’ll be able to create one monthly challenge for your followers.';
+
+  @override
+  String get businessPanelHint =>
+      'No personal level. Followers and events come first.';
+
+  @override
+  String currentBadge(String name) {
+    return 'Current badge: $name';
+  }
+
+  @override
+  String unlockedBadges(int count) {
+    return 'Unlocked ($count)';
+  }
+
+  @override
+  String lockedBadges(int count) {
+    return 'Still locked ($count)';
+  }
+
+  @override
+  String get noBadgesYet => 'No badges unlocked yet.';
+
+  @override
+  String get noBadgeYetHint => 'No badge yet – Spark awaits you at level 5.';
+
+  @override
+  String badgeLockedHint(int level, String description) {
+    return 'Still locked. Reach level $level to unlock this badge.\n\n$description';
+  }
+
+  @override
+  String get levelBadges => 'Level badges';
+
+  @override
+  String levelBadgesWithName(String name) {
+    return 'Level badges · $name';
+  }
+
+  @override
+  String xpRemaining(int xp, int level) {
+    return '$xp XP left until level $level';
+  }
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String get bio => 'Bio';
+
+  @override
+  String get topInterests => 'Top interests';
+
+  @override
+  String get noInterestsYet => 'No interests added yet.';
+
+  @override
+  String get noActivitiesYet =>
+      'No activities yet.\nCreate one or join a friend’s.';
+
+  @override
+  String get noVisibleActivities => 'No visible activities.';
+
+  @override
+  String get resetFilters => 'Reset search / filters';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String showEventsIn(String category) {
+    return 'Show events in $category.';
+  }
+
+  @override
+  String get catAll => 'All categories';
+
+  @override
+  String get catConcerts => 'Concerts';
+
+  @override
+  String get catParties => 'Parties';
+
+  @override
+  String get catFestivals => 'Festivals';
+
+  @override
+  String get catTheater => 'Theater & stage';
+
+  @override
+  String get catComedy => 'Comedy';
+
+  @override
+  String get catSport => 'Sports & fitness';
+
+  @override
+  String get catKids => 'Kids & family';
+
+  @override
+  String get catCourses => 'Courses & seminars';
+
+  @override
+  String get catMarkets => 'Markets & fairs';
+
+  @override
+  String get catClassic => 'Classical & opera';
+
+  @override
+  String get catLeisure => 'Leisure & trips';
+
+  @override
+  String get catOther => 'Other';
+
+  @override
+  String get phraseAll => 'all categories';
+
+  @override
+  String get phraseConcerts => 'concerts';
+
+  @override
+  String get phraseParties => 'parties';
+
+  @override
+  String get phraseFestivals => 'festivals';
+
+  @override
+  String get phraseTheater => 'theater & stage';
+
+  @override
+  String get phraseComedy => 'comedy';
+
+  @override
+  String get phraseSport => 'sports & fitness';
+
+  @override
+  String get phraseKids => 'kids & family';
+
+  @override
+  String get phraseCourses => 'courses & seminars';
+
+  @override
+  String get phraseMarkets => 'markets & fairs';
+
+  @override
+  String get phraseClassic => 'classical & opera';
+
+  @override
+  String get phraseLeisure => 'leisure & trips';
+
+  @override
+  String get phraseOther => 'other';
+
+  @override
+  String get feedFromFriends => 'Activities from friends and acquaintances';
+
+  @override
+  String get noFeedYet =>
+      'No activities from friends or acquaintances yet.\nAdd friends to see their events here.';
+
+  @override
+  String get searchFriendsHint => 'Search friends or profiles…';
+
+  @override
+  String get searchActivitiesHint => 'Search activities…';
+
+  @override
+  String get searchMessagesHint => 'Search chats…';
+
+  @override
+  String get searchFeedHint => 'Search feed…';
+
+  @override
+  String get searchDiscoverHint => 'Search events…';
+
+  @override
+  String get searchEverything => 'Everything';
+
+  @override
+  String searchResults(String context) {
+    return 'Results · $context';
+  }
+
+  @override
+  String get applyPlace => 'Apply place';
+
+  @override
+  String get weeklyReset => 'Resets every Monday';
+
+  @override
+  String get monthlyReset => 'Resets on the 1st of the month';
+
+  @override
+  String get onceOnly => 'One-time';
+
+  @override
+  String get challenge => 'Challenge';
+
+  @override
+  String get nearby => 'Nearby';
+
+  @override
+  String get actionJoin => 'I\'m in!';
+
+  @override
+  String get actionInterested => 'Interested';
+
+  @override
+  String get actionJoined => 'Going';
+
+  @override
+  String get actionInterestSent => 'Interest sent';
+
+  @override
+  String get actionFull => 'Sold out';
+
+  @override
+  String get actionYourEvent => 'Your event';
+
+  @override
+  String get actionExternal => 'Open source';
+
+  @override
+  String levelLabel(int level) {
+    return 'Level $level';
+  }
+
+  @override
+  String get discoverHeroHint => 'What do you want to experience today?';
+
+  @override
+  String get optionalComment => 'Optional comment';
+
+  @override
+  String get tellAboutYou => 'Tell us a bit about yourself…';
+
+  @override
+  String get interestExample => 'e.g. go-kart, football';
+
+  @override
+  String get activityTitleHint => 'e.g. go-karting';
+
+  @override
+  String get locationExampleHint => 'e.g. Berlin Mitte';
+
+  @override
+  String get gifSearchHint => 'Search GIFs…';
+
+  @override
+  String get activitySingular => 'activity';
+
+  @override
+  String get activityPlural => 'activities';
+
+  @override
+  String get challengeHowToWeekly =>
+      'Create or join activities – counts this week (resets Monday).';
+
+  @override
+  String get challengeHowToMonthly =>
+      'Create or join activities – counts this month (resets on the 1st).';
+
+  @override
+  String get challengeHowToSocial =>
+      'Make new friendships – counts this month (resets on the 1st).';
+
+  @override
+  String get challengeHowToSport =>
+      'Join sports/outdoor activities – counts this month (resets on the 1st).';
+
+  @override
+  String get challengeHowToDefault => 'Complete the goal to claim the reward.';
+
+  @override
+  String get weatherCold => 'Cold';
+
+  @override
+  String get weatherRain => 'Rain';
+
+  @override
+  String get weatherSun => 'Sun';
+
+  @override
+  String get newBadge => 'New';
+
+  @override
+  String get clearSearch => 'Clear';
+
+  @override
+  String get targetAudiences => 'Audiences';
+
+  @override
+  String get friendsCanJoin => 'Can join directly';
+
+  @override
+  String get acquaintancesCanInterest => 'Can show interest';
+
+  @override
+  String get strangersAudience => 'Strangers / like-minded';
+
+  @override
+  String get strangersSubtitle => 'Radius-based, show interest';
+
+  @override
+  String discoveryRadius(int km) {
+    return 'Discovery radius: $km km';
+  }
+
+  @override
+  String radiusFreePremiumHint(int freeKm, int premiumKm) {
+    return 'Free: max. $freeKm km · Premium: up to $premiumKm km';
+  }
+
+  @override
+  String get settingsSubtitle => 'Manage account and test features';
+
+  @override
+  String get accountTypePerson => 'Private person';
+
+  @override
+  String get accountTypeEvent => 'Event profile';
+
+  @override
+  String get accountTypeCompany => 'Company';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String rewardXp(int xp) {
+    return 'Reward: $xp XP';
+  }
+
+  @override
+  String get howToComplete => 'How to complete';
+
+  @override
+  String get challengeNotFound => 'Challenge not found.';
+
+  @override
+  String get claimReward => 'Claim reward';
+
+  @override
+  String get challengeComplete => 'Completed';
+
+  @override
+  String rewardClaimed(int xp) {
+    return 'Reward claimed (+$xp XP)';
+  }
+
+  @override
+  String get goToFriends => 'Go to friends';
+
+  @override
+  String get discoverActivities => 'Discover activities';
+
+  @override
+  String get getStarted => 'Get started';
+
+  @override
+  String get success => 'Success!';
+
+  @override
+  String get noExternalSource => 'No external source available';
+
+  @override
+  String get linkOpenFailed => 'Could not open link';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get weather => 'Weather';
+
+  @override
+  String maxDistanceKm(int km) {
+    return 'max. $km km';
+  }
+
+  @override
+  String get discoverSubtitle =>
+      'Discover activities near you – with friends, the community, and events from your region.';
+
+  @override
+  String get daily => 'Daily';
+
+  @override
+  String get repeat => 'Repeat';
+
+  @override
+  String get noOwnActivitiesYet =>
+      'No activities of your own yet.\nCreate one or join a friend’s.';
+
+  @override
+  String get noCurrentActivities =>
+      'No upcoming activities.\nPast ones are below.';
+
+  @override
+  String get pastActivities => 'Past activities';
+
+  @override
+  String get galleryEmptyPast =>
+      'No completed activities yet.\nAfter an event you can store your photos here.';
+
+  @override
+  String get noPhotosYetUpload => 'No photos yet.\nUpload your first memories.';
+
+  @override
+  String get noPhotosInMemory => 'No photos in this memory yet.';
+
+  @override
+  String get photoSingular => 'photo';
+
+  @override
+  String get photoPlural => 'photos';
+
+  @override
+  String get memoriesPrivateHint =>
+      'Memories are private and only visible to the account owner.';
+
+  @override
+  String get noPublicMemories => 'No public memories yet.';
+
+  @override
+  String get noReviewsReceived => 'No reviews received yet.';
+
+  @override
+  String get noReviewsBeFirst => 'No reviews yet – be the first.';
+
+  @override
+  String get allReviews => 'All reviews';
+
+  @override
+  String get addPhoto => 'Add photo';
+
+  @override
+  String get locationType => 'Location type';
+
+  @override
+  String get deleteAllNotifications => 'Delete all?';
+
+  @override
+  String get deleteAllNotificationsBody =>
+      'All notifications will be permanently removed.';
+
+  @override
+  String get deleteAllTooltip => 'Delete all';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get noNotifications => 'No notifications';
+
+  @override
+  String get noSearchHits => 'No matches in this area.';
+
+  @override
+  String challengeTitleWeekly(int count) {
+    return '$count activities this week';
+  }
+
+  @override
+  String challengeTitleMonthly(int count) {
+    return '$count activities this month';
+  }
+
+  @override
+  String challengeTitleSocial(int count) {
+    return '$count new friends this month';
+  }
+
+  @override
+  String challengeTitleSport(int count) {
+    return '$count sports activities this month';
+  }
+
+  @override
+  String get challengeDescWeekly =>
+      'Join or create activities this week. Resets every Monday.';
+
+  @override
+  String get challengeDescMonthly =>
+      'Join or create activities this month. Resets on the 1st.';
+
+  @override
+  String get challengeDescSocial =>
+      'Make new friendships this month. Resets on the 1st.';
+
+  @override
+  String get challengeDescSport =>
+      'Join sports/outdoor activities this month. Resets on the 1st.';
+
+  @override
+  String get deleteActivityTitle => 'Delete activity?';
+
+  @override
+  String get activityDeleted => 'Activity deleted';
+
+  @override
+  String get memoriesPublicTitle => 'Public memories';
+
+  @override
+  String get memoriesPublicOn => 'All your memories are visible to others.';
+
+  @override
+  String get memoriesPublicOff =>
+      'When on, all memories become public automatically.';
+
+  @override
+  String get memoriesNowPublic => 'All memories are now public';
+
+  @override
+  String get memoriesNowPrivate => 'Memories are private';
+
+  @override
+  String get updateYourReview => 'Update your review';
+
+  @override
+  String get tapStarsToRate => 'Tap stars to rate';
+
+  @override
+  String get submitReview => 'Submit review';
+
+  @override
+  String get saveReview => 'Save review';
+
+  @override
+  String get reviewSaved => 'Review saved';
+
+  @override
+  String get reviewSingular => 'Review';
+
+  @override
+  String reviewWithCount(int count) {
+    return 'Review ($count)';
+  }
+
+  @override
+  String get changeBanner => 'Change banner';
+
+  @override
+  String get changeProfilePhoto => 'Change profile photo';
+
+  @override
+  String deleteActivityBody(String title) {
+    return '“$title” will be permanently deleted (including participants, interests, and chats).';
+  }
 }

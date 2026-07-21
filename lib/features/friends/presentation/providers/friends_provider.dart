@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/network/supabase_client.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/datasources/friends_remote_datasource.dart';
 import '../../data/repositories/friends_repository_impl.dart';
 import '../../data/repositories/unconfigured_friends_repository.dart';
@@ -22,6 +23,11 @@ final friendsRepositoryProvider = Provider<FriendsRepository>((ref) {
 final myConnectionsProvider =
     FutureProvider.autoDispose<List<UserConnection>>((ref) {
   return ref.watch(friendsRepositoryProvider).getMyConnections();
+});
+
+final myFollowedCompaniesProvider =
+    FutureProvider.autoDispose<List<FollowedCompany>>((ref) {
+  return ref.watch(friendsRepositoryProvider).getMyFollowedCompanies();
 });
 
 final profileSearchProvider = FutureProvider.autoDispose
@@ -60,6 +66,26 @@ class FriendsActionsController extends AutoDisposeAsyncNotifier<void> {
     if (!state.hasError) {
       ref.invalidate(myConnectionsProvider);
       ref.invalidate(profileSearchProvider);
+    }
+  }
+
+  Future<void> followCompany(String companyId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _repo.followCompany(companyId));
+    if (!state.hasError) {
+      ref.invalidate(myFollowedCompaniesProvider);
+      ref.invalidate(profileSearchProvider);
+      ref.invalidate(profileProvider(companyId));
+    }
+  }
+
+  Future<void> unfollowCompany(String companyId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _repo.unfollowCompany(companyId));
+    if (!state.hasError) {
+      ref.invalidate(myFollowedCompaniesProvider);
+      ref.invalidate(profileSearchProvider);
+      ref.invalidate(profileProvider(companyId));
     }
   }
 }

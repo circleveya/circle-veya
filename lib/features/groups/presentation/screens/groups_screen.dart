@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/groups_provider.dart';
 
 class GroupsScreen extends ConsumerWidget {
@@ -36,7 +37,7 @@ class GroupsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: () => ref.invalidate(myGroupsProvider),
-                  child: const Text('Erneut versuchen'),
+                  child: Text(AppLocalizations.of(context).tryAgain),
                 ),
               ],
             ),

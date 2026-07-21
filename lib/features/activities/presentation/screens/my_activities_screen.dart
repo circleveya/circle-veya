@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/activity.dart';
 import '../../domain/entities/activity_enums.dart';
 import '../providers/activity_provider.dart';
@@ -21,6 +22,7 @@ class MyActivitiesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final myAsync = ref.watch(myActivitiesProvider);
+    final l10n = AppLocalizations.of(context);
 
     return myAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -52,12 +54,11 @@ class MyActivitiesScreen extends ConsumerWidget {
               const _GalleryCard(),
               const SizedBox(height: 16),
               if (created.isEmpty && joined.isEmpty && past.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
-                      'Noch keine eigenen Aktivitäten.\n'
-                      'Erstelle eine oder sage bei Freunden zu.',
+                      l10n.noOwnActivitiesYet,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -67,8 +68,7 @@ class MyActivitiesScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      'Keine aktuellen Aktivitäten.\n'
-                      'Vergangene findest du unten.',
+                      l10n.noCurrentActivities,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context)
@@ -131,26 +131,26 @@ class MyActivitiesScreen extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Aktivität löschen?'),
-        content: Text(
-          '„${activity.title}“ wird unwiderruflich gelöscht '
-          '(inkl. Teilnehmer, Interessen und Chats).',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l10n.deleteActivityTitle),
+          content: Text(l10n.deleteActivityBody(activity.title)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
             ),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true || !context.mounted) return false;
@@ -161,6 +161,7 @@ class MyActivitiesScreen extends ConsumerWidget {
 
     if (!context.mounted) return false;
 
+    final l10n = AppLocalizations.of(context);
     final error = ref.read(activityActionsProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -170,7 +171,7 @@ class MyActivitiesScreen extends ConsumerWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Aktivität gelöscht')),
+      SnackBar(content: Text(l10n.activityDeleted)),
     );
     return true;
   }
@@ -230,6 +231,7 @@ class _PastActivitiesFolder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Theme(
       data: theme.copyWith(dividerColor: Colors.transparent),
@@ -246,14 +248,14 @@ class _PastActivitiesFolder extends StatelessWidget {
             color: AppColors.brandNavy.withValues(alpha: 0.75),
           ),
           title: Text(
-            'Vergangene Aktivitäten',
+            l10n.pastActivities,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           subtitle: Text(
             '${activities.length} '
-            '${activities.length == 1 ? 'Aktivität' : 'Aktivitäten'}',
+            '${activities.length == 1 ? l10n.activitySingular : l10n.activityPlural}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

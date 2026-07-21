@@ -35,9 +35,10 @@ class MessageBubble extends StatelessWidget {
     final isGif = message.messageType == ChatMessageType.gif;
     final isMedia = message.hasMedia;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    // Medien ~ wie eingezeichnet: mittlere Kachel, nicht Vollbreite
-    final mediaMaxWidth = (screenWidth * 0.36).clamp(220.0, 280.0);
-    final mediaMaxHeight = isGif ? 200.0 : 180.0;
+    // Bilder/GIFs ~ WhatsApp-Größe (lila Markierung im Chat)
+    final mediaMaxWidth = (screenWidth * 0.48).clamp(300.0, 380.0);
+    final mediaMaxHeight = (MediaQuery.sizeOf(context).height * 0.38)
+        .clamp(280.0, 360.0);
     final bubbleMaxWidth = isMedia ? mediaMaxWidth : screenWidth * 0.75;
 
     return Align(
@@ -77,21 +78,23 @@ class MessageBubble extends StatelessWidget {
                 ),
               if (isMedia)
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth: mediaMaxWidth,
                       maxHeight: mediaMaxHeight,
+                      minWidth: mediaMaxWidth * 0.85,
                     ),
                     child: isGif
                         ? Image.network(
                             message.mediaUrl!,
                             fit: BoxFit.contain,
                             width: mediaMaxWidth,
+                            height: mediaMaxHeight,
                             gaplessPlayback: true,
                             errorBuilder: (_, _, _) => SizedBox(
                               width: mediaMaxWidth,
-                              height: 120,
+                              height: mediaMaxHeight * 0.6,
                               child: const Center(
                                 child: Icon(Icons.broken_image_outlined),
                               ),
@@ -100,7 +103,7 @@ class MessageBubble extends StatelessWidget {
                               if (progress == null) return child;
                               return SizedBox(
                                 width: mediaMaxWidth,
-                                height: 120,
+                                height: mediaMaxHeight * 0.6,
                                 child: const Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
@@ -114,7 +117,7 @@ class MessageBubble extends StatelessWidget {
                             fit: BoxFit.cover,
                             width: mediaMaxWidth,
                             height: mediaMaxHeight,
-                            memCacheWidth: 560,
+                            memCacheWidth: 760,
                             placeholder: (_, _) => SizedBox(
                               width: mediaMaxWidth,
                               height: mediaMaxHeight,
@@ -124,7 +127,7 @@ class MessageBubble extends StatelessWidget {
                             ),
                             errorWidget: (_, _, _) => SizedBox(
                               width: mediaMaxWidth,
-                              height: 120,
+                              height: mediaMaxHeight * 0.6,
                               child: const Center(
                                 child: Icon(Icons.broken_image_outlined),
                               ),

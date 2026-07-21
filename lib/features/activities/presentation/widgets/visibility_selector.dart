@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/domain/premium_limits.dart';
 
 class VisibilitySelector extends StatelessWidget {
@@ -30,6 +31,7 @@ class VisibilitySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final clamped = radiusKm.clamp(PremiumLimits.minRadiusKm, maxRadiusKm);
     final divisions =
         ((maxRadiusKm - PremiumLimits.minRadiusKm) / 5).round().clamp(1, 40);
@@ -38,34 +40,34 @@ class VisibilitySelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Zielgruppen',
+          l10n.targetAudiences,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         CheckboxListTile(
           value: friends,
           onChanged: (v) => onFriendsChanged(v ?? false),
-          title: const Text('Freunde'),
-          subtitle: const Text('Direkt zusagen möglich'),
+          title: Text(l10n.friends),
+          subtitle: Text(l10n.friendsCanJoin),
           controlAffinity: ListTileControlAffinity.leading,
         ),
         CheckboxListTile(
           value: acquaintances,
           onChanged: (v) => onAcquaintancesChanged(v ?? false),
-          title: const Text('Bekannte'),
-          subtitle: const Text('Können Interesse bekunden'),
+          title: Text(l10n.acquaintances),
+          subtitle: Text(l10n.acquaintancesCanInterest),
           controlAffinity: ListTileControlAffinity.leading,
         ),
         CheckboxListTile(
           value: strangers,
           onChanged: (v) => onStrangersChanged(v ?? false),
-          title: const Text('Fremde / Gleichgesinnte'),
-          subtitle: const Text('Radius-basiert, Interesse bekunden'),
+          title: Text(l10n.strangersAudience),
+          subtitle: Text(l10n.strangersSubtitle),
           controlAffinity: ListTileControlAffinity.leading,
         ),
         if (strangers) ...[
           const SizedBox(height: 8),
-          Text('Entdeckungs-Radius: ${clamped.round()} km'),
+          Text(l10n.discoveryRadius(clamped.round())),
           Slider(
             value: clamped.toDouble(),
             min: PremiumLimits.minRadiusKm,
@@ -76,8 +78,10 @@ class VisibilitySelector extends StatelessWidget {
           ),
           if (!isPremium)
             Text(
-              'Free: max. ${PremiumLimits.freeRadiusKm.round()} km · '
-              'Premium: bis ${PremiumLimits.premiumRadiusKm.round()} km',
+              l10n.radiusFreePremiumHint(
+                PremiumLimits.freeRadiusKm.round(),
+                PremiumLimits.premiumRadiusKm.round(),
+              ),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
