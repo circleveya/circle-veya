@@ -90,18 +90,21 @@ class LevelBadgeImage extends StatelessWidget {
 
     Widget image;
     if (milestone.hasBadgeImage) {
-      image = Image.asset(
-        milestone.assetPath!,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        gaplessPlayback: true,
-        errorBuilder: (_, _, _) => Icon(
-          Icons.emoji_events,
-          size: size * 0.55,
-          color: unlocked ? AppColors.seed : muted,
+      // ClipOval removes any residual square/checkerboard around the circle.
+      image = ClipOval(
+        child: Image.asset(
+          milestone.assetPath!,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => Icon(
+            Icons.emoji_events,
+            size: size * 0.55,
+            color: unlocked ? AppColors.seed : muted,
+          ),
         ),
       );
     } else {

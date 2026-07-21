@@ -28,7 +28,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 5,
       name: 'Spark',
-      assetPath: 'assets/badges/spark_5.png',
+      assetPath: 'assets/badges/v3/spark_5.png',
       descriptionDe:
           'Du hast den ersten Funken gezündet und bist aktiv geworden.',
       descriptionEn: 'You’ve sparked your first flame and become active.',
@@ -36,7 +36,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 10,
       name: 'Starter',
-      assetPath: 'assets/badges/starter_10.png',
+      assetPath: 'assets/badges/v3/starter_10.png',
       descriptionDe:
           'Du beginnst, Kontakte zu knüpfen und Aktivitäten zu entdecken.',
       descriptionEn:
@@ -45,7 +45,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 15,
       name: 'Gatherer',
-      assetPath: 'assets/badges/gatherer_15.png',
+      assetPath: 'assets/badges/v3/gatherer_15.png',
       descriptionDe:
           'Du bringst Menschen zusammen und sammelst erste gemeinsame Momente.',
       descriptionEn:
@@ -54,14 +54,14 @@ class LevelMilestone {
     LevelMilestone(
       level: 20,
       name: 'Explorer',
-      assetPath: 'assets/badges/explorer_20.png',
+      assetPath: 'assets/badges/v3/explorer_20.png',
       descriptionDe: 'Du entdeckst neue Orte, Aktivitäten und Menschen.',
       descriptionEn: 'You discover new places, activities, and people.',
     ),
     LevelMilestone(
       level: 25,
       name: 'Builder',
-      assetPath: 'assets/badges/builder_25.png',
+      assetPath: 'assets/badges/v3/builder_25.png',
       descriptionDe:
           'Du baust eigene Verbindungen auf und kannst Communitys mitgestalten.',
       descriptionEn:
@@ -70,7 +70,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 30,
       name: 'Seeker',
-      assetPath: 'assets/badges/seeker_30.png',
+      assetPath: 'assets/badges/v3/seeker_30.png',
       descriptionDe:
           'Du suchst aktiv nach neuen Erlebnissen und spannenden Events.',
       descriptionEn:
@@ -79,7 +79,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 35,
       name: 'Connector',
-      assetPath: 'assets/badges/connector_35.png',
+      assetPath: 'assets/badges/v3/connector_35.png',
       descriptionDe:
           'Du verbindest Menschen durch gemeinsame Interessen und Aktivitäten.',
       descriptionEn:
@@ -88,7 +88,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 40,
       name: 'Creator',
-      assetPath: 'assets/badges/creator_40.png',
+      assetPath: 'assets/badges/v3/creator_40.png',
       descriptionDe:
           'Du erstellst eigene Aktivitäten und sorgst für neue Erlebnisse.',
       descriptionEn:
@@ -97,7 +97,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 45,
       name: 'Guide',
-      assetPath: 'assets/badges/guide_45.png',
+      assetPath: 'assets/badges/v3/guide_45.png',
       descriptionDe:
           'Du zeigst anderen gute Orte, Events und neue Möglichkeiten.',
       descriptionEn: 'You show others great places, events, and opportunities.',
@@ -105,7 +105,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 50,
       name: 'Captain',
-      assetPath: 'assets/badges/captain_50.png',
+      assetPath: 'assets/badges/v3/captain_50.png',
       descriptionDe:
           'Du führst Gruppen an und bist ein aktiver Teil der Community.',
       descriptionEn:
