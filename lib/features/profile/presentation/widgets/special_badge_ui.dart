@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/crisp_asset_image.dart';
 import '../../../../core/widgets/vector_badge.dart';
 import '../../domain/entities/special_badge.dart';
 
@@ -52,6 +53,16 @@ class SpecialBadgeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (badge.type == SpecialBadgeType.founder) {
+      return CrispAssetImage(
+        assetPath: badge.assetPath,
+        size: size,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) =>
+            VectorSpecialBadge(badge: badge, size: size),
+      );
+    }
+
     return VectorSpecialBadge(badge: badge, size: size);
   }
 }

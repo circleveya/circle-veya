@@ -82,14 +82,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           children: [
             Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: CircleVeyaBrand(logoHeight: 52),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: CircleVeyaBrand(logoHeight: 44),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               l10n.registerTitle,
-              style: theme.textTheme.headlineSmall?.copyWith(
+              style: const TextStyle(
+                fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: AppColors.brandNavy,
               ),
@@ -98,8 +99,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 8),
             Text(
               l10n.accountTypeHint,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.brandNavy.withValues(alpha: 0.55),
               ),
               textAlign: TextAlign.center,
             ),
@@ -146,15 +148,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
             ),
             const SizedBox(height: 20),
-            TextFormField(
+            AuthTextField(
               controller: _usernameController,
+              hintText: _accountType.isEventOrganizer
+                  ? l10n.nameOrBrand
+                  : l10n.username,
+              prefixIcon: Icons.person_outline,
               autofillHints: const [AutofillHints.name, AutofillHints.username],
-              decoration: InputDecoration(
-                labelText: _accountType.isEventOrganizer
-                    ? l10n.nameOrBrand
-                    : l10n.username,
-                prefixIcon: const Icon(Icons.person_outline),
-              ),
               textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -166,14 +166,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            const SizedBox(height: 14),
+            AuthTextField(
               controller: _emailController,
+              hintText: l10n.email,
+              prefixIcon: Icons.email_outlined,
               autofillHints: const [AutofillHints.email],
-              decoration: InputDecoration(
-                labelText: l10n.email,
-                prefixIcon: const Icon(Icons.email_outlined),
-              ),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               validator: (value) {
@@ -186,14 +184,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            const SizedBox(height: 14),
+            AuthTextField(
               controller: _passwordController,
+              hintText: l10n.password,
+              prefixIcon: Icons.lock_outline,
               autofillHints: const [AutofillHints.newPassword],
-              decoration: InputDecoration(
-                labelText: l10n.password,
-                prefixIcon: const Icon(Icons.lock_outline),
-              ),
               obscureText: true,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),

@@ -54,93 +54,87 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return AuthScreenScaffold(
       child: AutofillGroup(
         child: Form(
           key: _formKey,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: CircleVeyaBrand(logoHeight: 52),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(child: CircleVeyaBrand(logoHeight: 44)),
+              const SizedBox(height: 32),
+              Text(
+                l10n.loginTitle,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.brandNavy,
+                  height: 1.2,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              l10n.loginTitle,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.brandNavy,
+              const SizedBox(height: 10),
+              Text(
+                l10n.loginSubtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.brandNavy.withValues(alpha: 0.55),
+                  height: 1.45,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.loginSubtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              const SizedBox(height: 28),
+              AuthTextField(
+                controller: _emailController,
+                hintText: l10n.email,
+                prefixIcon: Icons.email_outlined,
+                autofillHints: const [AutofillHints.email, AutofillHints.username],
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return l10n.emailRequired;
+                  }
+                  if (!value.contains('@')) {
+                    return l10n.emailInvalid;
+                  }
+                  return null;
+                },
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            TextFormField(
-              controller: _emailController,
-              autofillHints: const [AutofillHints.email, AutofillHints.username],
-              decoration: InputDecoration(
-                labelText: l10n.email,
-                prefixIcon: const Icon(Icons.email_outlined),
+              const SizedBox(height: 14),
+              AuthTextField(
+                controller: _passwordController,
+                hintText: l10n.password,
+                prefixIcon: Icons.lock_outline,
+                autofillHints: const [AutofillHints.password],
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return l10n.passwordRequired;
+                  }
+                  if (value.length < 6) {
+                    return l10n.passwordMinLength;
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.emailRequired;
-                }
-                if (!value.contains('@')) {
-                  return l10n.emailInvalid;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _passwordController,
-              autofillHints: const [AutofillHints.password],
-              decoration: InputDecoration(
-                labelText: l10n.password,
-                prefixIcon: const Icon(Icons.lock_outline),
+              const SizedBox(height: 22),
+              AuthPrimaryButton(
+                label: l10n.login,
+                isLoading: isLoading,
+                onPressed: _submit,
               ),
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return l10n.passwordRequired;
-                }
-                if (value.length < 6) {
-                  return l10n.passwordMinLength;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            AuthPrimaryButton(
-              label: l10n.login,
-              isLoading: isLoading,
-              onPressed: _submit,
-            ),
-            const SizedBox(height: 16),
-            AuthFooterLink(
-              fullText: l10n.noAccount,
-              onPressed: isLoading ? null : () => context.goNamed('register'),
-            ),
-          ],
+              const SizedBox(height: 18),
+              AuthFooterLink(
+                fullText: l10n.noAccount,
+                onPressed: isLoading ? null : () => context.goNamed('register'),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
