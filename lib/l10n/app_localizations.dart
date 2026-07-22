@@ -620,6 +620,12 @@ abstract class AppLocalizations {
   /// **'Event profile'**
   String get eventProfile;
 
+  /// No description provided for @createEventProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create event profile'**
+  String get createEventProfile;
+
   /// No description provided for @privatePersonDesc.
   ///
   /// In en, this message translates to:

@@ -111,6 +111,7 @@
   "accountType": "Konto-Typ",
   "privatePerson": "Privatperson",
   "eventProfile": "Event-Profil",
+  "createEventProfile": "Event-Profil erstellen",
   "privatePersonDesc": "Für Leute, die mitmachen und Freunde treffen wollen.",
   "eventProfileDesc": "Für Event-Manager und Geschäfte, die Events hochladen.",
   "nameOrBrand": "Name / Marke",

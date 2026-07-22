@@ -121,6 +121,7 @@
   "accountType": "Account type",
   "privatePerson": "Private person",
   "eventProfile": "Event profile",
+  "createEventProfile": "Create event profile",
   "privatePersonDesc": "For people who want to join and meet friends.",
   "eventProfileDesc": "For event managers and businesses that upload events.",
   "nameOrBrand": "Name / brand",

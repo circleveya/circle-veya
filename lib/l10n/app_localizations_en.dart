@@ -292,6 +292,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventProfile => 'Event profile';
 
   @override
+  String get createEventProfile => 'Create event profile';
+
+  @override
   String get privatePersonDesc =>
       'For people who want to join and meet friends.';
 

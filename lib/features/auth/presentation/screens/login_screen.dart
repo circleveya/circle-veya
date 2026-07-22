@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -43,7 +44,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(formatAuthError(error))),
       );
+      return;
     }
+
+    TextInput.finishAutofillContext(shouldSave: true);
   }
 
   @override
@@ -53,15 +57,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
 
     return AuthScreenScaffold(
-      child: Form(
-        key: _formKey,
-        child: Column(
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: CircleVeyaBrand(logoHeight: 48),
+                child: CircleVeyaBrand(logoHeight: 52),
               ),
             ),
             const SizedBox(height: 28),
@@ -84,6 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 32),
             TextFormField(
               controller: _emailController,
+              autofillHints: const [AutofillHints.email, AutofillHints.username],
               decoration: InputDecoration(
                 labelText: l10n.email,
                 prefixIcon: const Icon(Icons.email_outlined),
@@ -103,6 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              autofillHints: const [AutofillHints.password],
               decoration: InputDecoration(
                 labelText: l10n.password,
                 prefixIcon: const Icon(Icons.lock_outline),
@@ -133,6 +140,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

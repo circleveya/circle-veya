@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -61,6 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       ),
     );
+    TextInput.finishAutofillContext(shouldSave: true);
     context.goNamed('login');
   }
 
@@ -72,15 +74,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return AuthScreenScaffold(
       showBackButton: true,
-      child: Form(
-        key: _formKey,
-        child: Column(
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: CircleVeyaBrand(logoHeight: 48),
+                child: CircleVeyaBrand(logoHeight: 52),
               ),
             ),
             const SizedBox(height: 24),
@@ -145,6 +148,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _usernameController,
+              autofillHints: const [AutofillHints.name, AutofillHints.username],
               decoration: InputDecoration(
                 labelText: _accountType.isEventOrganizer
                     ? l10n.nameOrBrand
@@ -165,6 +169,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
+              autofillHints: const [AutofillHints.email],
               decoration: InputDecoration(
                 labelText: l10n.email,
                 prefixIcon: const Icon(Icons.email_outlined),
@@ -184,6 +189,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              autofillHints: const [AutofillHints.newPassword],
               decoration: InputDecoration(
                 labelText: l10n.password,
                 prefixIcon: const Icon(Icons.lock_outline),
@@ -204,7 +210,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 24),
             AuthPrimaryButton(
               label: _accountType.isEventOrganizer
-                  ? l10n.eventProfile
+                  ? l10n.createEventProfile
                   : l10n.registerTitle,
               isLoading: isLoading,
               onPressed: _submit,
@@ -216,6 +222,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
