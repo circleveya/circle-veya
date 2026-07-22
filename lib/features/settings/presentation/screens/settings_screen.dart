@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
     final premiumState = ref.watch(premiumSimulationControllerProvider);
+    final privacyState = ref.watch(profilePrivacyControllerProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
@@ -36,30 +37,127 @@ class SettingsScreen extends ConsumerWidget {
         profileAsync.when(
           loading: () => const _PremiumCardSkeleton(),
           error: (e, _) => _ErrorCard(message: '$e'),
-          data: (profile) => _PremiumTestCard(
-            isPremium: profile.isPremium,
-            isLoading: premiumState.isLoading,
-            onToggle: () async {
-              await ref
-                  .read(premiumSimulationControllerProvider.notifier)
-                  .setPremium(!profile.isPremium);
-              if (!context.mounted) return;
-              final error = ref.read(premiumSimulationControllerProvider).error;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    error == null
-                        ? (profile.isPremium
-                            ? 'Premium deaktiviert'
-                            : 'Premium aktiviert')
-                        : 'Fehler: $error',
+          data: (profile) {
+            if (!profile.isBusinessProfile) {
+              return Column(
+                children: [
+                  _ProfilePrivacyCard(
+                    isPrivate: profile.profilePrivate,
+                    isLoading: privacyState.isLoading,
+                    onToggle: () async {
+                      await ref
+                          .read(profilePrivacyControllerProvider.notifier)
+                          .setProfilePrivate(!profile.profilePrivate);
+                      if (!context.mounted) return;
+                      final error =
+                          ref.read(profilePrivacyControllerProvider).error;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            error == null
+                                ? (profile.profilePrivate
+                                    ? l10n.profileNowPublic
+                                    : l10n.profileNowPrivate)
+                                : 'Fehler: $error',
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  _PremiumTestCard(
+                    isPremium: profile.isPremium,
+                    isLoading: premiumState.isLoading,
+                    onToggle: () async {
+                      await ref
+                          .read(premiumSimulationControllerProvider.notifier)
+                          .setPremium(!profile.isPremium);
+                      if (!context.mounted) return;
+                      final error =
+                          ref.read(premiumSimulationControllerProvider).error;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            error == null
+                                ? (profile.isPremium
+                                    ? 'Premium deaktiviert'
+                                    : 'Premium aktiviert')
+                                : 'Fehler: $error',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               );
-            },
-          ),
+            }
+            return _PremiumTestCard(
+              isPremium: profile.isPremium,
+              isLoading: premiumState.isLoading,
+              onToggle: () async {
+                await ref
+                    .read(premiumSimulationControllerProvider.notifier)
+                    .setPremium(!profile.isPremium);
+                if (!context.mounted) return;
+                final error = ref.read(premiumSimulationControllerProvider).error;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      error == null
+                          ? (profile.isPremium
+                              ? 'Premium deaktiviert'
+                              : 'Premium aktiviert')
+                          : 'Fehler: $error',
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ],
+    );
+  }
+}
+
+class _ProfilePrivacyCard extends StatelessWidget {
+  const _ProfilePrivacyCard({
+    required this.isPrivate,
+    required this.isLoading,
+    required this.onToggle,
+  });
+
+  final bool isPrivate;
+  final bool isLoading;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        border: Border.all(color: AppColors.sidebarBorder),
+      ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+        value: isPrivate,
+        onChanged: isLoading ? null : (_) => onToggle(),
+        secondary: Icon(
+          isPrivate ? Icons.lock_outline : Icons.public_outlined,
+          color: AppColors.brandNavy,
+        ),
+        title: Text(
+          l10n.privateProfileSetting,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        subtitle: Text(l10n.privateProfileSettingSubtitle),
+      ),
     );
   }
 }

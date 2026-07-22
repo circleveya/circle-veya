@@ -22,6 +22,18 @@ import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 import '../../features/profile/presentation/screens/profile_view_screen.dart';
 import 'route_names.dart';
 
+bool _isPublicRoute(String location) {
+  if (location == '/login' || location == '/register') return true;
+  return RegExp(r'^/activity/[^/]+$').hasMatch(location);
+}
+
+String? _redirectAfterLogin(GoRouterState state) {
+  final target = state.uri.queryParameters['redirect']?.trim();
+  if (target == null || target.isEmpty) return null;
+  if (!target.startsWith('/') || target.startsWith('//')) return null;
+  return target;
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
@@ -39,8 +51,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isLoading) return null;
 
-      if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && isAuthRoute) return '/home';
+      if (!isLoggedIn && !_isPublicRoute(state.matchedLocation)) {
+        final returnTo = Uri.encodeComponent(state.uri.toString());
+        return '/login?redirect=$returnTo';
+      }
+      if (isLoggedIn && isAuthRoute) {
+        return _redirectAfterLogin(state) ?? '/home';
+      }
       return null;
     },
     routes: [

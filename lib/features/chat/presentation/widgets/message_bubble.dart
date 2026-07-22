@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/chat.dart';
+import '../widgets/activity_share_preview.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({super.key, required this.message});
@@ -34,12 +35,16 @@ class MessageBubble extends StatelessWidget {
 
     final isGif = message.messageType == ChatMessageType.gif;
     final isMedia = message.hasMedia;
+    final activityShare = message.activityShare;
+    final isActivityShare = activityShare != null;
     final screenWidth = MediaQuery.sizeOf(context).width;
     // Bilder/GIFs ~ WhatsApp-Größe (lila Markierung im Chat)
     final mediaMaxWidth = (screenWidth * 0.48).clamp(300.0, 380.0);
     final mediaMaxHeight = (MediaQuery.sizeOf(context).height * 0.38)
         .clamp(280.0, 360.0);
-    final bubbleMaxWidth = isMedia ? mediaMaxWidth : screenWidth * 0.75;
+    final bubbleMaxWidth = isMedia || isActivityShare
+        ? mediaMaxWidth
+        : screenWidth * 0.75;
 
     return Align(
       alignment: alignment,
@@ -52,7 +57,7 @@ class MessageBubble extends StatelessWidget {
             left: isMine ? 48 : 0,
             right: isMine ? 0 : 48,
           ),
-          padding: isMedia
+          padding: isMedia || isActivityShare
               ? const EdgeInsets.fromLTRB(4, 4, 4, 6)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
@@ -65,7 +70,7 @@ class MessageBubble extends StatelessWidget {
             children: [
               if (!isMine)
                 Padding(
-                  padding: isMedia
+                  padding: isMedia || isActivityShare
                       ? const EdgeInsets.fromLTRB(6, 2, 6, 4)
                       : EdgeInsets.zero,
                   child: Text(
@@ -75,6 +80,11 @@ class MessageBubble extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+              if (isActivityShare)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: ActivitySharePreview(payload: activityShare),
                 ),
               if (isMedia)
                 ClipRRect(
@@ -135,7 +145,7 @@ class MessageBubble extends StatelessWidget {
                           ),
                   ),
                 ),
-              if (showCaption) ...[
+              if (showCaption && !isActivityShare) ...[
                 if (isMedia) const SizedBox(height: 6),
                 Padding(
                   padding: isMedia
@@ -151,7 +161,7 @@ class MessageBubble extends StatelessWidget {
               ],
               const SizedBox(height: 4),
               Padding(
-                padding: isMedia
+                padding: isMedia || isActivityShare
                     ? const EdgeInsets.symmetric(horizontal: 8)
                     : EdgeInsets.zero,
                 child: Text(

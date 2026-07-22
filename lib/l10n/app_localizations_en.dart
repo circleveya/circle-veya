@@ -193,6 +193,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyAsTextSubtitle => 'Title + link';
 
   @override
+  String get shareToFriends => 'Send to friends';
+
+  @override
+  String get shareToFriendsHint =>
+      'Tap a friend – the event goes to your direct message.';
+
+  @override
+  String get noFriendsToShare => 'No friends to share with yet.';
+
+  @override
+  String activitySentToFriend(String username) {
+    return 'Sent to $username';
+  }
+
+  @override
+  String shareActivityToFriend(String username) {
+    return 'Send to $username';
+  }
+
+  @override
+  String get shareActivityMessageHint => 'Message (optional)';
+
+  @override
+  String get shareActivitySend => 'Send';
+
+  @override
+  String get privateProfileSetting => 'Private profile';
+
+  @override
+  String get privateProfileSettingSubtitle =>
+      'Only friends and acquaintances can see bio, activities, level and gallery.';
+
+  @override
+  String get privateProfileTitle => 'Private profile';
+
+  @override
+  String privateProfileBody(String username) {
+    return '$username\'s content is only visible to friends and acquaintances.';
+  }
+
+  @override
+  String get profileNowPrivate => 'Profile is now private';
+
+  @override
+  String get profileNowPublic => 'Profile is now public';
+
+  @override
   String get linkCopied => 'Link copied – ready to send';
 
   @override
@@ -793,6 +840,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newBadge => 'New';
 
   @override
+  String get selfCreatedBadge => 'Created';
+
+  @override
   String get clearSearch => 'Clear';
 
   @override
@@ -1030,6 +1080,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get submitReview => 'Submit review';
+
+  @override
+  String get reviewConnectedOnly =>
+      'You can only review people you\'re connected with.';
 
   @override
   String get saveReview => 'Save review';

@@ -94,17 +94,57 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     );
   }
 
-  void _addInterest() {
-    final value = _interestController.text.trim();
-    if (value.isEmpty || _interests.contains(value)) return;
-    setState(() {
+  void _addInterestsFromInput(String raw) {
+    final parts = raw
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty);
+
+    var added = false;
+    for (final value in parts) {
+      if (_interests.contains(value)) continue;
       _interests.add(value);
-      _interestController.clear();
-    });
+      added = true;
+    }
+    if (added) setState(() {});
+  }
+
+  void _addInterest() {
+    final value = _interestController.text;
+    if (value.trim().isEmpty) return;
+
+    _addInterestsFromInput(value);
+    _interestController.clear();
+  }
+
+  void _onInterestChanged(String value) {
+    if (!value.contains(',')) return;
+
+    final parts = value.split(',');
+    if (parts.length <= 1) return;
+
+    final completed = parts.sublist(0, parts.length - 1);
+    final remainder = parts.last;
+
+    var added = false;
+    for (final part in completed) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty || _interests.contains(trimmed)) continue;
+      _interests.add(trimmed);
+      added = true;
+    }
+
+    _interestController.value = TextEditingValue(
+      text: remainder,
+      selection: TextSelection.collapsed(offset: remainder.length),
+    );
+    if (added) setState(() {});
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    _addInterest();
 
     final age = int.tryParse(_ageController.text.trim());
 
@@ -303,6 +343,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           decoration: const InputDecoration(
                             hintText: 'z.B. Go-Kart, Fußball',
                           ),
+                          onChanged: _onInterestChanged,
                           onSubmitted: (_) => _addInterest(),
                         ),
                       ),

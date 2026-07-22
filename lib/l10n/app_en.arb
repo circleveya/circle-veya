@@ -61,6 +61,40 @@
   "copyLinkSubtitle": "To clipboard",
   "copyAsText": "Copy as text",
   "copyAsTextSubtitle": "Title + link",
+  "shareToFriends": "Send to friends",
+  "shareToFriendsHint": "Tap a friend – the event goes to your direct message.",
+  "noFriendsToShare": "No friends to share with yet.",
+  "activitySentToFriend": "Sent to {username}",
+  "@activitySentToFriend": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "shareActivityToFriend": "Send to {username}",
+  "@shareActivityToFriend": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "shareActivityMessageHint": "Message (optional)",
+  "shareActivitySend": "Send",
+  "privateProfileSetting": "Private profile",
+  "privateProfileSettingSubtitle": "Only friends and acquaintances can see bio, activities, level and gallery.",
+  "privateProfileTitle": "Private profile",
+  "privateProfileBody": "{username}'s content is only visible to friends and acquaintances.",
+  "@privateProfileBody": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNowPrivate": "Profile is now private",
+  "profileNowPublic": "Profile is now public",
   "linkCopied": "Link copied – ready to send",
   "textCopied": "Text with link copied",
   "join": "Join",
@@ -332,6 +366,7 @@
   "weatherRain": "Rain",
   "weatherSun": "Sun",
   "newBadge": "New",
+  "selfCreatedBadge": "Created",
   "clearSearch": "Clear",
   "targetAudiences": "Audiences",
   "friendsCanJoin": "Can join directly",
@@ -448,6 +483,7 @@
   "updateYourReview": "Update your review",
   "tapStarsToRate": "Tap stars to rate",
   "submitReview": "Submit review",
+  "reviewConnectedOnly": "You can only review people you're connected with.",
   "saveReview": "Save review",
   "reviewSaved": "Review saved",
   "reviewSingular": "Review",

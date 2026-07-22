@@ -61,6 +61,40 @@
   "copyLinkSubtitle": "In die Zwischenablage",
   "copyAsText": "Als Text kopieren",
   "copyAsTextSubtitle": "Titel + Link",
+  "shareToFriends": "An Freunde senden",
+  "shareToFriendsHint": "Tippe einen Freund – das Event landet in der Direktnachricht.",
+  "noFriendsToShare": "Noch keine Freunde zum Teilen.",
+  "activitySentToFriend": "An {username} gesendet",
+  "@activitySentToFriend": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "shareActivityToFriend": "An {username} senden",
+  "@shareActivityToFriend": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "shareActivityMessageHint": "Nachricht (optional)",
+  "shareActivitySend": "Senden",
+  "privateProfileSetting": "Privates Profil",
+  "privateProfileSettingSubtitle": "Nur Freunde und Bekannte sehen Bio, Aktivitäten, Level und Galerie.",
+  "privateProfileTitle": "Privates Profil",
+  "privateProfileBody": "Die Inhalte von {username} sind nur für Freunde und Bekannte sichtbar.",
+  "@privateProfileBody": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNowPrivate": "Profil ist jetzt privat",
+  "profileNowPublic": "Profil ist jetzt öffentlich",
   "linkCopied": "Link kopiert – bereit zum Versenden",
   "textCopied": "Text mit Link kopiert",
   "join": "Zusagen",
@@ -245,6 +279,7 @@
   "weatherRain": "Regen",
   "weatherSun": "Sonne",
   "newBadge": "Neu",
+  "selfCreatedBadge": "Erstellt",
   "clearSearch": "Leeren",
   "targetAudiences": "Zielgruppen",
   "friendsCanJoin": "Direkt zusagen möglich",
@@ -315,6 +350,7 @@
   "updateYourReview": "Deine Bewertung aktualisieren",
   "tapStarsToRate": "Sterne tippen zum Bewerten",
   "submitReview": "Bewertung absenden",
+  "reviewConnectedOnly": "Du kannst nur Personen bewerten, mit denen du vernetzt bist.",
   "saveReview": "Bewertung speichern",
   "reviewSaved": "Bewertung gespeichert",
   "reviewSingular": "Bewertung",

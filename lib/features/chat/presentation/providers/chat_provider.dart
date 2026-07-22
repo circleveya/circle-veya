@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -6,6 +8,7 @@ import '../../../../core/network/supabase_client.dart';
 import '../../data/datasources/chat_remote_datasource.dart';
 import '../../data/repositories/chat_repository_impl.dart';
 import '../../data/repositories/unconfigured_chat_repository.dart';
+import '../../domain/entities/activity_share_payload.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/repositories/chat_repository.dart';
 
@@ -86,6 +89,21 @@ class ChatActionsController extends AutoDisposeAsyncNotifier<void> {
         content: content,
         messageType: messageType,
         mediaUrl: mediaUrl,
+      ),
+    );
+  }
+
+  Future<void> sendActivityShare({
+    required String chatId,
+    required ActivitySharePayload payload,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _repo.sendMessage(
+        chatId: chatId,
+        content: jsonEncode(payload.toJson()),
+        messageType: ChatMessageType.activityShare,
+        mediaUrl: payload.imageUrl,
       ),
     );
   }

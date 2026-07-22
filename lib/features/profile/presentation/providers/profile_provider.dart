@@ -126,6 +126,30 @@ class GalleryPrivacyController extends AutoDisposeAsyncNotifier<void> {
 final galleryPrivacyControllerProvider = AutoDisposeAsyncNotifierProvider<
     GalleryPrivacyController, void>(GalleryPrivacyController.new);
 
+class ProfilePrivacyController extends AutoDisposeAsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> setProfilePrivate(bool isPrivate) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(profileRemoteDatasourceProvider).updateProfilePrivate(
+            isPrivate: isPrivate,
+          );
+    });
+    if (!state.hasError) {
+      final userId = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      ref.invalidate(myProfileProvider);
+      if (userId != null) {
+        ref.invalidate(profileProvider(userId));
+      }
+    }
+  }
+}
+
+final profilePrivacyControllerProvider = AutoDisposeAsyncNotifierProvider<
+    ProfilePrivacyController, void>(ProfilePrivacyController.new);
+
 class ProfileEditController extends AutoDisposeAsyncNotifier<void> {
   @override
   Future<void> build() async {}

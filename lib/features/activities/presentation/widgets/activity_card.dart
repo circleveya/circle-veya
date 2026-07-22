@@ -110,9 +110,15 @@ class ActivityCard extends StatelessWidget {
                           isCompany: activity.hostIsCompany,
                         ),
                         const SizedBox(width: 8),
-                        _RelationBadge(
-                          label: activity.visibleAs.localizedLabel(l10n),
-                        ),
+                        if (activity.viewerAction == ViewerAction.host)
+                          _RelationBadge(
+                            label: l10n.selfCreatedBadge,
+                            emphasis: true,
+                          )
+                        else
+                          _RelationBadge(
+                            label: activity.visibleAs.localizedLabel(l10n),
+                          ),
                         if (activity.isNew) ...[
                           const SizedBox(width: 6),
                           _RelationBadge(
@@ -294,29 +300,38 @@ class _RelationBadge extends StatelessWidget {
   const _RelationBadge({
     required this.label,
     this.muted = false,
+    this.emphasis = false,
   });
 
   final String label;
   final bool muted;
+  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bg = emphasis
+        ? AppColors.brandNavy
+        : muted
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.primaryContainer.withValues(alpha: 0.55);
+    final fg = emphasis
+        ? Colors.white
+        : muted
+            ? theme.colorScheme.onSurfaceVariant
+            : theme.colorScheme.onPrimaryContainer;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: muted
-            ? theme.colorScheme.surfaceContainerHighest
-            : theme.colorScheme.primaryContainer.withValues(alpha: 0.55),
+        color: bg,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w600,
-          color: muted
-              ? theme.colorScheme.onSurfaceVariant
-              : theme.colorScheme.onPrimaryContainer,
+          color: fg,
         ),
       ),
     );

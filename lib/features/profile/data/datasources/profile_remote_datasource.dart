@@ -69,37 +69,26 @@ class ProfileRemoteDatasource {
   }
 
   Future<List<UserReview>> getReviewsForProfile(String profileId) async {
-    final response = await _client
-        .from('reviews')
-        .select(
-          'id, target_user_id, reviewer_id, rating, comment, created_at, '
-          'profiles!reviews_reviewer_id_fkey(username, avatar_url)',
-        )
-        .eq('target_user_id', profileId)
-        .order('created_at', ascending: false);
+    final response = await _client.rpc(
+      'get_profile_reviews',
+      params: {'p_profile_id': profileId},
+    );
 
-    final reviews = <UserReview>[];
-    for (final row in response as List) {
-      if (row is! Map) continue;
-      final map = Map<String, dynamic>.from(row);
-      final profile = map['profiles'];
-      final profileMap = profile is Map
-          ? Map<String, dynamic>.from(profile)
-          : null;
-      reviews.add(
-        UserReview(
-          id: map['id'] as String,
-          targetUserId: map['target_user_id'] as String,
-          reviewerId: map['reviewer_id'] as String,
-          reviewerUsername: profileMap?['username'] as String? ?? 'User',
-          reviewerAvatarUrl: profileMap?['avatar_url'] as String?,
-          rating: (map['rating'] as num?)?.toInt() ?? 0,
-          comment: map['comment'] as String?,
-          createdAt: DateTime.parse(map['created_at'] as String),
-        ),
+    if (response is! List) return const [];
+
+    return response.map((row) {
+      final map = row as Map<String, dynamic>;
+      return UserReview(
+        id: map['id'] as String,
+        targetUserId: map['target_user_id'] as String,
+        reviewerId: map['reviewer_id'] as String,
+        reviewerUsername: map['reviewer_username'] as String? ?? 'User',
+        reviewerAvatarUrl: map['reviewer_avatar_url'] as String?,
+        rating: (map['rating'] as num?)?.toInt() ?? 0,
+        comment: map['comment'] as String?,
+        createdAt: DateTime.parse(map['created_at'] as String),
       );
-    }
-    return reviews;
+    }).toList();
   }
 
   Future<UserReview?> getMyReviewForProfile(String targetUserId) async {
@@ -149,14 +138,13 @@ class ProfileRemoteDatasource {
       throw StateError('Bewertung muss zwischen 1 und 5 liegen');
     }
 
-    await _client.from('reviews').upsert(
-      {
-        'target_user_id': targetUserId,
-        'reviewer_id': userId,
-        'rating': rating,
-        'comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
+    await _client.rpc(
+      'upsert_profile_review',
+      params: {
+        'p_target_user_id': targetUserId,
+        'p_rating': rating,
+        'p_comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
       },
-      onConflict: 'target_user_id,reviewer_id',
     );
   }
 
@@ -172,6 +160,13 @@ class ProfileRemoteDatasource {
     await _client.rpc(
       'update_my_gallery_public',
       params: {'p_public': isPublic},
+    );
+  }
+
+  Future<void> updateProfilePrivate({required bool isPrivate}) async {
+    await _client.rpc(
+      'update_my_profile_private',
+      params: {'p_private': isPrivate},
     );
   }
 
@@ -264,6 +259,9 @@ class ProfileRemoteDatasource {
       isPremium: map['is_premium'] as bool? ?? false,
       isFounder: map['is_founder'] as bool? ?? false,
       galleryPublic: map['gallery_public'] as bool? ?? false,
+      profilePrivate: map['profile_private'] as bool? ?? false,
+      canViewFullProfile: map['can_view_full_profile'] as bool? ?? true,
+      canReview: map['can_review'] as bool? ?? false,
       level: map['level'] == null ? null : (map['level'] as num).toInt(),
       followedByMe: map['followed_by_me'] as bool? ?? false,
       followerCount: (map['follower_count'] as num?)?.toInt() ?? 0,

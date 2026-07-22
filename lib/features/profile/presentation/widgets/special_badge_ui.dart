@@ -77,11 +77,13 @@ class SpecialBadgeButton extends StatelessWidget {
     required this.badge,
     this.showLabel = true,
     this.size = 44,
+    this.labelFontSize = 13,
   });
 
   final SpecialBadge badge;
   final bool showLabel;
   final double size;
+  final double labelFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -98,10 +100,10 @@ class SpecialBadgeButton extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 badge.name,
-                style: const TextStyle(
-                  color: Color(0xFFE6AE41),
+                style: TextStyle(
+                  color: const Color(0xFFE6AE41),
                   fontWeight: FontWeight.w800,
-                  fontSize: 13,
+                  fontSize: labelFontSize,
                   shadows: [
                     Shadow(
                       color: Colors.black54,

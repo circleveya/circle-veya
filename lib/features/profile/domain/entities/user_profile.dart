@@ -74,6 +74,9 @@ class UserProfile extends Equatable {
     this.isPremium = false,
     this.isFounder = false,
     this.galleryPublic = false,
+    this.profilePrivate = false,
+    this.canViewFullProfile = true,
+    this.canReview = false,
     this.level = 1,
     this.followedByMe = false,
     this.followerCount = 0,
@@ -90,6 +93,11 @@ class UserProfile extends Equatable {
   final bool isPremium;
   final bool isFounder;
   final bool galleryPublic;
+  final bool profilePrivate;
+  /// Ob der aktuelle Betrachter Bio, Aktivitäten, Level usw. sehen darf.
+  final bool canViewFullProfile;
+  /// Ob der aktuelle Betrachter eine Bewertung abgeben darf.
+  final bool canReview;
   /// `null` bei Event-/Unternehmens-Profilen (kein Level-System).
   final int? level;
   final bool followedByMe;
@@ -122,6 +130,9 @@ class UserProfile extends Equatable {
     int? age,
     List<String>? interests,
     bool? galleryPublic,
+    bool? profilePrivate,
+    bool? canViewFullProfile,
+    bool? canReview,
     int? level,
     bool? followedByMe,
     int? followerCount,
@@ -142,6 +153,9 @@ class UserProfile extends Equatable {
       isPremium: isPremium,
       isFounder: isFounder,
       galleryPublic: galleryPublic ?? this.galleryPublic,
+      profilePrivate: profilePrivate ?? this.profilePrivate,
+      canViewFullProfile: canViewFullProfile ?? this.canViewFullProfile,
+      canReview: canReview ?? this.canReview,
       level: clearLevel ? null : (level ?? this.level),
       followedByMe: followedByMe ?? this.followedByMe,
       followerCount: followerCount ?? this.followerCount,
@@ -161,6 +175,9 @@ class UserProfile extends Equatable {
         isPremium,
         isFounder,
         galleryPublic,
+        profilePrivate,
+        canViewFullProfile,
+        canReview,
         level,
         followedByMe,
         followerCount,

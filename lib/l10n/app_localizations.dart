@@ -464,6 +464,66 @@ abstract class AppLocalizations {
   /// **'Title + link'**
   String get copyAsTextSubtitle;
 
+  /// No description provided for @shareToFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to friends'**
+  String get shareToFriends;
+
+  /// No description provided for @shareToFriendsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a friend – the event goes to your direct message.'**
+  String get shareToFriendsHint;
+
+  /// No description provided for @noFriendsToShare.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends to share with yet.'**
+  String get noFriendsToShare;
+
+  /// No description provided for @activitySentToFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to {username}'**
+  String activitySentToFriend(String username);
+
+  /// No description provided for @shareActivityToFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to {username}'**
+  String shareActivityToFriend(String username);
+
+  /// No description provided for @shareActivityMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message (optional)'**
+  String get shareActivityMessageHint;
+
+  /// No description provided for @shareActivitySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get shareActivitySend;
+
+  /// No description provided for @privateProfileSetting.
+  String get privateProfileSetting;
+
+  /// No description provided for @privateProfileSettingSubtitle.
+  String get privateProfileSettingSubtitle;
+
+  /// No description provided for @privateProfileTitle.
+  String get privateProfileTitle;
+
+  /// No description provided for @privateProfileBody.
+  String privateProfileBody(String username);
+
+  /// No description provided for @profileNowPrivate.
+  String get profileNowPrivate;
+
+  /// No description provided for @profileNowPublic.
+  String get profileNowPublic;
+
   /// No description provided for @linkCopied.
   ///
   /// In en, this message translates to:
@@ -1568,6 +1628,12 @@ abstract class AppLocalizations {
   /// **'New'**
   String get newBadge;
 
+  /// No description provided for @selfCreatedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get selfCreatedBadge;
+
   /// No description provided for @clearSearch.
   ///
   /// In en, this message translates to:
@@ -1987,6 +2053,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submit review'**
   String get submitReview;
+
+  /// No description provided for @reviewConnectedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only review people you're connected with.'**
+  String get reviewConnectedOnly;
 
   /// No description provided for @saveReview.
   ///

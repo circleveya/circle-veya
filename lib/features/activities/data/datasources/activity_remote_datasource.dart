@@ -187,43 +187,35 @@ class ActivityRemoteDatasource {
     return getActivitiesByHost(userId);
   }
 
-  /// Gehostete Aktivitäten eines Users; RLS filtert unsichtbare Einträge.
+  /// Gehostete Aktivitäten eines Users (respektiert privates Profil).
   Future<List<DiscoverableActivity>> getActivitiesByHost(String hostId) async {
     final viewerId = _client.auth.currentUser?.id;
     if (viewerId == null) {
       throw const AppAuthException('Nicht angemeldet');
     }
 
-    final response = await _client
-        .from('activities')
-        .select(
-          'id, host_id, title, description, max_participants, current_participants, '
-          'date_time, image_url, location_type, weather_condition, location_name, '
-          'is_sponsored, status, source, external_url, source_event_id, '
-          'source_event_title, created_at, '
-          'profiles!activities_host_id_fkey(username, user_type, avatar_url)',
-        )
-        .eq('host_id', hostId)
-        .neq('status', 'cancelled')
-        .order('date_time', ascending: false, nullsFirst: false);
+    final response = await _client.rpc(
+      'get_profile_host_activities',
+      params: {'p_host_id': hostId},
+    );
+    if (response is! List) return const [];
 
     final activities = <DiscoverableActivity>[];
-    for (final row in response as List) {
+    for (final row in response) {
       if (row is! Map<String, dynamic>) continue;
       try {
         final map = row;
-        final profile = map['profiles'] as Map<String, dynamic>?;
         final isOwnHost = hostId == viewerId;
         activities.add(
           DiscoverableActivity(
             id: _requireString(map['id'], fallback: ''),
             hostId: _requireString(map['host_id'], fallback: hostId),
-            hostUsername: _optionalString(profile?['username']) ??
+            hostUsername: _optionalString(map['host_username']) ??
                 (isOwnHost ? 'Du' : 'User'),
-            hostIsCompany: profile?['user_type'] == 'company' ||
-                profile?['user_type'] == 'event' ||
-                profile?['user_type'] == 'dev',
-            hostAvatarUrl: _optionalString(profile?['avatar_url']),
+            hostIsCompany: map['host_user_type'] == 'company' ||
+                map['host_user_type'] == 'event' ||
+                map['host_user_type'] == 'dev',
+            hostAvatarUrl: _optionalString(map['host_avatar_url']),
             title: _requireString(map['title'], fallback: 'Aktivität'),
             description: _optionalString(map['description']),
             maxParticipants: _optionalInt(map['max_participants']),
@@ -239,9 +231,9 @@ class ActivityRemoteDatasource {
                 isOwnHost ? ViewerAction.host : ViewerAction.none,
             isSponsored: map['is_sponsored'] as bool? ?? false,
             isFeatured: (map['is_sponsored'] as bool? ?? false) &&
-                (profile?['user_type'] == 'company' ||
-                    profile?['user_type'] == 'event' ||
-                    profile?['user_type'] == 'dev'),
+                (map['host_user_type'] == 'company' ||
+                    map['host_user_type'] == 'event' ||
+                    map['host_user_type'] == 'dev'),
             source: ActivitySource.fromDb(map['source'] as String?),
             externalUrl: _optionalString(map['external_url']),
             sourceEventId: _optionalString(map['source_event_id']),

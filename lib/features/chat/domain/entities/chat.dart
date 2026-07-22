@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import 'activity_share_payload.dart';
 
 enum ChatType {
   activityGroup,
@@ -29,11 +30,13 @@ enum ChatType {
 enum ChatMessageType {
   text,
   image,
-  gif;
+  gif,
+  activityShare;
 
   static ChatMessageType fromDb(String? value) => switch (value) {
         'image' => image,
         'gif' => gif,
+        'activity_share' => activityShare,
         _ => text,
       };
 
@@ -41,6 +44,7 @@ enum ChatMessageType {
         text => 'text',
         image => 'image',
         gif => 'gif',
+        activityShare => 'activity_share',
       };
 }
 
@@ -123,6 +127,27 @@ class ChatMessage extends Equatable {
       mediaUrl!.isNotEmpty &&
       (messageType == ChatMessageType.image ||
           messageType == ChatMessageType.gif);
+
+  ActivitySharePayload? get activityShare {
+    if (messageType != ChatMessageType.activityShare) return null;
+    final parsed = ActivitySharePayload.fromMessageContent(content);
+    if (parsed == null) return null;
+
+    final thumb = parsed.imageUrl?.trim();
+    final media = mediaUrl?.trim();
+    if ((thumb == null || thumb.isEmpty) && media != null && media.isNotEmpty) {
+      return ActivitySharePayload(
+        activityId: parsed.activityId,
+        title: parsed.title,
+        url: parsed.url,
+        caption: parsed.caption,
+        imageUrl: media,
+      );
+    }
+    return parsed;
+  }
+
+  bool get isActivityShare => activityShare != null;
 
   @override
   List<Object?> get props => [

@@ -8,9 +8,10 @@ import '../../../../core/layout/shell_destination_request.dart';
 import '../../../../core/layout/web_shell_destination.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/share_links.dart';
+import '../widgets/share_activity_sheet.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../groups/presentation/providers/groups_provider.dart';
 import '../../domain/entities/activity.dart';
@@ -105,6 +106,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                     context,
                     activityId: widget.activityId,
                     title: activity.title,
+                    imageUrl: activity.imageUrl,
                   ),
                   icon: const Icon(Icons.share_outlined),
                 ),
@@ -286,6 +288,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                               context,
                               activityId: widget.activityId,
                               title: activity.title,
+                              imageUrl: activity.imageUrl,
                             ),
                             icon: const Icon(Icons.share_outlined),
                             label: Text(l10n.share),
@@ -316,6 +319,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                               context,
                               activityId: widget.activityId,
                               title: activity.title,
+                              imageUrl: activity.imageUrl,
                             ),
                             icon: const Icon(Icons.share_outlined),
                             label: Text(l10n.share),
@@ -510,6 +514,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     BuildContext context,
     DiscoverableActivity activity,
   ) {
+    if (!_requireAuth(context)) return Future.value();
     ref.read(eventSelectionProvider.notifier).selectFromActivity(activity);
     ref
         .read(shellDestinationRequestProvider.notifier)
@@ -539,6 +544,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       }
       return;
     }
+
+    if (!_requireAuth(context)) return;
 
     final controller = ref.read(activityActionsProvider.notifier);
 
@@ -688,6 +695,17 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         SnackBar(content: Text(error.toString())),
       );
     }
+  }
+
+  bool _requireAuth(BuildContext context) {
+    final isLoggedIn = ref.read(authStateProvider).valueOrNull != null;
+    if (isLoggedIn) return true;
+
+    final returnTo = Uri.encodeComponent(
+      GoRouterState.of(context).uri.toString(),
+    );
+    context.push('/login?redirect=$returnTo');
+    return false;
   }
 }
 

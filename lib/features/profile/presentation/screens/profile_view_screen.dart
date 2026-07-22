@@ -124,7 +124,8 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
     final rating = ratingAsync.valueOrNull?.avgRating ?? 0.0;
     final reviewCount = ratingAsync.valueOrNull?.reviewCount ?? 0;
     final followBusy = ref.watch(friendsActionsProvider).isLoading;
-    final showLevelTab = profile.hasLevelSystem;
+    final showLevelTab = profile.hasLevelSystem && profile.canViewFullProfile;
+    final canViewDetails = isOwnProfile || profile.canViewFullProfile;
     final l10n = AppLocalizations.of(context);
 
     final content = CustomScrollView(
@@ -174,18 +175,23 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
           ),
         SliverToBoxAdapter(
           child: _ProfileStatsRow(
-            activities: activityCount,
-            friends: profile.isBusinessProfile
-                ? profile.followerCount
-                : friendCount,
-            groups: profile.isBusinessProfile ? 0 : groupCount,
-            rating: rating,
-            reviewCount: reviewCount,
+            activities: canViewDetails ? activityCount : 0,
+            friends: canViewDetails
+                ? (profile.isBusinessProfile
+                    ? profile.followerCount
+                    : friendCount)
+                : 0,
+            groups: canViewDetails && !profile.isBusinessProfile ? groupCount : 0,
+            rating: canViewDetails ? rating : 0,
+            reviewCount: canViewDetails ? reviewCount : 0,
             friendsLabel:
                 profile.isBusinessProfile ? l10n.followers : l10n.friends,
             hideGroups: profile.isBusinessProfile,
-            onActivitiesTap: () => tabController.animateTo(1),
-            onFriendsTap: (!profile.isBusinessProfile && isOwnProfile)
+            onActivitiesTap:
+                canViewDetails ? () => tabController.animateTo(1) : null,
+            onFriendsTap: canViewDetails &&
+                    !profile.isBusinessProfile &&
+                    isOwnProfile
                 ? () {
                     ref
                         .read(shellDestinationRequestProvider.notifier)
@@ -195,7 +201,9 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
                     }
                   }
                 : null,
-            onGroupsTap: (!profile.isBusinessProfile && isOwnProfile)
+            onGroupsTap: canViewDetails &&
+                    !profile.isBusinessProfile &&
+                    isOwnProfile
                 ? () {
                     ref
                         .read(shellDestinationRequestProvider.notifier)
@@ -205,9 +213,19 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
                     }
                   }
                 : null,
-            onRatingTap: () => tabController.animateTo(showLevelTab ? 4 : 3),
+            onRatingTap: canViewDetails
+                ? () => tabController.animateTo(showLevelTab ? 4 : 3)
+                : null,
           ),
         ),
+        if (!canViewDetails)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _PrivateProfilePlaceholder(
+              username: profile.username,
+            ),
+          )
+        else ...[
         SliverPersistentHeader(
           pinned: true,
           delegate: _TabBarDelegate(
@@ -245,10 +263,12 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
                 profileId: profile.id,
                 isOwnProfile: isOwnProfile,
                 username: profile.username,
+                canReview: profile.canReview,
               ),
             ],
           ),
         ),
+        ],
       ],
     );
 
@@ -272,6 +292,52 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
   }
 }
 
+class _PrivateProfilePlaceholder extends StatelessWidget {
+  const _PrivateProfilePlaceholder({required this.username});
+
+  final String username;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 56,
+              color: AppColors.brandNavy.withValues(alpha: 0.45),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.privateProfileTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.brandNavy,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l10n.privateProfileBody(username),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.45,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProfileCoverHeader extends ConsumerWidget {
   const _ProfileCoverHeader({
     required this.profile,
@@ -280,6 +346,11 @@ class _ProfileCoverHeader extends ConsumerWidget {
     this.onLevelTap,
     this.showBackButton = false,
   });
+
+  static const _avatarRadius = 68.0;
+  static const _headerHeight = 312.0;
+  static const _badgeSize = 56.0;
+  static const _badgeLabelSize = 15.0;
 
   final UserProfile profile;
   final bool isOwnProfile;
@@ -339,7 +410,7 @@ class _ProfileCoverHeader extends ConsumerWidget {
     final specialBadges = SpecialBadge.forProfile(profile);
 
     return SizedBox(
-      height: 280,
+      height: _headerHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -388,7 +459,7 @@ class _ProfileCoverHeader extends ConsumerWidget {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
+                        border: Border.all(color: Colors.white, width: 5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.2),
@@ -397,7 +468,7 @@ class _ProfileCoverHeader extends ConsumerWidget {
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: 52,
+                        radius: _avatarRadius,
                         backgroundColor: theme.colorScheme.primaryContainer,
                         backgroundImage: profile.avatarUrl != null
                             ? CachedNetworkImageProvider(profile.avatarUrl!)
@@ -423,58 +494,68 @@ class _ProfileCoverHeader extends ConsumerWidget {
                       ),
                   ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 18),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: 10,
+                        runSpacing: 6,
                         children: [
                           Text(
                             profile.username,
-                            style: theme.textTheme.headlineSmall?.copyWith(
+                            style: theme.textTheme.titleLarge?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
+                              fontSize: 26,
                             ),
                           ),
+                          for (final badge in specialBadges)
+                            SpecialBadgeButton(
+                              badge: badge,
+                              size: _badgeSize,
+                              labelFontSize: _badgeLabelSize,
+                            ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         profile.ageLabel,
-                        style: theme.textTheme.bodyLarge?.copyWith(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           color: Colors.white70,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      if (level != null || specialBadges.isNotEmpty)
+                      if (level != null) ...[
+                        const SizedBox(height: 10),
                         Wrap(
-                          spacing: 10,
+                          spacing: 12,
                           runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            if (level != null) ...[
-                              LevelLabelChip(
-                                level: level!,
-                                onTap: onLevelTap,
+                            LevelLabelChip(
+                              level: level!,
+                              onTap: onLevelTap,
+                              fontSize: _badgeLabelSize,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 7,
                               ),
-                              if (LevelMilestone.currentFor(level!) != null)
-                                _ProfileBadgeButton(
-                                  milestone:
-                                      LevelMilestone.currentFor(level!)!,
-                                ),
-                            ],
-                            for (final badge in specialBadges)
-                              SpecialBadgeButton(badge: badge),
+                            ),
+                            if (LevelMilestone.currentFor(level!) != null)
+                              _ProfileBadgeButton(
+                                milestone: LevelMilestone.currentFor(level!)!,
+                                badgeSize: _badgeSize,
+                                labelFontSize: _badgeLabelSize,
+                              ),
                           ],
                         ),
+                      ],
                       if (profile.isBusinessProfile) ...[
-                        if (level != null || specialBadges.isNotEmpty)
-                          const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -510,9 +591,15 @@ class _ProfileCoverHeader extends ConsumerWidget {
 
 /// Aktuelles Level-Badge im Profil-Header (Tipp → Erklärung).
 class _ProfileBadgeButton extends StatelessWidget {
-  const _ProfileBadgeButton({required this.milestone});
+  const _ProfileBadgeButton({
+    required this.milestone,
+    this.badgeSize = 44,
+    this.labelFontSize = 13,
+  });
 
   final LevelMilestone milestone;
+  final double badgeSize;
+  final double labelFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -529,14 +616,14 @@ class _ProfileBadgeButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            LevelBadgeImage(milestone: milestone, size: 44),
+            LevelBadgeImage(milestone: milestone, size: badgeSize),
             const SizedBox(width: 8),
             Text(
               milestone.name,
               style: TextStyle(
                 color: colors.accent,
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
+                fontSize: labelFontSize,
                 shadows: const [
                   Shadow(
                     color: Colors.black54,
@@ -1057,11 +1144,13 @@ class _ProfileReviewsTab extends ConsumerStatefulWidget {
     required this.profileId,
     required this.isOwnProfile,
     required this.username,
+    required this.canReview,
   });
 
   final String profileId;
   final bool isOwnProfile;
   final String username;
+  final bool canReview;
 
   @override
   ConsumerState<_ProfileReviewsTab> createState() => _ProfileReviewsTabState();
@@ -1106,7 +1195,7 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
-            if (!widget.isOwnProfile) ...[
+            if (!widget.isOwnProfile && widget.canReview) ...[
               Text(
                 myReview == null
                     ? '${widget.username} bewerten'
@@ -1166,6 +1255,19 @@ class _ProfileReviewsTabState extends ConsumerState<_ProfileReviewsTab> {
                             ? 'Bewertung absenden'
                             : 'Bewertung speichern',
                       ),
+              ),
+              const SizedBox(height: 28),
+              Divider(
+                color:
+                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 12),
+            ] else if (!widget.isOwnProfile && !widget.canReview) ...[
+              Text(
+                AppLocalizations.of(context).reviewConnectedOnly,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 28),
               Divider(

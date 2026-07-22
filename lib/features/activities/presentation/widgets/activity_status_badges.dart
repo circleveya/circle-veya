@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/activity.dart';
+import '../../domain/entities/activity_enums.dart';
 
 /// „Neu“, „Gesponsert“ und „Automatisch“-Badges auf Aktivitätskarten.
 class ActivityStatusBadges extends StatelessWidget {
@@ -13,10 +16,17 @@ class ActivityStatusBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: 6,
       runSpacing: 6,
       children: [
+        if (activity.viewerAction == ViewerAction.host)
+          _Badge(
+            label: l10n.selfCreatedBadge,
+            color: AppColors.brandNavy,
+            icon: Icons.edit_outlined,
+          ),
         if (activity.isNew)
           const _Badge(
             label: 'Neu',
