@@ -72,6 +72,7 @@ class UserProfile extends Equatable {
     this.interests = const [],
     this.userType = 'standard',
     this.isPremium = false,
+    this.isFounder = false,
     this.galleryPublic = false,
     this.level = 1,
     this.followedByMe = false,
@@ -87,6 +88,7 @@ class UserProfile extends Equatable {
   final List<String> interests;
   final String userType;
   final bool isPremium;
+  final bool isFounder;
   final bool galleryPublic;
   /// `null` bei Event-/Unternehmens-Profilen (kein Level-System).
   final int? level;
@@ -138,6 +140,7 @@ class UserProfile extends Equatable {
       interests: interests ?? this.interests,
       userType: userType,
       isPremium: isPremium,
+      isFounder: isFounder,
       galleryPublic: galleryPublic ?? this.galleryPublic,
       level: clearLevel ? null : (level ?? this.level),
       followedByMe: followedByMe ?? this.followedByMe,
@@ -156,6 +159,7 @@ class UserProfile extends Equatable {
         interests,
         userType,
         isPremium,
+        isFounder,
         galleryPublic,
         level,
         followedByMe,

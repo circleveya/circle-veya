@@ -21,10 +21,12 @@ import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../gallery/presentation/providers/gallery_provider.dart';
 import '../../../gallery/presentation/screens/activity_gallery_screen.dart';
 import '../../../groups/presentation/providers/groups_provider.dart';
+import '../../domain/entities/special_badge.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_review.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_image_crop_editor.dart';
+import '../widgets/special_badge_ui.dart';
 import '../widgets/star_rating.dart';
 import '../../../../l10n/app_localizations.dart';
 
@@ -334,6 +336,7 @@ class _ProfileCoverHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final isUploading = ref.watch(profileEditControllerProvider).isLoading;
+    final specialBadges = SpecialBadge.forProfile(profile);
 
     return SizedBox(
       height: 280,
@@ -438,29 +441,6 @@ class _ProfileCoverHeader extends ConsumerWidget {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          if (profile.isPremium)
-                            const _ProfileStatusBadge(
-                              label: 'Premium',
-                              icon: Icons.workspace_premium,
-                              background: Color(0xFFFFC107),
-                            ),
-                          if (profile.isDev)
-                            const _ProfileStatusBadge(
-                              label: 'Dev',
-                              background: Color(0xFFFFD54F),
-                            )
-                          else if (profile.isMarketing)
-                            const _ProfileStatusBadge(
-                              label: 'Marketing',
-                              background: Color(0xFFFFB74D),
-                            )
-                          else if (profile.isEventOrganizer)
-                            const _ProfileStatusBadge(
-                              label: 'Event',
-                              icon: Icons.verified,
-                              background: Color(0xFFE3F2FD),
-                              iconColor: Color(0xFF1DA1F2),
-                            ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -471,24 +451,30 @@ class _ProfileCoverHeader extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      if (level != null)
+                      if (level != null || specialBadges.isNotEmpty)
                         Wrap(
                           spacing: 10,
                           runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            LevelLabelChip(
-                              level: level!,
-                              onTap: onLevelTap,
-                            ),
-                            if (LevelMilestone.currentFor(level!) != null)
-                              _ProfileBadgeButton(
-                                milestone:
-                                    LevelMilestone.currentFor(level!)!,
+                            if (level != null) ...[
+                              LevelLabelChip(
+                                level: level!,
+                                onTap: onLevelTap,
                               ),
+                              if (LevelMilestone.currentFor(level!) != null)
+                                _ProfileBadgeButton(
+                                  milestone:
+                                      LevelMilestone.currentFor(level!)!,
+                                ),
+                            ],
+                            for (final badge in specialBadges)
+                              SpecialBadgeButton(badge: badge),
                           ],
-                        )
-                      else if (profile.isBusinessProfile)
+                        ),
+                      if (profile.isBusinessProfile) ...[
+                        if (level != null || specialBadges.isNotEmpty)
+                          const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -509,6 +495,7 @@ class _ProfileCoverHeader extends ConsumerWidget {
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),
@@ -562,61 +549,6 @@ class _ProfileBadgeButton extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ProfileStatusBadge extends StatelessWidget {
-  const _ProfileStatusBadge({
-    required this.label,
-    required this.background,
-    this.icon,
-    this.iconColor,
-  });
-
-  final String label;
-  final IconData? icon;
-  final Color background;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = iconColor ?? AppColors.brandNavy;
-    final labelStyle = TextStyle(
-      color: fg,
-      fontWeight: FontWeight.w800,
-      fontSize: 11,
-      height: 1.1,
-    );
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        icon != null ? 6 : 8,
-        3,
-        8,
-        3,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: icon == null
-          ? Text(label, style: labelStyle)
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: fg),
-                const SizedBox(width: 4),
-                Text(label, style: labelStyle),
-              ],
-            ),
     );
   }
 }
