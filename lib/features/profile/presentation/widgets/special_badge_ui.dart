@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/crisp_asset_image.dart';
-import '../../../../core/widgets/vector_badge.dart';
 import '../../domain/entities/special_badge.dart';
 
 void showSpecialBadgeDetails(BuildContext context, SpecialBadge badge) {
@@ -53,17 +53,24 @@ class SpecialBadgeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final image = CrispAssetImage(
+      assetPath: badge.assetPath,
+      size: size,
+      fit: badge.type == SpecialBadgeType.founder
+          ? BoxFit.contain
+          : BoxFit.cover,
+      errorBuilder: (_, _, _) => Icon(
+        Icons.emoji_events,
+        size: size * 0.55,
+        color: AppColors.seed,
+      ),
+    );
+
     if (badge.type == SpecialBadgeType.founder) {
-      return CrispAssetImage(
-        assetPath: badge.assetPath,
-        size: size,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) =>
-            VectorSpecialBadge(badge: badge, size: size),
-      );
+      return image;
     }
 
-    return VectorSpecialBadge(badge: badge, size: size);
+    return ClipOval(child: image);
   }
 }
 
@@ -100,7 +107,7 @@ class SpecialBadgeButton extends StatelessWidget {
                   color: const Color(0xFFE6AE41),
                   fontWeight: FontWeight.w800,
                   fontSize: labelFontSize,
-                  shadows: [
+                  shadows: const [
                     Shadow(
                       color: Colors.black54,
                       blurRadius: 4,
