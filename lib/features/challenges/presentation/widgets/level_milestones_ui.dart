@@ -327,12 +327,15 @@ class LevelMilestonesGallery extends StatelessWidget {
             ),
           )
         else
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final m in unlocked)
-                _MilestoneTile(
+          SizedBox(
+            height: 168,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: unlocked.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final m = unlocked[index];
+                return _MilestoneTile(
                   milestone: m,
                   unlocked: true,
                   highlighted: current?.level == m.level,
@@ -341,8 +344,9 @@ class LevelMilestonesGallery extends StatelessWidget {
                     m,
                     unlocked: true,
                   ),
-                ),
-            ],
+                );
+              },
+            ),
           ),
         const SizedBox(height: 28),
         Text(
@@ -359,22 +363,27 @@ class LevelMilestonesGallery extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (final m in locked)
-              _MilestoneTile(
-                milestone: m,
-                unlocked: false,
-                onTap: () => showLevelMilestoneDetails(
-                  context,
-                  m,
+        if (locked.isNotEmpty)
+          SizedBox(
+            height: 168,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: locked.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final m = locked[index];
+                return _MilestoneTile(
+                  milestone: m,
                   unlocked: false,
-                ),
-              ),
-          ],
-        ),
+                  onTap: () => showLevelMilestoneDetails(
+                    context,
+                    m,
+                    unlocked: false,
+                  ),
+                );
+              },
+            ),
+          ),
       ],
     );
   }

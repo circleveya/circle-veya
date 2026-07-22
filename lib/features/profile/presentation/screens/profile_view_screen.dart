@@ -347,10 +347,11 @@ class _ProfileCoverHeader extends ConsumerWidget {
     this.showBackButton = false,
   });
 
-  static const _avatarRadius = 68.0;
-  static const _headerHeight = 312.0;
+  static const _avatarRadius = 84.0;
+  static const _headerHeight = 340.0;
   static const _badgeSize = 56.0;
   static const _badgeLabelSize = 15.0;
+  static const _nameFontSize = 32.0;
 
   final UserProfile profile;
   final bool isOwnProfile;
@@ -500,26 +501,14 @@ class _ProfileCoverHeader extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 10,
-                        runSpacing: 6,
-                        children: [
-                          Text(
-                            profile.username,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 26,
-                            ),
-                          ),
-                          for (final badge in specialBadges)
-                            SpecialBadgeButton(
-                              badge: badge,
-                              size: _badgeSize,
-                              labelFontSize: _badgeLabelSize,
-                            ),
-                        ],
+                      Text(
+                        profile.username,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: _nameFontSize,
+                          height: 1.15,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -529,29 +518,45 @@ class _ProfileCoverHeader extends ConsumerWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      if (level != null) ...[
+                      if (specialBadges.isNotEmpty || level != null) ...[
                         const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            LevelLabelChip(
-                              level: level!,
-                              onTap: onLevelTap,
-                              fontSize: _badgeLabelSize,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 7,
-                              ),
-                            ),
-                            if (LevelMilestone.currentFor(level!) != null)
-                              _ProfileBadgeButton(
-                                milestone: LevelMilestone.currentFor(level!)!,
-                                badgeSize: _badgeSize,
-                                labelFontSize: _badgeLabelSize,
-                              ),
-                          ],
+                        SizedBox(
+                          height: _badgeSize + _badgeLabelSize + 10,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            children: [
+                              for (final badge in specialBadges) ...[
+                                SpecialBadgeButton(
+                                  badge: badge,
+                                  size: _badgeSize,
+                                  labelFontSize: _badgeLabelSize,
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              if (level != null) ...[
+                                LevelLabelChip(
+                                  level: level!,
+                                  onTap: onLevelTap,
+                                  fontSize: _badgeLabelSize,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 7,
+                                  ),
+                                ),
+                                if (LevelMilestone.currentFor(level!) != null) ...[
+                                  const SizedBox(width: 12),
+                                  _ProfileBadgeButton(
+                                    milestone:
+                                        LevelMilestone.currentFor(level!)!,
+                                    badgeSize: _badgeSize,
+                                    labelFontSize: _badgeLabelSize,
+                                  ),
+                                ],
+                              ],
+                            ],
+                          ),
                         ),
                       ],
                       if (profile.isBusinessProfile) ...[
