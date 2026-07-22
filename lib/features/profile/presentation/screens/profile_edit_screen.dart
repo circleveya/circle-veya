@@ -117,30 +117,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _interestController.clear();
   }
 
-  void _onInterestChanged(String value) {
-    if (!value.contains(',')) return;
-
-    final parts = value.split(',');
-    if (parts.length <= 1) return;
-
-    final completed = parts.sublist(0, parts.length - 1);
-    final remainder = parts.last;
-
-    var added = false;
-    for (final part in completed) {
-      final trimmed = part.trim();
-      if (trimmed.isEmpty || _interests.contains(trimmed)) continue;
-      _interests.add(trimmed);
-      added = true;
-    }
-
-    _interestController.value = TextEditingValue(
-      text: remainder,
-      selection: TextSelection.collapsed(offset: remainder.length),
-    );
-    if (added) setState(() {});
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -239,8 +215,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     const SizedBox(height: 6),
                                     Text(
                                       profile.coverUrl == null
-                                          ? 'Banner hinzuf√ºgen'
-                                          : 'Banner √§ndern',
+                                          ? 'Banner hinzufùgen'
+                                          : 'Banner ùndern',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600,
@@ -257,7 +233,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Banner und Profilbild getrennt w√§hlbar',
+                    'Banner und Profilbild getrennt wùhlbar',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -296,7 +272,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text('Profilbild tippen zum √Ñndern'),
+                  const Text('Profilbild tippen zum ùndern'),
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _usernameController,
@@ -312,7 +288,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     validator: (v) {
                       final age = int.tryParse(v ?? '');
                       if (age == null || age < 13 || age > 120) {
-                        return '13‚Äì120';
+                        return '13ù120';
                       }
                       return null;
                     },
@@ -322,7 +298,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     controller: _bioController,
                     decoration: const InputDecoration(
                       labelText: 'Bio',
-                      hintText: 'Erz√§hl kurz etwas √ºber dich ‚Ä¶',
+                      hintText: 'Erzùhl kurz etwas ùber dich ù',
                     ),
                     maxLines: 4,
                   ),
@@ -340,10 +316,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       Expanded(
                         child: TextField(
                           controller: _interestController,
-                          decoration: const InputDecoration(
-                            hintText: 'z.B. Go-Kart, Fu√üball',
+                          decoration: InputDecoration(
+                            hintText: l10n.interestInputHint,
                           ),
-                          onChanged: _onInterestChanged,
                           onSubmitted: (_) => _addInterest(),
                         ),
                       ),

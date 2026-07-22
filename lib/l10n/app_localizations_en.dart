@@ -794,6 +794,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interestExample => 'e.g. go-kart, football';
 
   @override
+  String get interestInputHint =>
+      'e.g. go-kart, football – press Enter to add';
+
+  @override
   String get activityTitleHint => 'e.g. go-karting';
 
   @override

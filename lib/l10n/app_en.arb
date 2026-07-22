@@ -352,6 +352,7 @@
   "optionalComment": "Optional comment",
   "tellAboutYou": "Tell us a bit about yourself…",
   "interestExample": "e.g. go-kart, football",
+  "interestInputHint": "e.g. go-kart, football – press Enter to add",
   "activityTitleHint": "e.g. go-karting",
   "locationExampleHint": "e.g. Berlin Mitte",
   "gifSearchHint": "Search GIFs…",

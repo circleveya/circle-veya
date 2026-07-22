@@ -265,6 +265,7 @@
   "optionalComment": "Optionaler Kommentar",
   "tellAboutYou": "Erzähl kurz etwas über dich …",
   "interestExample": "z.B. Go-Kart, Fußball",
+  "interestInputHint": "z.B. Go-Kart, Fußball – Enter zum Hinzufügen",
   "activityTitleHint": "z.B. Go-Kart fahren",
   "locationExampleHint": "z.B. Berlin Mitte",
   "gifSearchHint": "GIF suchen …",

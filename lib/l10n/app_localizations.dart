@@ -1544,6 +1544,12 @@ abstract class AppLocalizations {
   /// **'e.g. go-kart, football'**
   String get interestExample;
 
+  /// No description provided for @interestInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. go-kart, football – press Enter to add'**
+  String get interestInputHint;
+
   /// No description provided for @activityTitleHint.
   ///
   /// In en, this message translates to:
