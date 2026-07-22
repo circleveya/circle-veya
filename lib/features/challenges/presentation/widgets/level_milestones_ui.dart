@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/crisp_asset_image.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/level_milestone.dart';
 import 'level_badge_theme.dart';
@@ -90,16 +91,11 @@ class LevelBadgeImage extends StatelessWidget {
 
     Widget image;
     if (milestone.hasBadgeImage) {
-      // ClipOval removes any residual square/checkerboard around the circle.
       image = ClipOval(
-        child: Image.asset(
-          milestone.assetPath!,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-          gaplessPlayback: true,
+        child: CrispAssetImage(
+          assetPath: milestone.assetPath!,
+          size: size,
+          fit: BoxFit.cover,
           errorBuilder: (_, _, _) => Icon(
             Icons.emoji_events,
             size: size * 0.55,

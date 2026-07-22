@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/crisp_asset_image.dart';
 import '../../domain/entities/special_badge.dart';
 
 void showSpecialBadgeDetails(BuildContext context, SpecialBadge badge) {
@@ -53,14 +54,10 @@ class SpecialBadgeImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipOval(
-      child: Image.asset(
-        badge.assetPath,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        gaplessPlayback: true,
+      child: CrispAssetImage(
+        assetPath: badge.assetPath,
+        size: size,
+        fit: BoxFit.cover,
         errorBuilder: (_, _, _) => Icon(
           Icons.emoji_events,
           size: size * 0.55,
