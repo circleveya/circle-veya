@@ -209,8 +209,8 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final isPremium =
-        ref.read(myProfileProvider).valueOrNull?.isPremium ?? false;
+    final myProfile = ref.read(myProfileProvider).valueOrNull;
+    final isPremium = myProfile?.isPremium ?? false;
     final maxSlots = PremiumLimits.maxSlots(isPremium: isPremium);
     final maxRadius = PremiumLimits.maxRadiusKm(isPremium: isPremium);
 
@@ -242,7 +242,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
       return;
     }
 
-    if (_visibleToFriends != true &&
+    final isEventCompany = myProfile?.isEventOrganizer ?? false;
+
+    if (!isEventCompany &&
+        _visibleToFriends != true &&
         _visibleToAcquaintances != true &&
         _visibleToStrangers != true) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -319,10 +322,11 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 : _locationNameController.text.trim(),
             locationType: _locationType,
             weatherCondition: _weatherCondition,
-            visibleToFriends: _visibleToFriends,
-            visibleToAcquaintances: _visibleToAcquaintances,
-            visibleToStrangers: _visibleToStrangers,
-            discoveryRadiusKm: _radiusKm,
+            visibleToFriends: isEventCompany ? false : _visibleToFriends,
+            visibleToAcquaintances:
+                isEventCompany ? false : _visibleToAcquaintances,
+            visibleToStrangers: isEventCompany ? true : _visibleToStrangers,
+            discoveryRadiusKm: isEventCompany ? maxRadius : _radiusKm,
             isSponsored: _isSponsored,
             imageUrl: imageUrl,
             sourceEventId: _sourceEventId,
@@ -753,22 +757,36 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            VisibilitySelector(
-              friends: _visibleToFriends,
-              acquaintances: _visibleToAcquaintances,
-              strangers: _visibleToStrangers,
-              onFriendsChanged: (v) => setState(() => _visibleToFriends = v),
-              onAcquaintancesChanged: (v) =>
-                  setState(() => _visibleToAcquaintances = v),
-              onStrangersChanged: (v) => setState(() => _visibleToStrangers = v),
-              radiusKm: _radiusKm.clamp(
-                PremiumLimits.minRadiusKm,
-                maxRadius,
+            if (isCompany)
+              Card(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                child: const ListTile(
+                  leading: Icon(Icons.groups_outlined),
+                  title: Text('Offen für alle'),
+                  subtitle: Text(
+                    'Dein Event ist öffentlich sichtbar – jeder kann direkt '
+                    'zusagen, ohne Freund oder Follower zu sein.',
+                  ),
+                ),
+              )
+            else
+              VisibilitySelector(
+                friends: _visibleToFriends,
+                acquaintances: _visibleToAcquaintances,
+                strangers: _visibleToStrangers,
+                onFriendsChanged: (v) => setState(() => _visibleToFriends = v),
+                onAcquaintancesChanged: (v) =>
+                    setState(() => _visibleToAcquaintances = v),
+                onStrangersChanged: (v) =>
+                    setState(() => _visibleToStrangers = v),
+                radiusKm: _radiusKm.clamp(
+                  PremiumLimits.minRadiusKm,
+                  maxRadius,
+                ),
+                maxRadiusKm: maxRadius,
+                isPremium: isPremium,
+                onRadiusChanged: (v) => setState(() => _radiusKm = v),
               ),
-              maxRadiusKm: maxRadius,
-              isPremium: isPremium,
-              onRadiusChanged: (v) => setState(() => _radiusKm = v),
-            ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: isLoading ? null : _submit,
