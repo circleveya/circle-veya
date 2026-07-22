@@ -114,6 +114,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 55,
       name: 'Collector',
+      assetPath: 'assets/badges/v3/collector_55.png',
       descriptionDe:
           'Du hast viele Erinnerungen und gemeinsame Aktivitäten gesammelt.',
       descriptionEn:
@@ -122,6 +123,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 60,
       name: 'Pathfinder',
+      assetPath: 'assets/badges/v3/pathfinder_60.png',
       descriptionDe:
           'Du findest neue Wege, Menschen und Erlebnisse zusammenzubringen.',
       descriptionEn:
@@ -130,6 +132,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 65,
       name: 'Ambassador',
+      assetPath: 'assets/badges/v3/ambassador_65.png',
       descriptionDe:
           'Du repräsentierst CircleVeya und hilfst der Community zu wachsen.',
       descriptionEn:
@@ -138,6 +141,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 70,
       name: 'Master',
+      assetPath: 'assets/badges/v3/master_70.png',
       descriptionDe:
           'Du hast viel Erfahrung mit Aktivitäten, Gruppen und Events gesammelt.',
       descriptionEn:
@@ -146,6 +150,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 75,
       name: 'Hero',
+      assetPath: 'assets/badges/v3/hero_75.png',
       descriptionDe:
           'Du bist eine wichtige Person in der Community und bringst echten Mehrwert.',
       descriptionEn:
@@ -154,6 +159,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 80,
       name: 'Guardian',
+      assetPath: 'assets/badges/v3/guardian_80.png',
       descriptionDe:
           'Du hilfst, die Community positiv, sicher und aktiv zu halten.',
       descriptionEn:
@@ -162,6 +168,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 85,
       name: 'Champion',
+      assetPath: 'assets/badges/v3/champion_85.png',
       descriptionDe:
           'Du gehörst zu den besonders aktiven und geschätzten Nutzern.',
       descriptionEn:
@@ -170,6 +177,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 90,
       name: 'Host Legend',
+      assetPath: 'assets/badges/v3/host_legend_90.png',
       descriptionDe:
           'Deine Aktivitäten sind beliebt und bringen regelmäßig Menschen zusammen.',
       descriptionEn:
@@ -178,6 +186,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 95,
       name: 'Circle Icon',
+      assetPath: 'assets/badges/v3/circle_icon_95.png',
       descriptionDe:
           'Du bist ein bekanntes Gesicht innerhalb der CircleVeya-Community.',
       descriptionEn: 'You’re a familiar face in the CircleVeya community.',
@@ -185,6 +194,7 @@ class LevelMilestone {
     LevelMilestone(
       level: 100,
       name: 'Veya Legend',
+      assetPath: 'assets/badges/v3/veya_legend_100.png',
       descriptionDe:
           'Die höchste Auszeichnung: Du bist eine echte CircleVeya-Legende.',
       descriptionEn:
