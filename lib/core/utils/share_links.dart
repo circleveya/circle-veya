@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Öffentliche Share-Links für CircleVeya (Web).
 abstract final class CircleShareLinks {
@@ -21,4 +23,17 @@ abstract final class CircleShareLinks {
 
   static String activity(String activityId) =>
       '$webBase/activity/${Uri.encodeComponent(activityId)}';
+
+  /// Event aus Share-Link oder Chat-Vorschau oeffnen.
+  static void open(BuildContext context, {required String activityId, String? url}) {
+    final uri = url != null ? Uri.tryParse(url) : null;
+    final path = uri?.path;
+    if (path != null &&
+        path.startsWith('/activity/') &&
+        path.split('/').where((s) => s.isNotEmpty).length >= 2) {
+      context.push(path);
+      return;
+    }
+    context.push('/activity/${Uri.encodeComponent(activityId)}');
+  }
 }

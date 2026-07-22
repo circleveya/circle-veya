@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/share_links.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/activity_share_payload.dart';
 
@@ -17,6 +17,14 @@ class ActivitySharePreview extends StatelessWidget {
   final ActivitySharePayload payload;
   final bool compact;
 
+  void _openActivity(BuildContext context) {
+    CircleShareLinks.open(
+      context,
+      activityId: payload.activityId,
+      url: payload.url,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -27,10 +35,7 @@ class ActivitySharePreview extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.pushNamed(
-          RouteNames.activityDetail,
-          pathParameters: {'id': payload.activityId},
-        ),
+        onTap: () => _openActivity(context),
         borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

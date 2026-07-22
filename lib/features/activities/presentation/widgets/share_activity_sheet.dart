@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../chat/domain/entities/activity_share_payload.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../chat/presentation/widgets/activity_share_preview.dart';
@@ -54,11 +55,31 @@ class _ShareActivitySheet extends ConsumerStatefulWidget {
 
 class _ShareActivitySheetState extends ConsumerState<_ShareActivitySheet> {
   String? _sendingToFriendId;
+  String? _linkActivityId;
 
-  String get _url => CircleShareLinks.activity(widget.activityId);
+  @override
+  void initState() {
+    super.initState();
+    _resolveLinkId();
+  }
+
+  Future<void> _resolveLinkId() async {
+    try {
+      final resolved = await ref
+          .read(activityRemoteDatasourceProvider)
+          .resolveActivityLinkId(widget.activityId);
+      if (mounted) setState(() => _linkActivityId = resolved);
+    } catch (_) {
+      if (mounted) setState(() => _linkActivityId = widget.activityId);
+    }
+  }
+
+  String get _effectiveActivityId => _linkActivityId ?? widget.activityId;
+
+  String get _url => CircleShareLinks.activity(_effectiveActivityId);
 
   ActivitySharePayload get _previewPayload => ActivitySharePayload(
-        activityId: widget.activityId,
+        activityId: _effectiveActivityId,
         title: widget.title,
         url: _url,
         imageUrl: widget.imageUrl,
@@ -78,7 +99,7 @@ class _ShareActivitySheetState extends ConsumerState<_ShareActivitySheet> {
       await actions.sendActivityShare(
         chatId: chatId,
         payload: ActivitySharePayload(
-          activityId: widget.activityId,
+          activityId: _effectiveActivityId,
           title: widget.title,
           url: _url,
           imageUrl: widget.imageUrl,

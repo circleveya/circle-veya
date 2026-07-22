@@ -437,6 +437,14 @@ class ActivityRemoteDatasource {
     }).toList();
   }
 
+  Future<String> resolveActivityLinkId(String activityId) async {
+    final response = await _client.rpc(
+      'resolve_activity_link_id',
+      params: {'p_id': activityId},
+    );
+    return response as String? ?? activityId;
+  }
+
   Future<DiscoverableActivity?> getActivityDetail(String activityId) async {
     final response = await _client.rpc(
       'get_activity_detail',
