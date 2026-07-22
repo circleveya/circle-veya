@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/crisp_asset_image.dart';
+import '../../../../core/widgets/vector_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/level_milestone.dart';
 import 'level_badge_theme.dart';
@@ -91,35 +91,16 @@ class LevelBadgeImage extends StatelessWidget {
 
     Widget image;
     if (milestone.hasBadgeImage) {
-      image = ClipOval(
-        child: CrispAssetImage(
-          assetPath: milestone.assetPath!,
-          size: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => Icon(
-            Icons.emoji_events,
-            size: size * 0.55,
-            color: unlocked ? AppColors.seed : muted,
-          ),
-        ),
+      image = VectorLevelBadge(
+        milestone: milestone,
+        size: size,
+        unlocked: unlocked,
       );
     } else {
       image = Icon(
         unlocked ? Icons.emoji_events : Icons.lock_outline,
         size: size * 0.55,
         color: unlocked ? AppColors.seed : muted,
-      );
-    }
-
-    if (!unlocked && milestone.hasBadgeImage) {
-      return ColorFiltered(
-        colorFilter: const ColorFilter.matrix(<double>[
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0, 0, 0, 0.55, 0,
-        ]),
-        child: Opacity(opacity: 0.75, child: image),
       );
     }
 

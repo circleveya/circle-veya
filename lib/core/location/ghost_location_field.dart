@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_colors.dart';
 import 'swiss_places.dart';
 
-/// Textfeld mit ausgegrauter Orts-Vervollständigung (Tab / → / Enter).
+/// Textfeld mit blauer Inline-Vervollständigung (Tab / → / Enter).
 class GhostLocationField extends StatefulWidget {
   const GhostLocationField({
     super.key,
@@ -25,11 +26,15 @@ class GhostLocationField extends StatefulWidget {
 class _GhostLocationFieldState extends State<GhostLocationField> {
   final _focusNode = FocusNode();
   String? _ghostSuffix;
+  PlaceSuggestion? _suggestion;
+
+  static const _contentPadding = EdgeInsets.symmetric(vertical: 14);
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_syncGhost);
+    _focusNode.addListener(_onFocusChange);
     _syncGhost();
   }
 
@@ -46,15 +51,24 @@ class _GhostLocationFieldState extends State<GhostLocationField> {
   @override
   void dispose() {
     widget.controller.removeListener(_syncGhost);
+    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     super.dispose();
   }
 
+  void _onFocusChange() => setState(() {});
+
   void _syncGhost() {
-    final next = ghostCompletionSuffix(widget.controller.text);
-    if (next != _ghostSuffix) {
-      setState(() => _ghostSuffix = next);
+    final typed = widget.controller.text;
+    final suggestion = findPlaceSuggestion(typed);
+    final suffix = ghostCompletionSuffix(typed);
+    if (suffix == _ghostSuffix && suggestion?.name == _suggestion?.name) {
+      return;
     }
+    setState(() {
+      _ghostSuffix = suffix;
+      _suggestion = suffix != null ? suggestion : null;
+    });
   }
 
   bool _acceptGhost() {
@@ -66,7 +80,10 @@ class _GhostLocationFieldState extends State<GhostLocationField> {
       text: completed,
       selection: TextSelection.collapsed(offset: completed.length),
     );
-    setState(() => _ghostSuffix = null);
+    setState(() {
+      _ghostSuffix = null;
+      _suggestion = null;
+    });
     return true;
   }
 
@@ -107,66 +124,110 @@ class _GhostLocationFieldState extends State<GhostLocationField> {
     final theme = Theme.of(context);
     final typed = widget.controller.text;
     final ghost = _ghostSuffix;
-    final bodyStyle = theme.textTheme.bodyLarge ?? const TextStyle(fontSize: 16);
+    final suggestion = _suggestion;
+    final bodyStyle = (theme.textTheme.bodyLarge ?? const TextStyle(fontSize: 16))
+        .copyWith(height: 1.25, letterSpacing: 0);
 
     return Focus(
       onKeyEvent: _onKey,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          hintText: typed.isEmpty ? widget.hintText : null,
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.check),
-            tooltip: 'Ort übernehmen',
-            onPressed: _confirm,
-          ),
-          isDense: true,
-          // Inhalt selbst zeichnen wir
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            if (ghost != null && typed.isNotEmpty)
-              IgnorePointer(
-                child: Text.rich(
-                  TextSpan(
-                    style: bodyStyle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _focusNode.hasFocus
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Icon(
+                    Icons.search,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    clipBehavior: Clip.none,
                     children: [
-                      TextSpan(
-                        text: typed,
-                        style: const TextStyle(color: Colors.transparent),
-                      ),
-                      TextSpan(
-                        text: ghost,
-                        style: bodyStyle.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.42),
-                          fontWeight: FontWeight.w500,
+                      if (ghost != null && typed.isNotEmpty)
+                        Padding(
+                          padding: _contentPadding,
+                          child: IgnorePointer(
+                            child: Text.rich(
+                              TextSpan(
+                                style: bodyStyle,
+                                children: [
+                                  TextSpan(
+                                    text: typed,
+                                    style: const TextStyle(
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ghost,
+                                    style: bodyStyle.copyWith(
+                                      color: Colors.white,
+                                      backgroundColor: AppColors.brandBlue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                            ),
+                          ),
                         ),
+                      TextField(
+                        controller: widget.controller,
+                        focusNode: _focusNode,
+                        style: bodyStyle.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        cursorColor: theme.colorScheme.primary,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: typed.isEmpty ? widget.hintText : null,
+                          border: InputBorder.none,
+                          contentPadding: _contentPadding,
+                        ),
+                        onChanged: (_) => _syncGhost(),
+                        onSubmitted: (_) => _confirm(),
+                        onTapOutside: (_) => _focusNode.unfocus(),
                       ),
                     ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  tooltip: 'Ort übernehmen',
+                  onPressed: _confirm,
+                ),
+              ],
+            ),
+          ),
+          if (suggestion != null && ghost != null && typed.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(
+                'Tab für ${suggestion.name}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.brandBlue,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            TextField(
-              controller: widget.controller,
-              focusNode: _focusNode,
-              style: bodyStyle,
-              cursorColor: theme.colorScheme.primary,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: (_) => _syncGhost(),
-              onSubmitted: (_) => _confirm(),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

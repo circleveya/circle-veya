@@ -79,18 +79,57 @@ const kSwissPlaceSuggestions = <PlaceSuggestion>[
   PlaceSuggestion(name: 'Grindelwald', latitude: 46.6242, longitude: 8.0414),
 ];
 
+String normalizePlaceQuery(String input) {
+  return input
+      .toLowerCase()
+      .replaceAll('ä', 'a')
+      .replaceAll('ö', 'o')
+      .replaceAll('ü', 'u')
+      .replaceAll('é', 'e')
+      .replaceAll('è', 'e')
+      .replaceAll('ê', 'e')
+      .replaceAll('à', 'a')
+      .replaceAll('â', 'a')
+      .replaceAll('ô', 'o')
+      .replaceAll('û', 'u')
+      .replaceAll('ç', 'c');
+}
+
+bool placeQueryMatches(String name, String query) =>
+    _completionStartIndex(name, query) >= 0;
+
+bool _placeMatchesQuery(String name, String query) {
+  final q = query.trim();
+  if (q.isEmpty) return false;
+  final nameLower = name.toLowerCase();
+  final qLower = q.toLowerCase();
+  if (nameLower.startsWith(qLower)) return true;
+  return normalizePlaceQuery(name).startsWith(normalizePlaceQuery(q));
+}
+
+int _completionStartIndex(String name, String query) {
+  final nameLower = name.toLowerCase();
+  final qLower = query.toLowerCase();
+  if (nameLower.startsWith(qLower)) return query.length;
+  final nameNorm = normalizePlaceQuery(name);
+  final qNorm = normalizePlaceQuery(query);
+  if (nameNorm.startsWith(qNorm)) return query.length;
+  return -1;
+}
+
 PlaceSuggestion? findPlaceSuggestion(String query) {
-  final q = query.trim().toLowerCase();
+  final q = query.trim();
   if (q.isEmpty) return null;
 
   final prefixMatches = kSwissPlaceSuggestions
-      .where((p) => p.name.toLowerCase().startsWith(q))
+      .where((p) => _placeMatchesQuery(p.name, q))
       .toList()
     ..sort((a, b) => a.name.length.compareTo(b.name.length));
   if (prefixMatches.isNotEmpty) return prefixMatches.first;
 
+  final qNorm = normalizePlaceQuery(q);
   final containsMatches = kSwissPlaceSuggestions
-      .where((p) => p.name.toLowerCase().contains(q))
+      .where((p) => normalizePlaceQuery(p.name).contains(qNorm))
       .toList()
     ..sort((a, b) => a.name.length.compareTo(b.name.length));
   if (containsMatches.isNotEmpty) return containsMatches.first;
@@ -98,14 +137,14 @@ PlaceSuggestion? findPlaceSuggestion(String query) {
   return null;
 }
 
-/// Ghost-Text-Rest: nur bei Prefix-Match (z. B. „zü“ → „rich“).
+/// Ghost-Text-Rest bei Prefix-Match (z. B. „zür“ → „ich“, „interla“ → „ken“).
 String? ghostCompletionSuffix(String typed) {
-  final q = typed; // keep trailing spaces out
+  final q = typed;
   if (q.trim().isEmpty || q.endsWith(' ')) return null;
   final suggestion = findPlaceSuggestion(q);
   if (suggestion == null) return null;
   final name = suggestion.name;
-  if (!name.toLowerCase().startsWith(q.toLowerCase())) return null;
-  if (name.length <= q.length) return null;
-  return name.substring(q.length);
+  final start = _completionStartIndex(name, q);
+  if (start < 0 || start >= name.length) return null;
+  return name.substring(start);
 }

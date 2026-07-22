@@ -431,7 +431,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String placeNotFound(String query) {
-    return '„$query“ nicht gefunden. Tippe weiter – Vorschläge erscheinen ausgegraut (Tab / → / Enter).';
+    return '„$query“ nicht gefunden. Tippe weiter – Vorschläge erscheinen blau markiert (Tab / → / Enter).';
   }
 
   @override

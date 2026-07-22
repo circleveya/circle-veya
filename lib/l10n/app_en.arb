@@ -179,7 +179,7 @@
       "name": {"type": "String"}
     }
   },
-  "placeNotFound": "“{query}” not found. Keep typing – suggestions appear greyed out (Tab / → / Enter).",
+  "placeNotFound": "“{query}” not found. Keep typing – suggestions appear highlighted in blue (Tab / → / Enter).",
   "@placeNotFound": {
     "placeholders": {
       "query": {"type": "String"}

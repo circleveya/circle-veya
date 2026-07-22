@@ -97,16 +97,33 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void _addInterestsFromInput(String raw) {
     final parts = raw
         .split(',')
-        .map((part) => part.trim())
+        .map(_formatInterest)
         .where((part) => part.isNotEmpty);
 
     var added = false;
     for (final value in parts) {
-      if (_interests.contains(value)) continue;
+      if (_interests.any((i) => i.toLowerCase() == value.toLowerCase())) {
+        continue;
+      }
       _interests.add(value);
       added = true;
     }
     if (added) setState(() {});
+  }
+
+  String _formatInterest(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return trimmed;
+
+    return trimmed.splitMapJoin(
+      RegExp(r'[\s-]+'),
+      onMatch: (match) => match.group(0)!,
+      onNonMatch: (part) {
+        if (part.isEmpty) return part;
+        final lower = part.toLowerCase();
+        return lower[0].toUpperCase() + lower.substring(1);
+      },
+    );
   }
 
   void _addInterest() {

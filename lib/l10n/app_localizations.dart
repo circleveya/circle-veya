@@ -507,21 +507,39 @@ abstract class AppLocalizations {
   String get shareActivitySend;
 
   /// No description provided for @privateProfileSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Private profile'**
   String get privateProfileSetting;
 
   /// No description provided for @privateProfileSettingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only friends and acquaintances can see bio, activities, level and gallery.'**
   String get privateProfileSettingSubtitle;
 
   /// No description provided for @privateProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Private profile'**
   String get privateProfileTitle;
 
   /// No description provided for @privateProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{username}\'s content is only visible to friends and acquaintances.'**
   String privateProfileBody(String username);
 
   /// No description provided for @profileNowPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile is now private'**
   String get profileNowPrivate;
 
   /// No description provided for @profileNowPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile is now public'**
   String get profileNowPublic;
 
   /// No description provided for @linkCopied.
@@ -881,7 +899,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeNotFound.
   ///
   /// In en, this message translates to:
-  /// **'“{query}” not found. Keep typing – suggestions appear greyed out (Tab / → / Enter).'**
+  /// **'“{query}” not found. Keep typing – suggestions appear highlighted in blue (Tab / → / Enter).'**
   String placeNotFound(String query);
 
   /// No description provided for @gpsTaken.
@@ -2069,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewConnectedOnly.
   ///
   /// In en, this message translates to:
-  /// **'You can only review people you're connected with.'**
+  /// **'You can only review people you\'re connected with.'**
   String get reviewConnectedOnly;
 
   /// No description provided for @saveReview.

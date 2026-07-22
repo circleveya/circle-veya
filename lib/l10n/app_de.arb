@@ -154,7 +154,7 @@
   "profilePictureUpdated": "Profilbild aktualisiert",
   "bannerUpdated": "Banner aktualisiert",
   "locationApplied": "Standort: {name}",
-  "placeNotFound": "„{query}“ nicht gefunden. Tippe weiter – Vorschläge erscheinen ausgegraut (Tab / → / Enter).",
+  "placeNotFound": "„{query}“ nicht gefunden. Tippe weiter – Vorschläge erscheinen blau markiert (Tab / → / Enter).",
   "gpsTaken": "Standort per GPS übernommen.",
   "mockLocationHint": "Test-Standort aktiv. GPS oder Ort-Chip überschreibt den Mock.",
   "finish": "Fertig",

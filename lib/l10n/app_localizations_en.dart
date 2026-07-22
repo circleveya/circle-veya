@@ -431,7 +431,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String placeNotFound(String query) {
-    return '“$query” not found. Keep typing – suggestions appear greyed out (Tab / → / Enter).';
+    return '“$query” not found. Keep typing – suggestions appear highlighted in blue (Tab / → / Enter).';
   }
 
   @override
@@ -797,8 +797,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interestExample => 'e.g. go-kart, football';
 
   @override
-  String get interestInputHint =>
-      'e.g. go-kart, football – press Enter to add';
+  String get interestInputHint => 'e.g. go-kart, football – press Enter to add';
 
   @override
   String get activityTitleHint => 'e.g. go-karting';

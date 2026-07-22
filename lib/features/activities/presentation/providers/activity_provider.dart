@@ -161,9 +161,9 @@ class DiscoverActivitiesController
   }
 
   String? _cityHint(UserLocation location) {
-    if (location.source == LocationSource.gps) return null;
-    final raw = location.label ?? location.displayLabel;
-    return raw.replaceAll(RegExp(r'\s*\(.*\)\s*'), '').trim();
+    // Orte werden über Koordinaten (+ optional Entfernung) gefiltert.
+    // Stadtnamen-Filter würde Events ohne passendes city-Feld ausschliessen.
+    return null;
   }
 
   Future<void> _triggerBackgroundSync() async {
@@ -175,7 +175,7 @@ class DiscoverActivitiesController
         .syncForUserLocation(
           latitude: location.latitude,
           longitude: location.longitude,
-          radiusKm: filters.maxDistanceKm ?? 25,
+          radiusKm: filters.maxDistanceKm ?? 150,
           countryCode: 'CH',
           expandRadius: true,
         )

@@ -187,6 +187,7 @@ class _DiscoverFiltersSheet extends StatefulWidget {
 
 class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
   late ActivityDiscoverFilters _filters;
+  Future<void> Function()? _applyPendingLocation;
 
   @override
   void initState() {
@@ -242,6 +243,7 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
                   filters: _filters,
                   onFiltersChanged: _update,
                   embedded: true,
+                  onReady: (apply) => _applyPendingLocation = apply,
                 ),
                 Divider(
                   height: 1,
@@ -255,7 +257,10 @@ class _DiscoverFiltersSheetState extends State<_DiscoverFiltersSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
                   child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () async {
+                      await _applyPendingLocation?.call();
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.brandNavy,
                       foregroundColor: Colors.white,
