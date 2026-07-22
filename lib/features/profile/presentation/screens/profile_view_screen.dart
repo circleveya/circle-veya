@@ -527,6 +527,18 @@ class _ProfileCoverHeader extends ConsumerWidget {
                             shrinkWrap: true,
                             padding: EdgeInsets.zero,
                             children: [
+                              if (level != null &&
+                                  LevelMilestone.currentFor(level!) != null) ...[
+                                _ProfileBadgeButton(
+                                  milestone: LevelMilestone.currentFor(level!)!,
+                                  badgeSize: _badgeSize,
+                                  labelFontSize: _badgeLabelSize,
+                                  labelOverride: AppLocalizations.of(context)
+                                      .levelLabel(level!),
+                                  onTap: onLevelTap,
+                                ),
+                                const SizedBox(width: 12),
+                              ],
                               for (final badge in specialBadges) ...[
                                 SpecialBadgeButton(
                                   badge: badge,
@@ -534,26 +546,6 @@ class _ProfileCoverHeader extends ConsumerWidget {
                                   labelFontSize: _badgeLabelSize,
                                 ),
                                 const SizedBox(width: 12),
-                              ],
-                              if (level != null) ...[
-                                LevelLabelChip(
-                                  level: level!,
-                                  onTap: onLevelTap,
-                                  fontSize: _badgeLabelSize,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 7,
-                                  ),
-                                ),
-                                if (LevelMilestone.currentFor(level!) != null) ...[
-                                  const SizedBox(width: 12),
-                                  _ProfileBadgeButton(
-                                    milestone:
-                                        LevelMilestone.currentFor(level!)!,
-                                    badgeSize: _badgeSize,
-                                    labelFontSize: _badgeLabelSize,
-                                  ),
-                                ],
                               ],
                             ],
                           ),
@@ -594,27 +586,32 @@ class _ProfileCoverHeader extends ConsumerWidget {
   }
 }
 
-/// Aktuelles Level-Badge im Profil-Header (Tipp → Erklärung).
+/// Aktuelles Level-Badge im Profil-Header (Tipp → Erklärung / Level-Tab).
 class _ProfileBadgeButton extends StatelessWidget {
   const _ProfileBadgeButton({
     required this.milestone,
     this.badgeSize = 44,
     this.labelFontSize = 13,
+    this.labelOverride,
+    this.onTap,
   });
 
   final LevelMilestone milestone;
   final double badgeSize;
   final double labelFontSize;
+  final String? labelOverride;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = LevelBadgeTheme.forLevel(milestone.level);
     return InkWell(
-      onTap: () => showLevelMilestoneDetails(
-        context,
-        milestone,
-        unlocked: true,
-      ),
+      onTap: onTap ??
+          () => showLevelMilestoneDetails(
+                context,
+                milestone,
+                unlocked: true,
+              ),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
@@ -624,7 +621,7 @@ class _ProfileBadgeButton extends StatelessWidget {
             LevelBadgeImage(milestone: milestone, size: badgeSize),
             const SizedBox(width: 8),
             Text(
-              milestone.name,
+              labelOverride ?? milestone.name,
               style: TextStyle(
                 color: colors.accent,
                 fontWeight: FontWeight.w800,
