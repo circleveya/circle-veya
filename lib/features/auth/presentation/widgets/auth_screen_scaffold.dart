@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import 'auth_background.dart';
 
-/// Login/Registrierung – Hintergrund wie Mockup, Formular ohne weisse Karte.
+/// Login/Registrierung – programmatischer Hintergrund, kein PNG.
 class AuthScreenScaffold extends StatelessWidget {
   const AuthScreenScaffold({
     super.key,
@@ -11,33 +12,24 @@ class AuthScreenScaffold extends StatelessWidget {
     this.showBackButton = false,
   });
 
-  static const _backgroundAsset = 'assets/branding/auth_background.png';
-
   final Widget child;
   final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7F4),
+      backgroundColor: const Color(0xFFF9F7F3),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            _backgroundAsset,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (_, _, _) =>
-                const ColoredBox(color: Color(0xFFF8F7F4)),
-          ),
+          const AuthBackground(),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  child: child,
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: AuthFormSurface(child: child),
                 ),
               ),
             ),
